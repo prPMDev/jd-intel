@@ -88,7 +88,7 @@ const companies = await registry.search('fintech');
 
 ## Who is this for
 
-**Job seekers:** Connect this to your AI assistant (Claude, ChatGPT, Cursor) to search company career pages without visiting each one manually. Pair with evaluation tools to score and track opportunities against your profile.
+**Job seekers:** Connect this to your AI assistant to search company career pages without visiting each one manually. Pair with evaluation tools to score and track opportunities against your profile.
 
 **Developers:** Building a job search tool, career platform, or AI agent that needs structured job data? Use this as your data layer instead of writing your own ATS adapters.
 
