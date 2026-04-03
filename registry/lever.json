@@ -1,0 +1,22 @@
+[
+  {"slug": "netflix", "name": "Netflix", "sector": "media"},
+  {"slug": "shopify", "name": "Shopify", "sector": "ecommerce"},
+  {"slug": "openai", "name": "OpenAI", "sector": "ai"},
+  {"slug": "anthropic", "name": "Anthropic", "sector": "ai"},
+  {"slug": "scale", "name": "Scale AI", "sector": "ai"},
+  {"slug": "anduril", "name": "Anduril", "sector": "defense tech"},
+  {"slug": "flexport", "name": "Flexport", "sector": "logistics"},
+  {"slug": "calm", "name": "Calm", "sector": "health"},
+  {"slug": "navan", "name": "Navan", "sector": "travel"},
+  {"slug": "chime", "name": "Chime", "sector": "fintech"},
+  {"slug": "faire", "name": "Faire", "sector": "marketplace"},
+  {"slug": "grammarly", "name": "Grammarly", "sector": "productivity"},
+  {"slug": "lucid", "name": "Lucid Software", "sector": "productivity"},
+  {"slug": "miro", "name": "Miro", "sector": "collaboration"},
+  {"slug": "gitlab", "name": "GitLab", "sector": "developer tools"},
+  {"slug": "postman", "name": "Postman", "sector": "developer tools"},
+  {"slug": "cockroachdb", "name": "Cockroach Labs", "sector": "database"},
+  {"slug": "supabase", "name": "Supabase", "sector": "developer tools"},
+  {"slug": "replit", "name": "Replit", "sector": "developer tools"},
+  {"slug": "wiz-inc", "name": "Wiz", "sector": "security"}
+]

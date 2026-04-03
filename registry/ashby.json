@@ -1,0 +1,17 @@
+[
+  {"slug": "notion", "name": "Notion", "sector": "productivity"},
+  {"slug": "linear", "name": "Linear", "sector": "developer tools"},
+  {"slug": "ramp", "name": "Ramp", "sector": "fintech"},
+  {"slug": "vercel", "name": "Vercel", "sector": "developer tools"},
+  {"slug": "anthropic", "name": "Anthropic", "sector": "ai"},
+  {"slug": "resend", "name": "Resend", "sector": "developer tools"},
+  {"slug": "clerk", "name": "Clerk", "sector": "developer tools"},
+  {"slug": "railway", "name": "Railway", "sector": "developer tools"},
+  {"slug": "cal", "name": "Cal.com", "sector": "scheduling"},
+  {"slug": "drata", "name": "Drata", "sector": "security"},
+  {"slug": "mercury", "name": "Mercury", "sector": "fintech"},
+  {"slug": "watershed", "name": "Watershed", "sector": "climate tech"},
+  {"slug": "persona", "name": "Persona", "sector": "identity"},
+  {"slug": "stytch", "name": "Stytch", "sector": "identity"},
+  {"slug": "flatfile", "name": "Flatfile", "sector": "data"}
+]
