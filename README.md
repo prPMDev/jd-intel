@@ -2,11 +2,16 @@
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js 18+](https://img.shields.io/badge/node-18%2B-green.svg)](https://nodejs.org)
-[![Tests: 66 passing](https://img.shields.io/badge/tests-66%20passing-brightgreen.svg)](test/)
 
 > **One API to search jobs across every ATS. Full descriptions, salary ranges, 66 verified companies — no API keys, no scraping.**
 
 ---
+
+## Why this exists
+
+Every company's careers page sits behind a different ATS — Greenhouse, Lever, Ashby, and more. Getting structured data means writing custom integrations for each one, parsing different response formats, and usually settling for job titles and links with no descriptions.
+
+ats-index gives you one unified API to all of them. Public data, public APIs, no scraping — just the integration work you'd rather not redo.
 
 ## Try it
 
@@ -36,12 +41,6 @@ Every job normalizes to this shape, across every platform:
 ```
 
 No custom parsing per company. One schema across Greenhouse, Ashby, and Lever.
-
-## Why this exists
-
-Every company's careers page sits behind a different ATS — Greenhouse, Lever, Ashby, and more. Getting structured data means writing custom integrations for each one, parsing different response formats, and usually settling for job titles and links with no descriptions.
-
-ats-index gives you one unified API to all of them. Public data, public APIs, no scraping — just the integration work you'd rather not redo.
 
 ## What you can build with it
 
