@@ -1,4 +1,4 @@
-import { normalize } from '../normalizer.js';
+import { normalize, stripHtml } from '../normalizer.js';
 
 const BASE_URL = 'https://api.lever.co/v0/postings';
 
