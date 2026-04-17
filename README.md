@@ -86,14 +86,20 @@ ats-index fetch <company-slug>
 # Specify the platform explicitly
 ats-index fetch <company-slug> --ats greenhouse
 
-# Filter by keyword (matches title, department, and full description)
-ats-index fetch stripe --filter "product manager|PM"
+# Role-type gate (matches title only — reliable role identity)
+ats-index fetch stripe --title-filter "product manager"
+
+# Topic/scope match (title + department + description)
+ats-index fetch stripe --filter "integrations|partnerships"
+
+# Combined: PM roles about integrations (title gate AND topic match)
+ats-index fetch stripe --title-filter "product manager" --filter "integrations|partnerships"
 
 # Only recent roles
 ats-index fetch stripe --posted-within-days 14
 
 # Cut geographic noise (comma-separated keyword lists)
-ats-index fetch ramp --location-include "United States,US,Remote" --location-exclude "London,Dublin,Berlin"
+ats-index fetch ramp --location-include "United States,US,Remote - US" --location-exclude "London,Dublin,Berlin"
 
 # Detect which ATS a company uses
 ats-index detect <company-name>
@@ -112,9 +118,10 @@ import { fetchJobs, registry } from 'ats-index';
 
 const jobs = await fetchJobs({
   company: 'ramp',
-  filter: 'product manager|PM',
+  titleFilter: 'product manager',         // role identity (title only)
+  filter: 'integrations|partnerships',    // topic/scope (anywhere)
   postedWithinDays: 14,
-  locationIncludes: ['United States', 'Remote'],
+  locationIncludes: ['United States', 'US', 'Remote - US'],
   locationExcludes: ['London', 'Dublin'],
   limit: 50,
 });
@@ -129,11 +136,31 @@ Filters operate on structured fields only — deterministic, fast, no interpreta
 
 | Filter | Matches | Use when |
 |--------|---------|----------|
-| `filter` | Title, department, **and description** | Role keywords ("PM", "Staff Engineer") |
+| `titleFilter` | **Title only** | Role identity — "what KIND of role" ("PM", "Staff Engineer") |
+| `filter` | Title + department + description | Topic/scope — "what it's ABOUT" ("integrations", "growth") |
 | `postedWithinDays` | `postedAt` within N days | Recency cuts |
 | `locationIncludes` | Any keyword matches location (OR) | Region targeting |
 | `locationExcludes` | No keyword matches location | Drop geographic noise (EMEA pollution) |
 | `limit` | First N results | Cap output size |
+
+**Why title and topic are separate flags:**
+
+`--filter "product manager"` alone creates false positives — engineering JDs that mention "the product manager" as a collaborator get swept in. The keyword means different things in different fields:
+
+- In a **title**, "product manager" means *this role IS a PM*
+- In a **description**, "product manager" often means *this role works with PMs*
+
+Split intent:
+- `--title-filter "product manager"` — role identity (title must match)
+- `--filter "integrations"` — topic scope (matches anywhere)
+
+Both AND together. One CLI call captures "PM roles about integrations" with no noise.
+
+**Location filtering notes:**
+
+- **Prefer include over exclude.** Excluding every non-US location requires enumerating the world. `--location-include "United States,US,Remote - US"` is bounded and cleaner.
+- **Avoid bare "Remote"** as an inclusion — it matches "Remote (LatAm)", "Remote (EMEA)", "Remote - Global". Prefer qualified terms like "Remote - US" or pair "Remote" with country keywords.
+- Use exclude as a refinement on top of include, not as the primary tool.
 
 ---
 
@@ -183,7 +210,8 @@ Format:
 | Lever adapter | Shipped | Full JDs, departments, workplace type |
 | Auto-detect | Shipped | Checks all platforms for a company slug |
 | Company registry | Shipped | 36 verified companies across platforms |
-| Title + description filter | Shipped | --filter flag with regex pattern matching across title, department, description |
+| Title filter (role identity) | Shipped | --title-filter for role-type gating (title only) |
+| Topic filter (scope) | Shipped | --filter for topic match across title, department, description |
 | Posted-within filter | Shipped | --posted-within-days for recency cuts |
 | Location filters | Shipped | --location-include / --location-exclude for geographic targeting |
 | Salary extraction | Shipped | From structured fields and JD text |

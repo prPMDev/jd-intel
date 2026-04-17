@@ -48,6 +48,91 @@ const JOBS = [
   },
 ];
 
+describe('applyFilters — titleFilter', () => {
+  test('matches title only', () => {
+    const result = applyFilters(JOBS, { titleFilter: 'Product Manager' });
+    assert.equal(result.length, 1);
+    assert.equal(result[0].id, '1');
+  });
+
+  test('does NOT match description mentions (the PM-in-engineer-JD case)', () => {
+    // Job 2 description says "Open to remote US" — doesn't mention PM.
+    // But add a job that mentions product manager in description only.
+    const withPMInDesc = [
+      ...JOBS,
+      {
+        id: '99',
+        title: 'Staff Engineer',
+        department: 'Engineering',
+        description: 'Work closely with the product manager to define APIs.',
+        location: 'Remote - US',
+        postedAt: daysAgo(2),
+      },
+    ];
+    const result = applyFilters(withPMInDesc, { titleFilter: 'product manager' });
+    // Only real PM (id 1) matches, not the engineer whose JD mentions PMs
+    assert.equal(result.length, 1);
+    assert.equal(result[0].id, '1');
+  });
+
+  test('case insensitive', () => {
+    const result = applyFilters(JOBS, { titleFilter: 'ENGINEER' });
+    assert.equal(result.length, 2);
+  });
+
+  test('regex pattern works', () => {
+    const result = applyFilters(JOBS, { titleFilter: 'Manager|PM' });
+    const ids = result.map(j => j.id).sort();
+    assert.deepEqual(ids, ['1', '5']);
+  });
+});
+
+describe('applyFilters — titleFilter AND filter (the real use case)', () => {
+  test('title gate + topic match combines with AND', () => {
+    // PM roles that are also about growth
+    const result = applyFilters(JOBS, {
+      titleFilter: 'Manager|PM',
+      filter: 'growth',
+    });
+    const ids = result.map(j => j.id).sort();
+    // Job 1: "Senior Product Manager" title + "growth" in description → matches
+    // Job 5: "Growth PM" title → "Growth" in title matches both filters
+    assert.deepEqual(ids, ['1', '5']);
+  });
+
+  test('title gate excludes roles whose description mentions the role type', () => {
+    const withPMInDesc = [
+      ...JOBS,
+      {
+        id: '99',
+        title: 'Staff Engineer',
+        department: 'Engineering',
+        description: 'Collaborate with the product manager on growth initiatives.',
+        location: 'Remote - US',
+        postedAt: daysAgo(2),
+      },
+    ];
+    // Without titleFilter, old --filter "product manager" would grab job 99
+    // With titleFilter, job 99 is correctly excluded
+    const result = applyFilters(withPMInDesc, {
+      titleFilter: 'product manager',
+      filter: 'growth',
+    });
+    assert.equal(result.length, 1);
+    assert.equal(result[0].id, '1'); // Only the real PM, not the engineer
+  });
+
+  test('topic filter still searches description within the title-gated set', () => {
+    // Filter on a topic that only appears in descriptions of PM roles
+    const result = applyFilters(JOBS, {
+      titleFilter: 'Manager',
+      filter: 'roadmap',
+    });
+    assert.equal(result.length, 1);
+    assert.equal(result[0].id, '1'); // "Lead growth initiatives and drive roadmap"
+  });
+});
+
 describe('applyFilters — filter keyword', () => {
   test('matches title', () => {
     const result = applyFilters(JOBS, { filter: 'Product Manager' });

@@ -15,7 +15,8 @@ import { applyFilters } from './filters.js';
  * @param {Object} options
  * @param {string} options.company - Company slug or name
  * @param {string} [options.ats] - Specific ATS platform. If omitted, auto-detects.
- * @param {string} [options.filter] - Regex/keyword matched against title, department, description.
+ * @param {string} [options.titleFilter] - Regex matched against title only. Use for role identity ("product manager", "staff engineer").
+ * @param {string} [options.filter] - Regex matched across title, department, description. Use for topic/scope.
  * @param {number} [options.postedWithinDays] - Only return jobs posted within N days.
  * @param {string[]} [options.locationIncludes] - Keep jobs whose location contains any of these (case-insensitive).
  * @param {string[]} [options.locationExcludes] - Drop jobs whose location contains any of these (case-insensitive).
@@ -25,6 +26,7 @@ import { applyFilters } from './filters.js';
 export async function fetchJobs({
   company,
   ats,
+  titleFilter,
   filter,
   postedWithinDays,
   locationIncludes,
@@ -49,7 +51,7 @@ export async function fetchJobs({
       .flatMap(r => r.value);
   }
 
-  return applyFilters(jobs, { filter, postedWithinDays, locationIncludes, locationExcludes, limit });
+  return applyFilters(jobs, { titleFilter, filter, postedWithinDays, locationIncludes, locationExcludes, limit });
 }
 
 /**

@@ -24,6 +24,7 @@ async function main() {
         return idx >= 0 ? args[idx + 1] : undefined;
       };
       const ats = getArg('--ats');
+      const titleFilter = getArg('--title-filter');
       const filter = getArg('--filter');
       const postedWithinRaw = getArg('--posted-within-days');
       const postedWithinDays = postedWithinRaw !== undefined ? Number(postedWithinRaw) : undefined;
@@ -35,7 +36,8 @@ async function main() {
       const limit = limitRaw !== undefined ? Number(limitRaw) : undefined;
 
       const parts = [];
-      if (filter) parts.push(`filter: ${filter}`);
+      if (titleFilter) parts.push(`title: ${titleFilter}`);
+      if (filter) parts.push(`topic: ${filter}`);
       if (postedWithinDays !== undefined) parts.push(`within ${postedWithinDays}d`);
       if (locationIncludes) parts.push(`loc+: ${locationIncludes.join('|')}`);
       if (locationExcludes) parts.push(`loc-: ${locationExcludes.join('|')}`);
@@ -43,7 +45,7 @@ async function main() {
 
       console.log(`Fetching jobs from ${company}${ats ? ` (${ats})` : ' (auto-detect)'}${suffix}...`);
       const jobs = await fetchJobs({
-        company, ats, filter, postedWithinDays, locationIncludes, locationExcludes, limit,
+        company, ats, titleFilter, filter, postedWithinDays, locationIncludes, locationExcludes, limit,
       });
       console.log(`Found ${jobs.length} jobs\n`);
 
@@ -111,18 +113,25 @@ Usage:
 
 Fetch options:
   --ats greenhouse|lever|ashby    Skip auto-detect
-  --filter pattern                Regex matched against title, department, description
+  --title-filter pattern          Regex matched against TITLE only (role identity)
+  --filter pattern                Regex matched across title, department, description (topic/scope)
   --posted-within-days N          Only jobs posted in the last N days
   --location-include "A,B,C"      Keep jobs whose location contains any of these
   --location-exclude "A,B,C"      Drop jobs whose location contains any of these
   --limit N                       Cap results (default 100)
   --json                          Output full JSON
 
+Filter guidance:
+  Use --title-filter for "what KIND of role" (PM, engineer, designer).
+  Use --filter for "what it's ABOUT" (integrations, growth, payments).
+  Both AND together. Avoid --filter "product manager" — description
+  mentions of PMs in other roles' JDs create false positives.
+
 Examples:
   ats-index fetch stripe
-  ats-index fetch stripe --filter "product manager|PM" --posted-within-days 14
-  ats-index fetch ramp --location-include "United States,US,Remote" --location-exclude "London,Dublin"
-  ats-index fetch notion --ats ashby --filter integrations
+  ats-index fetch stripe --title-filter "product manager" --filter "growth|platform"
+  ats-index fetch ramp --location-include "United States,US,Remote - US" --location-exclude "London,Dublin"
+  ats-index fetch notion --ats ashby --title-filter engineer --posted-within-days 14
   ats-index detect figma
   ats-index registry search fintech`);
   }

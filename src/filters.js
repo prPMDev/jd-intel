@@ -7,6 +7,7 @@
  */
 export function applyFilters(jobs, options = {}) {
   const {
+    titleFilter,
     filter,
     postedWithinDays,
     locationIncludes,
@@ -15,6 +16,11 @@ export function applyFilters(jobs, options = {}) {
   } = options;
 
   let result = jobs;
+
+  if (titleFilter) {
+    const pattern = new RegExp(titleFilter, 'i');
+    result = result.filter(j => pattern.test(j.title || ''));
+  }
 
   if (filter) {
     const pattern = new RegExp(filter, 'i');
