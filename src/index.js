@@ -7,6 +7,7 @@
 
 import { ADAPTERS, ATS_NAMES } from './adapters/index.js';
 import { loadRegistry, searchRegistry, detectAts } from './registry.js';
+import { applyFilters } from './filters.js';
 
 /**
  * Fetch jobs from a company's ATS board.
@@ -14,30 +15,41 @@ import { loadRegistry, searchRegistry, detectAts } from './registry.js';
  * @param {Object} options
  * @param {string} options.company - Company slug or name
  * @param {string} [options.ats] - Specific ATS platform. If omitted, auto-detects.
- * @returns {Promise<Array>} Normalized job objects
+ * @param {string} [options.filter] - Regex/keyword matched against title, department, description.
+ * @param {number} [options.postedWithinDays] - Only return jobs posted within N days.
+ * @param {string[]} [options.locationIncludes] - Keep jobs whose location contains any of these (case-insensitive).
+ * @param {string[]} [options.locationExcludes] - Drop jobs whose location contains any of these (case-insensitive).
+ * @param {number} [options.limit=100] - Maximum jobs to return after filtering.
+ * @returns {Promise<Array>} Normalized, filtered job objects
  */
-export async function fetchJobs({ company, ats }) {
+export async function fetchJobs({
+  company,
+  ats,
+  filter,
+  postedWithinDays,
+  locationIncludes,
+  locationExcludes,
+  limit = 100,
+} = {}) {
   if (!company) throw new Error('Company slug required');
 
   const slug = company.toLowerCase().replace(/\s+/g, '');
 
+  let jobs;
   if (ats) {
     const adapter = ADAPTERS[ats];
     if (!adapter) throw new Error(`Unknown ATS: ${ats}. Supported: ${ATS_NAMES.join(', ')}`);
-    return adapter.fetch(slug);
+    jobs = await adapter.fetch(slug);
+  } else {
+    const results = await Promise.allSettled(
+      Object.entries(ADAPTERS).map(async ([name, adapter]) => adapter.fetch(slug))
+    );
+    jobs = results
+      .filter(r => r.status === 'fulfilled')
+      .flatMap(r => r.value);
   }
 
-  // Auto-detect: try all ATS platforms in parallel
-  const results = await Promise.allSettled(
-    Object.entries(ADAPTERS).map(async ([name, adapter]) => {
-      const jobs = await adapter.fetch(slug);
-      return jobs;
-    })
-  );
-
-  return results
-    .filter(r => r.status === 'fulfilled')
-    .flatMap(r => r.value);
+  return applyFilters(jobs, { filter, postedWithinDays, locationIncludes, locationExcludes, limit });
 }
 
 /**
@@ -67,3 +79,6 @@ export const registry = {
 export { fetchGreenhouse } from './adapters/greenhouse.js';
 export { fetchLever } from './adapters/lever.js';
 export { fetchAshby } from './adapters/ashby.js';
+
+// Re-export filter logic for reuse (e.g., by the MCP server)
+export { applyFilters } from './filters.js';

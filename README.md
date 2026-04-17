@@ -86,6 +86,15 @@ ats-index fetch <company-slug>
 # Specify the platform explicitly
 ats-index fetch <company-slug> --ats greenhouse
 
+# Filter by keyword (matches title, department, and full description)
+ats-index fetch stripe --filter "product manager|PM"
+
+# Only recent roles
+ats-index fetch stripe --posted-within-days 14
+
+# Cut geographic noise (comma-separated keyword lists)
+ats-index fetch ramp --location-include "United States,US,Remote" --location-exclude "London,Dublin,Berlin"
+
 # Detect which ATS a company uses
 ats-index detect <company-name>
 
@@ -101,10 +110,30 @@ ats-index fetch <company-slug> --json
 ```js
 import { fetchJobs, registry } from 'ats-index';
 
-const jobs = await fetchJobs({ company: 'company-slug' });
+const jobs = await fetchJobs({
+  company: 'ramp',
+  filter: 'product manager|PM',
+  postedWithinDays: 14,
+  locationIncludes: ['United States', 'Remote'],
+  locationExcludes: ['London', 'Dublin'],
+  limit: 50,
+});
+
 const companies = await registry.search('fintech');
 const platforms = await registry.detect('company-name');
 ```
+
+### Filter design
+
+Filters operate on structured fields only — deterministic, fast, no interpretation. For semantic cuts ("is this role senior enough", "is it truly remote-friendly"), let the AI layer reason over the returned jobs.
+
+| Filter | Matches | Use when |
+|--------|---------|----------|
+| `filter` | Title, department, **and description** | Role keywords ("PM", "Staff Engineer") |
+| `postedWithinDays` | `postedAt` within N days | Recency cuts |
+| `locationIncludes` | Any keyword matches location (OR) | Region targeting |
+| `locationExcludes` | No keyword matches location | Drop geographic noise (EMEA pollution) |
+| `limit` | First N results | Cap output size |
 
 ---
 
@@ -154,7 +183,9 @@ Format:
 | Lever adapter | Shipped | Full JDs, departments, workplace type |
 | Auto-detect | Shipped | Checks all platforms for a company slug |
 | Company registry | Shipped | 36 verified companies across platforms |
-| Title filter | Shipped | --filter flag with regex pattern matching |
+| Title + description filter | Shipped | --filter flag with regex pattern matching across title, department, description |
+| Posted-within filter | Shipped | --posted-within-days for recency cuts |
+| Location filters | Shipped | --location-include / --location-exclude for geographic targeting |
 | Salary extraction | Shipped | From structured fields and JD text |
 | Temporal tracking | Planned | Track when roles open, close, or reopen |
 | Change detection | Planned | Surface what changed since your last check |

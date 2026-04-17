@@ -19,22 +19,33 @@ async function main() {
     case 'fetch': {
       const company = args[0];
       if (!company) { console.error('Usage: ats-index fetch <company> [--ats greenhouse|lever|ashby]'); process.exit(1); }
-      const atsIdx = args.indexOf('--ats');
-      const ats = atsIdx >= 0 ? args[atsIdx + 1] : undefined;
-      const filterIdx = args.indexOf('--filter');
-      const filter = filterIdx >= 0 ? args[filterIdx + 1] : undefined;
+      const getArg = (flag) => {
+        const idx = args.indexOf(flag);
+        return idx >= 0 ? args[idx + 1] : undefined;
+      };
+      const ats = getArg('--ats');
+      const filter = getArg('--filter');
+      const postedWithinRaw = getArg('--posted-within-days');
+      const postedWithinDays = postedWithinRaw !== undefined ? Number(postedWithinRaw) : undefined;
+      const locIncludeRaw = getArg('--location-include');
+      const locationIncludes = locIncludeRaw ? locIncludeRaw.split(',').map(s => s.trim()).filter(Boolean) : undefined;
+      const locExcludeRaw = getArg('--location-exclude');
+      const locationExcludes = locExcludeRaw ? locExcludeRaw.split(',').map(s => s.trim()).filter(Boolean) : undefined;
+      const limitRaw = getArg('--limit');
+      const limit = limitRaw !== undefined ? Number(limitRaw) : undefined;
 
-      console.log(`Fetching jobs from ${company}${ats ? ` (${ats})` : ' (auto-detect)'}${filter ? ` [filter: ${filter}]` : ''}...`);
-      let jobs = await fetchJobs({ company, ats });
+      const parts = [];
+      if (filter) parts.push(`filter: ${filter}`);
+      if (postedWithinDays !== undefined) parts.push(`within ${postedWithinDays}d`);
+      if (locationIncludes) parts.push(`loc+: ${locationIncludes.join('|')}`);
+      if (locationExcludes) parts.push(`loc-: ${locationExcludes.join('|')}`);
+      const suffix = parts.length ? ` [${parts.join(', ')}]` : '';
 
-      if (filter) {
-        const pattern = new RegExp(filter, 'i');
-        const before = jobs.length;
-        jobs = jobs.filter(j => pattern.test(j.title) || pattern.test(j.department));
-        console.log(`Found ${before} jobs, ${jobs.length} match filter\n`);
-      } else {
-        console.log(`Found ${jobs.length} jobs\n`);
-      }
+      console.log(`Fetching jobs from ${company}${ats ? ` (${ats})` : ' (auto-detect)'}${suffix}...`);
+      const jobs = await fetchJobs({
+        company, ats, filter, postedWithinDays, locationIncludes, locationExcludes, limit,
+      });
+      console.log(`Found ${jobs.length} jobs\n`);
 
       for (const job of jobs.slice(0, 20)) {
         const salary = job.salary ? ` | $${job.salary.min?.toLocaleString()}-$${job.salary.max?.toLocaleString()}` : '';
@@ -94,13 +105,23 @@ async function main() {
       console.log(`ats-index — A structured index of who's hiring what.
 
 Usage:
-  ats-index fetch <company> [--ats greenhouse|lever|ashby] [--filter pattern] [--json]
+  ats-index fetch <company> [options]
   ats-index detect <company>
   ats-index registry search <query>
 
+Fetch options:
+  --ats greenhouse|lever|ashby    Skip auto-detect
+  --filter pattern                Regex matched against title, department, description
+  --posted-within-days N          Only jobs posted in the last N days
+  --location-include "A,B,C"      Keep jobs whose location contains any of these
+  --location-exclude "A,B,C"      Drop jobs whose location contains any of these
+  --limit N                       Cap results (default 100)
+  --json                          Output full JSON
+
 Examples:
   ats-index fetch stripe
-  ats-index fetch stripe --filter "product manager|PM"
+  ats-index fetch stripe --filter "product manager|PM" --posted-within-days 14
+  ats-index fetch ramp --location-include "United States,US,Remote" --location-exclude "London,Dublin"
   ats-index fetch notion --ats ashby --filter integrations
   ats-index detect figma
   ats-index registry search fintech`);
