@@ -6,7 +6,7 @@
  */
 
 import { ADAPTERS, ATS_NAMES } from './adapters/index.js';
-import { loadRegistry, searchRegistry, detectAts } from './registry.js';
+import { loadRegistry, searchRegistry, detectAts, findAtsBySlug } from './registry.js';
 import { applyFilters } from './filters.js';
 
 /**
@@ -35,7 +35,8 @@ export async function fetchJobs({
 } = {}) {
   if (!company) throw new Error('Company slug required');
 
-  const slug = company.toLowerCase().replace(/\s+/g, '');
+  // Unified slug normalization: strip all non-alphanumeric (matches detectAts)
+  const slug = company.toLowerCase().replace(/[^a-z0-9]/g, '');
 
   let jobs;
   if (ats) {
@@ -43,12 +44,20 @@ export async function fetchJobs({
     if (!adapter) throw new Error(`Unknown ATS: ${ats}. Supported: ${ATS_NAMES.join(', ')}`);
     jobs = await adapter.fetch(slug);
   } else {
-    const results = await Promise.allSettled(
-      Object.entries(ADAPTERS).map(async ([name, adapter]) => adapter.fetch(slug))
-    );
-    jobs = results
-      .filter(r => r.status === 'fulfilled')
-      .flatMap(r => r.value);
+    // Consult registry first — if we know which ATS this company uses,
+    // skip probing the others (saves API calls, clearer error semantics).
+    const known = await findAtsBySlug(slug);
+    if (known) {
+      jobs = await ADAPTERS[known].fetch(slug);
+    } else {
+      // Discovery mode: company not in registry, probe all adapters
+      const results = await Promise.allSettled(
+        Object.entries(ADAPTERS).map(async ([name, adapter]) => adapter.fetch(slug))
+      );
+      jobs = results
+        .filter(r => r.status === 'fulfilled')
+        .flatMap(r => r.value);
+    }
   }
 
   return applyFilters(jobs, { titleFilter, filter, postedWithinDays, locationIncludes, locationExcludes, limit });

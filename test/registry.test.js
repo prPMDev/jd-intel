@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadRegistry, searchRegistry } from '../src/registry.js';
+import { loadRegistry, searchRegistry, findAtsBySlug } from '../src/registry.js';
 
 describe('loadRegistry', () => {
   test('loads a single ATS as an array', async () => {
@@ -51,5 +51,25 @@ describe('searchRegistry', () => {
   test('returns empty array when nothing matches', async () => {
     const results = await searchRegistry('zzzz-no-such-company-zzzz');
     assert.deepEqual(results, []);
+  });
+});
+
+describe('findAtsBySlug', () => {
+  test('returns the ATS name for a known slug', async () => {
+    const all = await loadRegistry();
+    const first = all.greenhouse[0];
+    const ats = await findAtsBySlug(first.slug);
+    assert.equal(ats, 'greenhouse');
+  });
+
+  test('works across all three platforms', async () => {
+    assert.equal(await findAtsBySlug('stripe'), 'greenhouse');
+    assert.equal(await findAtsBySlug('notion'), 'ashby');
+    assert.equal(await findAtsBySlug('plaid'), 'lever');
+  });
+
+  test('returns null for unknown slug', async () => {
+    const ats = await findAtsBySlug('zzzz-nonexistent-slug-zzzz');
+    assert.equal(ats, null);
   });
 });

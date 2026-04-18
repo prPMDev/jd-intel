@@ -59,6 +59,18 @@ export async function searchRegistry(query) {
 }
 
 /**
+ * Look up which ATS a slug belongs to in the registry.
+ * Returns the ATS name (e.g., "greenhouse") or null if not in registry.
+ */
+export async function findAtsBySlug(slug) {
+  const all = await loadRegistry();
+  for (const [ats, companies] of Object.entries(all)) {
+    if (companies.some(c => c.slug === slug)) return ats;
+  }
+  return null;
+}
+
+/**
  * Auto-detect which ATS a company uses.
  */
 export async function detectAts(companyName) {

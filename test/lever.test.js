@@ -81,6 +81,16 @@ describe('fetchLever', () => {
     assert.ok(job.postedAt, 'postedAt converted from createdAt');
   });
 
+  test('company falls back to titlecased slug, NOT team name', async (t) => {
+    // Lever's API doesn't return the company name. Earlier versions used
+    // `categories.team` as a fallback, which meant company came back as
+    // "Platform" instead of "Testco". Fix: use slug.
+    mockFetch(t);
+    const [job] = await fetchLever('testco');
+    assert.equal(job.company, 'Testco');
+    assert.notEqual(job.company, 'Platform', 'company should NOT be team name');
+  });
+
   test('extracts salary from title (Lever pattern)', async (t) => {
     mockFetch(t);
     const [job] = await fetchLever('testco');
