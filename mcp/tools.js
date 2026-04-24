@@ -10,8 +10,9 @@
  */
 
 import { z } from 'zod';
-import { fetchJobs, detectAts as libDetectAts } from '../src/index.js';
-import { searchRegistry, findAtsBySlug } from '../src/registry.js';
+import { fetchJobs, detectAts as libDetectAts, registry } from 'jd-intel';
+
+const { search: searchRegistry, findAtsBySlug } = registry;
 import { success, partial, error } from './envelope.js';
 import { ERROR_CODES } from './errors.js';
 import {

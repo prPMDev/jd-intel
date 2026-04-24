@@ -1,12 +1,23 @@
 {
   "name": "jd-intel-mcp",
   "version": "0.1.0",
-  "description": "MCP server for jd-intel — your AI assistant fetches and reasons over full job descriptions, no copy-paste.",
+  "description": "MCP server for jd-intel. Your AI assistant fetches and reasons over full job descriptions, no copy-paste.",
   "type": "module",
   "main": "server.js",
   "bin": {
     "jd-intel-mcp": "./cli.js"
   },
+  "files": [
+    "cli.js",
+    "server.js",
+    "tools.js",
+    "resources.js",
+    "envelope.js",
+    "errors.js",
+    "descriptions.js",
+    "install.js",
+    "README.md"
+  ],
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
@@ -15,6 +26,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "jd-intel": "^0.1.0",
     "zod": "^3.23.0"
   },
   "keywords": [
@@ -29,7 +41,17 @@
     "lever",
     "ashby"
   ],
+  "author": "Prashant R",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prPMDev/jd-intel.git",
+    "directory": "mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/prPMDev/jd-intel/issues"
+  },
+  "homepage": "https://github.com/prPMDev/jd-intel#readme",
   "engines": {
     "node": ">=18"
   }

@@ -10,7 +10,9 @@
  * it needs the full catalog. One fetch per session for broad reasoning.
  */
 
-import { loadRegistry } from '../src/registry.js';
+import { registry } from 'jd-intel';
+
+const { load: loadRegistry } = registry;
 import { REGISTRY_RESOURCE } from './descriptions.js';
 
 export function registerResources(server) {
