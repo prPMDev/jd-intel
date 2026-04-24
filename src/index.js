@@ -73,9 +73,15 @@ export async function search({ keyword, location, ats } = {}) {
 }
 
 /**
- * Detect which ATS platform a company uses.
+ * Detect which ATS platform a company uses (probes each adapter).
  */
 export { detectAts } from './registry.js';
+
+/**
+ * Look up which ATS a slug belongs to in the registry (cached, no network).
+ * Returns the ATS name ("greenhouse" | "lever" | "ashby") or null if not in registry.
+ */
+export { findAtsBySlug } from './registry.js';
 
 /**
  * Registry management.
@@ -84,6 +90,7 @@ export const registry = {
   load: loadRegistry,
   search: searchRegistry,
   detect: detectAts,
+  findAtsBySlug,
 };
 
 // Re-export individual adapters for direct use

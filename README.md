@@ -2,48 +2,115 @@
 
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node.js 18+](https://img.shields.io/badge/node-18%2B-green.svg)](https://nodejs.org)
+[![npm](https://img.shields.io/npm/v/jd-intel.svg)](https://www.npmjs.com/package/jd-intel)
 
-> **Stop pasting job descriptions into ChatGPT. Your AI assistant can fetch them directly — full text, salary ranges, across every major ATS.**
+> **Stop pasting job descriptions into AI assistants. Let your AI fetch them directly.**
+
+Full text. Clean structure. Across every major ATS. No copy-paste. No context loss.
 
 ---
 
-## What this is
-
-jd-intel is a toolkit for making job descriptions AI-accessible. It contains three things:
-
-- **A library** (`jd-intel`) — fetch and normalize jobs across Greenhouse, Lever, and Ashby with one API
-- **A CLI** (`npx jd-intel fetch <company>`) — same capabilities from the command line
-- **An MCP server** (`jd-intel-mcp`) — lets any AI assistant (Claude Desktop, Cursor, Windsurf) query jobs through natural conversation
-
-Same core data. Three surfaces. Pick the one that fits how you work.
-
 ## Why this exists
 
-Every career advice thread tells you to paste job descriptions into ChatGPT for tailored cover letters, fit analysis, resume rewrites. But across 20 applications, copy-pasting 20 JDs is a part-time job — and half the formatting breaks, salary info gets lost, links die.
+Your AI assistant already knows a lot about you. Your resume is in its memory. Your target roles, your past projects, your background. Ready to help the moment you feed it a job description.
 
-Every company's careers page sits behind a different ATS (Greenhouse, Lever, Ashby, more). Getting structured data means writing custom integrations for each. Most tools settle for titles and links with no descriptions.
+So you copy-paste.
 
-jd-intel gives your AI one unified way to reach them. Public data, public APIs, no scraping, no copy-paste.
+A JD from Stripe. Another from Mercury. Six more from your target list. Half have broken HTML. Salary info dies in translation. Links get stripped. And for every role, the dance starts over.
 
-## Try it
+You could wait for the job boards to ship their own MCPs. They'll get there eventually. On their timeline. Filtered through their priorities, not yours. Tied to their query abstractions.
 
-**From the command line:**
+jd-intel skips that wait. Raw JDs, fetched directly by your AI, on your terms. One level below the curated layer.
 
-```bash
-npx jd-intel fetch stripe --title-filter "product manager" --posted-within-days 14
+> "Claude, pull the senior PM role at Stripe and draft a cover letter based on my resume."
+
+Done.
+
+---
+
+## What you can do with it
+
+- Draft cover letters without pasting anything
+- Tailor your resume across ten roles in one conversation
+- Rank openings by fit with your background
+- Scan a whole sector: "Pull PM roles at fintech companies posted this week"
+- Research teams by reading their JDs in bulk
+
+The toolkit fetches. Your AI thinks.
+
+---
+
+## Install
+
+### For Claude Desktop, Cursor, Windsurf users
+
+Add to your MCP config file:
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "jd-intel": {
+      "command": "npx",
+      "args": ["-y", "jd-intel-mcp"]
+    }
+  }
+}
 ```
 
-Returns every PM role posted at Stripe in the last two weeks — title, department, location, salary, full description, direct link.
+Restart your AI client. The tools appear automatically. Ask your AI to fetch any role.
 
-**Or from your AI assistant (via the MCP server):**
+**One-command install (avoids hand-editing the config):**
+```bash
+npx jd-intel-mcp install
+```
 
-> "Find me product manager roles at Stripe, remote US only, and draft a cover letter for the top match based on my resume."
+### For developers (CLI and library)
 
-Claude fetches the JDs directly, reads them, and drafts. No copy-paste.
+```bash
+npm install jd-intel
+```
+
+Or run without installing:
+
+```bash
+npx jd-intel fetch stripe --title-filter "product manager"
+```
+
+Or import as a library:
+
+```js
+import { fetchJobs, registry } from 'jd-intel';
+
+const jobs = await fetchJobs({
+  company: 'ramp',
+  titleFilter: 'engineer',
+  postedWithinDays: 14,
+  limit: 50,
+});
+```
+
+Node.js 18+. No API keys. No configuration.
+
+---
+
+## MCP tools
+
+| Tool | Purpose |
+|------|---------|
+| `fetch_jobs` | Get open roles at a company with filters for role type, topic, location, and recency |
+| `search_registry` | Find companies by name or sector |
+| `detect_ats` | Identify which ATS platform a company uses |
+
+Plus one Resource: `registry://jd-intel/all`. Full company registry, grouped by ATS. Fetched lazily for broad catalog surveys.
+
+---
 
 ## What you get back
 
-Every job normalizes to this shape, across every platform:
+Every job normalizes to one schema, across every platform:
 
 ```json
 {
@@ -60,49 +127,9 @@ Every job normalizes to this shape, across every platform:
 }
 ```
 
-No custom parsing per company. One schema across Greenhouse, Ashby, and Lever.
+No custom parsing per company.
 
-## What you can build with it
-
-**Daily scan at target companies**
-```bash
-npx jd-intel fetch ramp --title-filter "product manager" --location-include "United States,Remote - US" --posted-within-days 7
-```
-
-**Sector sweep**
-```bash
-npx jd-intel registry search fintech
-```
-
-**Plug it into your AI workflow**
-```js
-import { fetchJobs, registry } from 'jd-intel';
-
-const jobs = await fetchJobs({
-  company: 'ramp',
-  titleFilter: 'engineer',
-  postedWithinDays: 14,
-  limit: 50,
-});
-```
-
-Job seekers use it for daily shortlists and AI-drafted cover letters. Tool builders use it as a foundation for AI agents. Researchers use it for hiring-trend analysis.
-
-## Install
-
-**As a CLI or library:**
-```bash
-npm install jd-intel
-# or use without installing
-npx jd-intel fetch <company-slug>
-```
-
-**As an MCP server in Claude Desktop:**
-See [mcp/README.md](mcp/README.md) for the config snippet. One-command install planned: `npx jd-intel-mcp install`.
-
-Node.js 18+. No API keys. No configuration.
-
-## Data model
+### Data model
 
 | Field | Description |
 |-------|-------------|
@@ -110,13 +137,15 @@ Node.js 18+. No API keys. No configuration.
 | `company` | Normalized company name |
 | `department` | Team or department (when provided) |
 | `location` | City, state, country, or remote |
-| `locationType` | `remote` / `hybrid` / `onsite` |
+| `locationType` | `remote`, `hybrid`, or `onsite` |
 | `salary` | Min-max range with currency (when available) |
 | `description` | Full JD in clean markdown |
 | `url` | Direct link to the posting |
 | `postedAt` | Publication date (when provided) |
 
-## Platforms
+---
+
+## Platforms supported
 
 | Platform | Status | Typical use |
 |----------|--------|-------------|
@@ -128,53 +157,61 @@ Node.js 18+. No API keys. No configuration.
 
 Adding a new ATS is a single adapter file. See [Contributing](#contributing).
 
+---
+
 ## Filters (quick reference)
 
 | Flag | What it matches | Use for |
 |------|-----------------|---------|
 | `--title-filter` | Title only | Role identity (PM, engineer, designer) |
-| `--filter` | Title + department + description | Topic / scope (integrations, growth) |
+| `--filter` | Title + department + description | Topic or scope (integrations, growth) |
 | `--posted-within-days` | Recent postings | Recency cuts |
 | `--location-include` | Location contains any keyword | Region targeting |
 | `--location-exclude` | Location contains no keyword | Drop geographic noise |
 | `--limit` | First N results | Cap output size |
 
-All filters AND together. Deep dive: [docs/filters.md](docs/filters.md).
+All filters AND together. Deep dive on patterns and gotchas: [docs/filters.md](docs/filters.md).
+
+---
 
 ## Roadmap
 
 **Shipped**
-- Library, CLI, and MCP server
+- Library, CLI, and MCP server (three surfaces of one toolkit)
 - Greenhouse, Ashby, Lever adapters
-- Title / topic / location / date filters
-- Salary extraction
+- Title, topic, location, and date filters
+- Salary extraction from JD text
 - Verified company registry (66 companies)
 
-**In progress**
-- Publish `jd-intel-mcp` to npm
+**Next**
 - Anthropic MCP marketplace submission
-- Non-tech-friendly setup guide with screenshots
+- Setup guide with screenshots (non-technical walkthrough)
+- Remote MCP transport (for Claude.ai Custom Connectors)
 
 **Planned**
 - BambooHR and Workday adapters
 - Temporal tracking (when roles open, close, reopen)
 - Change detection
-- Remote MCP transport (Claude.ai Custom Connector support)
+- Resume-aware fit scoring
+
+---
 
 ## Contributing
 
 **Add a company to the registry:** submit a PR to the appropriate file in `registry/`.
 
-**Add an ATS adapter:** new file in `src/adapters/`, follow the pattern of existing adapters.
+**Add an ATS adapter:** new file in `src/adapters/`. One adapter, one file. Follow the pattern of the existing three.
+
+**Request a company:** [open an issue](https://github.com/prPMDev/jd-intel/issues/new). Tell me who's missing.
+
+---
 
 ## Built by
 
-**[Prashant R](https://prashantrana.xyz)** — PM who builds. I write about AI, product work, and the integration layer — where APIs, agents, and products fit together in practice.
+**[Prashant R](https://prashantrana.xyz)**. PM who builds. I write about what actually happens at the layer below the AI hype.
 
-- Portfolio + writing: [prashantrana.xyz](https://prashantrana.xyz)
+- Portfolio and writing: [prashantrana.xyz](https://prashantrana.xyz)
 - [LinkedIn](https://www.linkedin.com/in/prashant-rana)
-
-jd-intel is one experiment at that intersection.
 
 ## License
 

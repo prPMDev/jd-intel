@@ -1,6 +1,8 @@
 # jd-intel-mcp
 
-MCP server for [jd-intel](https://github.com/prPMDev/jd-intel) — lets any AI assistant (Claude Desktop, Cursor, Windsurf) search open job listings across Greenhouse, Lever, and Ashby through natural conversation.
+MCP server for [jd-intel](https://github.com/prPMDev/jd-intel). Lets any AI assistant (Claude Desktop, Cursor, Windsurf) search open job listings across Greenhouse, Lever, and Ashby through natural conversation.
+
+> **Stop pasting job descriptions into AI assistants. Let your AI fetch them directly.**
 
 ---
 
@@ -35,7 +37,7 @@ Add this to your Claude Desktop config file:
 
 Restart Claude Desktop. The tools appear automatically.
 
-**One-command install (post-publish):**
+**One-command install (avoids hand-editing the config):**
 ```bash
 npx jd-intel-mcp install
 ```
@@ -52,7 +54,7 @@ This detects your OS, locates the Claude Desktop config, adds the entry alongsid
 | `search_registry` | Find companies by name or sector |
 | `detect_ats` | Identify which ATS platform a company uses |
 
-Plus one Resource: `registry://jd-intel/all` — full company registry, grouped by ATS, for broad catalog surveys.
+Plus one Resource: `registry://jd-intel/all`. Full company registry, grouped by ATS, for broad catalog surveys.
 
 ---
 
@@ -60,11 +62,11 @@ Plus one Resource: `registry://jd-intel/all` — full company registry, grouped 
 
 See the main library [docs/filters.md](../docs/filters.md) for the full rationale. Short version:
 
-- Use `title_filter` for role identity ("product manager", "staff engineer") — matches title only
-- Use `filter` for topic/scope ("integrations", "growth") — matches across title, department, description
-- They AND together — use both for "PM roles about integrations"
-- For US queries: `location_includes: ["United States", "US", "Remote - US"]`. Avoid bare "Remote" (matches Remote-EMEA etc.)
-- Short codes like "US", "UK" are safe — they use word-boundary matching to prevent collisions with "Australia", "Auckland", etc.
+- Use `title_filter` for role identity ("product manager", "staff engineer"). Matches title only.
+- Use `filter` for topic or scope ("integrations", "growth"). Matches across title, department, description.
+- They AND together. Use both for "PM roles about integrations".
+- For US queries: `location_includes: ["United States", "US", "Remote - US"]`. Avoid bare "Remote" (matches Remote-EMEA etc.).
+- Short codes like "US", "UK" are safe. They use word-boundary matching to prevent collisions with "Australia", "Auckland", etc.
 
 ---
 

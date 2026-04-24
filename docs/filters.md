@@ -1,6 +1,6 @@
 # Filter design
 
-jd-intel gives you six filter controls that operate on structured fields — deterministic substring / regex / date matches, no NLP, no magic. For semantic cuts ("is this role senior enough", "is this truly remote-friendly"), let an AI layer or your own downstream logic reason over the returned jobs.
+jd-intel gives you six filter controls that operate on structured fields. All are deterministic substring, regex, or date matches. No NLP, no magic. For semantic cuts ("is this role senior enough", "is this truly remote-friendly"), let an AI layer or your own downstream logic reason over the returned jobs.
 
 This doc covers each filter, why the design is shaped this way, and the practical patterns that work in real queries.
 
@@ -10,8 +10,8 @@ This doc covers each filter, why the design is shaped this way, and the practica
 
 | Filter | Matches | Use when |
 |--------|---------|----------|
-| `titleFilter` | Title only | Role identity — "what KIND of role" |
-| `filter` | Title + department + description | Topic / scope — "what it's ABOUT" |
+| `titleFilter` | Title only | Role identity: "what KIND of role" |
+| `filter` | Title + department + description | Topic or scope: "what it's ABOUT" |
 | `postedWithinDays` | `postedAt` within N days | Recency cuts |
 | `locationIncludes` | Location contains ANY keyword (OR) | Region targeting |
 | `locationExcludes` | Location contains NO keyword | Drop geographic noise |
@@ -30,13 +30,13 @@ A single `--filter "product manager"` creates false positives. Engineering JDs t
 
 The fix: two flags for two intents.
 
-- `titleFilter` → role identity gate (title only)
-- `filter` → topic / scope match (searches anywhere)
+- `titleFilter`: role identity gate (title only)
+- `filter`: topic or scope match (searches anywhere)
 
 They AND together:
 
 ```bash
-# "PM roles about integrations" — title gate + topic match
+# "PM roles about integrations": title gate + topic match
 npx jd-intel fetch stripe \
   --title-filter "product manager" \
   --filter "integrations|partnerships"
@@ -54,7 +54,7 @@ Different signals live reliably in different fields:
 |--------|----------------|-----|
 | Role identity (PM, Staff Eng) | Title | Titles declare role; descriptions mention other roles in context |
 | Seniority (Senior, Staff, Principal) | Title | Same as role identity |
-| Topic / focus (integrations, growth) | Anywhere | Topics surface in title, dept, or description |
+| Topic or focus (integrations, growth) | Anywhere | Topics surface in title, dept, or description |
 | Tech stack (Python, Postgres) | Description | Rarely in title |
 
 A single filter applied to everything inverts signal strength. Split flags let each filter match its natural field.
@@ -65,7 +65,7 @@ A single filter applied to everything inverts signal strength. Split flags let e
 
 **Include is bounded. Exclude is infinite.**
 
-Excluding non-US locations requires enumerating London, Dublin, Berlin, Paris, Singapore, Bangalore, São Paulo, Tokyo, Sydney... miss one and noise slips through silently. Include is a finite list of exactly what you want.
+Excluding non-US locations requires enumerating London, Dublin, Berlin, Paris, Singapore, Bangalore, São Paulo, Tokyo, Sydney, and on. Miss one and noise slips through silently. Include is a finite list of exactly what you want.
 
 ```bash
 # Good: include bounds the set
@@ -76,21 +76,21 @@ Excluding non-US locations requires enumerating London, Dublin, Berlin, Paris, S
   --location-exclude "Remote - EMEA,Remote (LatAm)"
 ```
 
-Missed inclusions are visible — fewer results prompt you to relax the list. Missed exclusions are silent — noise leaks in and you don't know why.
+Missed inclusions are visible. Fewer results prompt you to relax the list. Missed exclusions are silent. Noise leaks in and you don't know why.
 
 ### The "Remote" trap
 
 Bare `Remote` is too broad. It substring-matches:
 
-- `Remote` — matches (what you want)
-- `Remote - US` — matches (what you want)
-- `Remote (LatAm)` — matches (probably not what you want)
-- `Remote - EMEA` — matches (probably not what you want)
+- `Remote`: matches (what you want)
+- `Remote - US`: matches (what you want)
+- `Remote (LatAm)`: matches (probably not what you want)
+- `Remote - EMEA`: matches (probably not what you want)
 
 Prefer qualified terms:
 
-- `Remote - US`, `Remote (US)` — US-specific
-- `Remote - Global` — explicitly worldwide
+- `Remote - US`, `Remote (US)`: US-specific
+- `Remote - Global`: explicitly worldwide
 - Pair `Remote` with country keywords in the same include list
 
 ### Short tokens: word-boundary matching
@@ -110,13 +110,13 @@ This prevents silent false positives on short country codes:
 | `United States` | `United States of America` | Yes | Substring match for longer keywords |
 | `EMEA` | `Remote - EMEA` | Yes | 4-char boundary, still matches cleanly |
 
-So `US` and `UK` are safe to pass as-is — the implementation prevents the substring collisions that would otherwise silently return Australian or New Zealand jobs to a US query.
+So `US` and `UK` are safe to pass as-is. The implementation prevents the substring collisions that would otherwise silently return Australian or New Zealand jobs to a US query.
 
 ---
 
 ## Date filtering
 
-`postedWithinDays` operates on the normalized `postedAt` field. Jobs without a `postedAt` timestamp are excluded conservatively — unknown age usually means old.
+`postedWithinDays` operates on the normalized `postedAt` field. Jobs without a `postedAt` timestamp are excluded conservatively. Unknown age usually means old.
 
 ```bash
 # "Posted this week"
@@ -156,7 +156,7 @@ npx jd-intel fetch securityscorecard \
   --posted-within-days 30
 ```
 
-Returns PM roles whose scope is partnerships / integrations / ecosystem, US-based, posted in the last month. No engineering-JD false positives, no EMEA pollution.
+Returns PM roles whose scope is partnerships, integrations, or ecosystem, US-based, posted in the last month. No engineering-JD false positives, no EMEA pollution.
 
 ---
 
@@ -166,6 +166,6 @@ Filters operate on facts. Interpretations stay with the caller.
 
 **Facts:** keyword presence, date ranges, substring matches. Deterministic, fast. Run them on the server.
 
-**Interpretations:** "Is this truly remote-friendly?" "Does the seniority match what I want?" "Is this on my trajectory?" These require reasoning — let an AI layer or downstream logic handle them over the filtered output.
+**Interpretations:** "Is this truly remote-friendly?" "Does the seniority match what I want?" "Is this on my trajectory?" These require reasoning. Let an AI layer or downstream logic handle them over the filtered output.
 
 This split keeps the tool transparent (you see exactly why each job matched) and efficient (AI doesn't burn tokens doing filtering the server can do deterministically).

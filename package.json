@@ -7,6 +7,11 @@
   "bin": {
     "jd-intel": "src/cli.js"
   },
+  "files": [
+    "src/",
+    "registry/",
+    "LICENSE"
+  ],
   "scripts": {
     "test": "node --test test/*.test.js",
     "fetch": "node src/cli.js fetch",
@@ -25,8 +30,16 @@
     "hiring",
     "careers"
   ],
-  "author": "",
+  "author": "Prashant R",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prPMDev/jd-intel.git"
+  },
+  "bugs": {
+    "url": "https://github.com/prPMDev/jd-intel/issues"
+  },
+  "homepage": "https://github.com/prPMDev/jd-intel#readme",
   "engines": {
     "node": ">=18"
   }
