@@ -1,0 +1,33 @@
+{
+  "name": "ats-index-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for ats-index — ask any AI assistant to search jobs across Greenhouse, Lever, and Ashby.",
+  "type": "module",
+  "main": "server.js",
+  "bin": {
+    "ats-index-mcp": "./server.js"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.23.0"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "jobs",
+    "ats",
+    "claude",
+    "greenhouse",
+    "lever",
+    "ashby",
+    "careers"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
