@@ -31,7 +31,7 @@ switch (command) {
   }
   default: {
     // No command → start the MCP server.
-    // This is the path Claude Desktop invokes via `npx -y ats-index-mcp`.
+    // This is the path Claude Desktop invokes via `npx -y jd-intel-mcp`.
     await import('./server.js');
   }
 }

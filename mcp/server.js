@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 
 /**
- * ats-index MCP server — entry point.
+ * jd-intel MCP server — entry point.
  *
  * Exposes fetch_jobs, search_registry, and detect_ats as MCP tools,
  * plus the full company registry as a Resource, over stdio transport.
  *
  * Run locally:   node mcp/server.js
- * Via Claude Desktop config (placeholder name during development):
+ * Via Claude Desktop config:
  *   {
  *     "mcpServers": {
- *       "ats-index": {
+ *       "jd-intel": {
  *         "command": "npx",
- *         "args": ["-y", "ats-index-mcp"]
+ *         "args": ["-y", "jd-intel-mcp"]
  *       }
  *     }
  *   }
@@ -26,7 +26,7 @@ import { registerResources } from './resources.js';
 
 async function main() {
   const server = new McpServer({
-    name: 'ats-index',
+    name: 'jd-intel',
     version: '0.1.0',
   });
 
@@ -37,10 +37,10 @@ async function main() {
   await server.connect(transport);
 
   // Log to stderr so stdout stays clean for MCP protocol traffic
-  console.error('ats-index MCP server running on stdio');
+  console.error('jd-intel MCP server running on stdio');
 }
 
 main().catch((err) => {
-  console.error('Fatal error starting ats-index MCP:', err);
+  console.error('Fatal error starting jd-intel MCP:', err);
   process.exit(1);
 });

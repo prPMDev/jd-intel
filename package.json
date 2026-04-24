@@ -1,11 +1,11 @@
 {
-  "name": "ats-index",
+  "name": "jd-intel",
   "version": "0.1.0",
-  "description": "One API to search job listings across ATS platforms: full descriptions, unified schema, title filtering, and salary extraction.",
+  "description": "Fetch and normalize job descriptions across every major ATS (Greenhouse, Lever, Ashby) — for your AI assistant, no copy-paste.",
   "type": "module",
   "main": "src/index.js",
   "bin": {
-    "ats-index": "src/cli.js"
+    "jd-intel": "src/cli.js"
   },
   "scripts": {
     "test": "node --test test/*.test.js",
@@ -14,14 +14,16 @@
   },
   "keywords": [
     "jobs",
+    "job-description",
     "ats",
     "greenhouse",
     "lever",
     "ashby",
-    "job-board",
+    "mcp",
+    "ai",
+    "claude",
     "hiring",
-    "careers",
-    "recruitment"
+    "careers"
   ],
   "author": "",
   "license": "MIT",

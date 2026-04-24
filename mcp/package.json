@@ -1,11 +1,11 @@
 {
-  "name": "ats-index-mcp",
+  "name": "jd-intel-mcp",
   "version": "0.1.0",
-  "description": "MCP server for ats-index — ask any AI assistant to search jobs across Greenhouse, Lever, and Ashby.",
+  "description": "MCP server for jd-intel — your AI assistant fetches and reasons over full job descriptions, no copy-paste.",
   "type": "module",
   "main": "server.js",
   "bin": {
-    "ats-index-mcp": "./cli.js"
+    "jd-intel-mcp": "./cli.js"
   },
   "scripts": {
     "start": "node server.js",
@@ -20,13 +20,14 @@
   "keywords": [
     "mcp",
     "model-context-protocol",
+    "jd",
+    "job-description",
     "jobs",
     "ats",
     "claude",
     "greenhouse",
     "lever",
-    "ashby",
-    "careers"
+    "ashby"
   ],
   "license": "MIT",
   "engines": {

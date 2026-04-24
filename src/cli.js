@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * ats-index CLI
+ * jd-intel CLI
  *
  * Usage:
- *   ats-index fetch <company> [--ats greenhouse|lever|ashby] [--filter keyword|pattern]
- *   ats-index detect <company>
- *   ats-index registry search <query>
+ *   jd-intel fetch <company> [--ats greenhouse|lever|ashby] [--filter keyword|pattern]
+ *   jd-intel detect <company>
+ *   jd-intel registry search <query>
  */
 
 import { fetchJobs } from './index.js';
@@ -18,7 +18,7 @@ async function main() {
   switch (command) {
     case 'fetch': {
       const company = args[0];
-      if (!company) { console.error('Usage: ats-index fetch <company> [--ats greenhouse|lever|ashby]'); process.exit(1); }
+      if (!company) { console.error('Usage: jd-intel fetch <company> [--ats greenhouse|lever|ashby]'); process.exit(1); }
       const getArg = (flag) => {
         const idx = args.indexOf(flag);
         return idx >= 0 ? args[idx + 1] : undefined;
@@ -74,7 +74,7 @@ async function main() {
 
     case 'detect': {
       const company = args[0];
-      if (!company) { console.error('Usage: ats-index detect <company>'); process.exit(1); }
+      if (!company) { console.error('Usage: jd-intel detect <company>'); process.exit(1); }
       console.log(`Detecting ATS for ${company}...`);
       const results = await detectAts(company);
       if (results.length === 0) {
@@ -91,25 +91,25 @@ async function main() {
       const subcommand = args[0];
       if (subcommand === 'search') {
         const query = args.slice(1).join(' ');
-        if (!query) { console.error('Usage: ats-index registry search <query>'); process.exit(1); }
+        if (!query) { console.error('Usage: jd-intel registry search <query>'); process.exit(1); }
         const results = await searchRegistry(query);
         console.log(`Found ${results.length} companies matching "${query}":\n`);
         for (const r of results) {
           console.log(`  ${r.name || r.slug} (${r.ats})${r.sector ? ` — ${r.sector}` : ''}`);
         }
       } else {
-        console.error('Usage: ats-index registry search <query>');
+        console.error('Usage: jd-intel registry search <query>');
       }
       break;
     }
 
     default:
-      console.log(`ats-index — A structured index of who's hiring what.
+      console.log(`jd-intel — JD intelligence toolkit for your AI assistant.
 
 Usage:
-  ats-index fetch <company> [options]
-  ats-index detect <company>
-  ats-index registry search <query>
+  jd-intel fetch <company> [options]
+  jd-intel detect <company>
+  jd-intel registry search <query>
 
 Fetch options:
   --ats greenhouse|lever|ashby    Skip auto-detect
@@ -128,12 +128,12 @@ Filter guidance:
   mentions of PMs in other roles' JDs create false positives.
 
 Examples:
-  ats-index fetch stripe
-  ats-index fetch stripe --title-filter "product manager" --filter "growth|platform"
-  ats-index fetch ramp --location-include "United States,US,Remote - US" --location-exclude "London,Dublin"
-  ats-index fetch notion --ats ashby --title-filter engineer --posted-within-days 14
-  ats-index detect figma
-  ats-index registry search fintech`);
+  jd-intel fetch stripe
+  jd-intel fetch stripe --title-filter "product manager" --filter "growth|platform"
+  jd-intel fetch ramp --location-include "United States,US,Remote - US" --location-exclude "London,Dublin"
+  jd-intel fetch notion --ats ashby --title-filter engineer --posted-within-days 14
+  jd-intel detect figma
+  jd-intel registry search fintech`);
   }
 }
 

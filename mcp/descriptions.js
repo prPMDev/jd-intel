@@ -45,7 +45,7 @@ export const SEARCH_REGISTRY = `Find companies in the indexed registry by name o
 USE WHEN: targeted lookups ("Is Stripe in your index?", "Show me fintech companies").
 
 DON'T USE WHEN:
-- User wants a broad survey of the catalog → read the registry://ats-index/all Resource instead (one fetch vs repeated tool calls)
+- User wants a broad survey of the catalog → read the registry://jd-intel/all Resource instead (one fetch vs repeated tool calls)
 - User asks about a specific company's jobs → call fetch_jobs directly
 
 ARGUMENT GUIDE:
@@ -76,7 +76,7 @@ ERROR CODES:
 - invalid_args — company arg missing
 - partial_failure — some probes failed`;
 
-export const REGISTRY_RESOURCE = `The full ats-index company registry, grouped by ATS platform.
+export const REGISTRY_RESOURCE = `The full jd-intel company registry, grouped by ATS platform.
 
 Use for broad surveys ("what fintech companies are indexed?", "tell me about the catalog"). Fetched once per session, then cached — cheaper than repeated search_registry calls for multi-query reasoning.
 

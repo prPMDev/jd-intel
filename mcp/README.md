@@ -1,17 +1,17 @@
-# ats-index-mcp
+# jd-intel-mcp
 
-MCP server for [ats-index](https://github.com/prPMDev/ats-index) — lets any AI assistant (Claude Desktop, Cursor, Windsurf) search open job listings across Greenhouse, Lever, and Ashby through natural conversation.
+MCP server for [jd-intel](https://github.com/prPMDev/jd-intel) — lets any AI assistant (Claude Desktop, Cursor, Windsurf) search open job listings across Greenhouse, Lever, and Ashby through natural conversation.
 
 ---
 
 ## What you can ask
 
 - "Is Stripe hiring PMs in the US?"
-- "Find remote engineering roles at fintech companies, posted in the last two weeks."
+- "Find remote engineering roles at fintech companies, posted in the last two weeks, then draft a cover letter for the best match."
 - "What companies in your index are in the developer tools space?"
 - "Does Figma use Greenhouse or Lever?"
 
-The AI handles the phrasing. The MCP server handles the calls, filters, and normalizes results.
+The AI handles the phrasing. The MCP server handles the calls, filters, and normalizes results. No copy-paste.
 
 ---
 
@@ -25,15 +25,22 @@ Add this to your Claude Desktop config file:
 ```json
 {
   "mcpServers": {
-    "ats-index": {
+    "jd-intel": {
       "command": "npx",
-      "args": ["-y", "ats-index-mcp"]
+      "args": ["-y", "jd-intel-mcp"]
     }
   }
 }
 ```
 
 Restart Claude Desktop. The tools appear automatically.
+
+**One-command install (post-publish):**
+```bash
+npx jd-intel-mcp install
+```
+
+This detects your OS, locates the Claude Desktop config, adds the entry alongside any existing servers, and writes back valid JSON. Prevents the "paste-a-snippet-into-existing-config" hand-editing error.
 
 ---
 
@@ -45,7 +52,7 @@ Restart Claude Desktop. The tools appear automatically.
 | `search_registry` | Find companies by name or sector |
 | `detect_ats` | Identify which ATS platform a company uses |
 
-Plus one Resource: `registry://ats-index/all` — full company registry, grouped by ATS.
+Plus one Resource: `registry://jd-intel/all` — full company registry, grouped by ATS, for broad catalog surveys.
 
 ---
 
@@ -69,14 +76,14 @@ npm install
 node server.js
 ```
 
-The server prints `ats-index MCP server running on stdio` and then listens on stdin/stdout. For quick testing, point Claude Desktop at the local path:
+The server prints `jd-intel MCP server running on stdio` and then listens on stdin/stdout. For quick testing, point Claude Desktop at the local path:
 
 ```json
 {
   "mcpServers": {
-    "ats-index-dev": {
+    "jd-intel-dev": {
       "command": "node",
-      "args": ["/absolute/path/to/ats-index/mcp/server.js"]
+      "args": ["/absolute/path/to/jd-intel/mcp/server.js"]
     }
   }
 }

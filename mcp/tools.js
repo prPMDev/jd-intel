@@ -3,7 +3,7 @@
  *
  * Each handler:
  *   1. Validates args (Zod handles most of this)
- *   2. Calls the ats-index library
+ *   2. Calls the jd-intel library
  *   3. Wraps the result in the uniform envelope
  *
  * Handlers stay thin — library does the work, MCP layer shapes the response.

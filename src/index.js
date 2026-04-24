@@ -1,5 +1,5 @@
 /**
- * ats-index — A structured index of who's hiring what, across every major ATS.
+ * jd-intel — JD intelligence toolkit: fetch, normalize, and search job descriptions across every major ATS.
  *
  * Fetches, normalizes, and enriches job data from public ATS APIs
  * (Greenhouse, Lever, Ashby) into a unified schema.

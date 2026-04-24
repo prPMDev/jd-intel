@@ -1,13 +1,13 @@
 /**
- * One-command installer for ats-index-mcp in Claude Desktop.
+ * One-command installer for jd-intel-mcp in Claude Desktop.
  *
- * Usage: npx ats-index-mcp install
+ * Usage: npx jd-intel-mcp install
  *
  * What it does:
  *   1. Detects the user's OS
  *   2. Locates Claude Desktop's config file
  *   3. Reads existing config (preserves other MCP servers)
- *   4. Adds or updates the ats-index entry
+ *   4. Adds or updates the jd-intel entry
  *   5. Writes back as valid JSON
  *   6. Prints next steps
  *
@@ -20,8 +20,8 @@ import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { homedir, platform } from 'node:os';
 
-const PACKAGE_NAME = 'ats-index-mcp';
-const SERVER_KEY = 'ats-index';
+const PACKAGE_NAME = 'jd-intel-mcp';
+const SERVER_KEY = 'jd-intel';
 
 function configPathFor(os) {
   const home = homedir();
@@ -96,8 +96,8 @@ export async function install() {
   console.log('\nNext steps:');
   console.log('  1. Fully quit Claude Desktop (system tray → Quit on Windows, ⌘Q on macOS)');
   console.log('  2. Reopen Claude Desktop');
-  console.log('  3. Start a new chat — ats-index tools will be available');
-  console.log('\nTry: "What fintech companies are in your ats-index?"\n');
+  console.log('  3. Start a new chat — jd-intel tools will be available');
+  console.log('\nTry: "What fintech companies are in your jd-intel?"\n');
 }
 
 export async function uninstall() {
@@ -131,12 +131,12 @@ export async function uninstall() {
 }
 
 export function printHelp() {
-  console.log(`ats-index-mcp — MCP server for searching jobs across ATS platforms
+  console.log(`jd-intel-mcp — MCP server for searching jobs across ATS platforms
 
 Usage:
-  npx ats-index-mcp            Start the MCP server (invoked by Claude Desktop)
-  npx ats-index-mcp install    Configure Claude Desktop to use this server
-  npx ats-index-mcp uninstall  Remove this server from Claude Desktop config
-  npx ats-index-mcp help       Show this help message
+  npx jd-intel-mcp            Start the MCP server (invoked by Claude Desktop)
+  npx jd-intel-mcp install    Configure Claude Desktop to use this server
+  npx jd-intel-mcp uninstall  Remove this server from Claude Desktop config
+  npx jd-intel-mcp help       Show this help message
 `);
 }

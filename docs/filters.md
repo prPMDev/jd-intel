@@ -1,6 +1,6 @@
 # Filter design
 
-ats-index gives you six filter controls that operate on structured fields — deterministic substring / regex / date matches, no NLP, no magic. For semantic cuts ("is this role senior enough", "is this truly remote-friendly"), let an AI layer or your own downstream logic reason over the returned jobs.
+jd-intel gives you six filter controls that operate on structured fields — deterministic substring / regex / date matches, no NLP, no magic. For semantic cuts ("is this role senior enough", "is this truly remote-friendly"), let an AI layer or your own downstream logic reason over the returned jobs.
 
 This doc covers each filter, why the design is shaped this way, and the practical patterns that work in real queries.
 
@@ -37,7 +37,7 @@ They AND together:
 
 ```bash
 # "PM roles about integrations" — title gate + topic match
-npx ats-index fetch stripe \
+npx jd-intel fetch stripe \
   --title-filter "product manager" \
   --filter "integrations|partnerships"
 ```
@@ -132,7 +132,7 @@ So `US` and `UK` are safe to pass as-is — the implementation prevents the subs
 
 **Daily scan at a target company:**
 ```bash
-npx ats-index fetch stripe \
+npx jd-intel fetch stripe \
   --posted-within-days 2 \
   --location-include "United States,Remote - US"
 ```
@@ -140,16 +140,16 @@ npx ats-index fetch stripe \
 **Sector sweep for a role type:**
 ```bash
 # Get company slugs
-npx ats-index registry search fintech
+npx jd-intel registry search fintech
 
 # For each, fetch_jobs with a title filter
-npx ats-index fetch ramp --title-filter "product manager"
-npx ats-index fetch plaid --title-filter "product manager"
+npx jd-intel fetch ramp --title-filter "product manager"
+npx jd-intel fetch plaid --title-filter "product manager"
 ```
 
 **Noise-free PM-scope search** (the canonical example):
 ```bash
-npx ats-index fetch securityscorecard \
+npx jd-intel fetch securityscorecard \
   --title-filter "product manager" \
   --filter "partnerships|integrations|ecosystem" \
   --location-include "United States,US,Remote - US" \

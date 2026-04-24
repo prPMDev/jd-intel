@@ -16,9 +16,9 @@ import { REGISTRY_RESOURCE } from './descriptions.js';
 export function registerResources(server) {
   server.registerResource(
     'registry',
-    'registry://ats-index/all',
+    'registry://jd-intel/all',
     {
-      title: 'ats-index company registry',
+      title: 'jd-intel company registry',
       description: REGISTRY_RESOURCE,
       mimeType: 'application/json',
     },
