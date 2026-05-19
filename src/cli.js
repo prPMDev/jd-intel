@@ -4,7 +4,7 @@
  * jd-intel CLI
  *
  * Usage:
- *   jd-intel fetch <company> [--ats greenhouse|lever|ashby] [--filter keyword|pattern]
+ *   jd-intel fetch <company> [--ats <platform>] [--filter keyword|pattern]
  *   jd-intel detect <company>
  *   jd-intel registry search <query>
  */
@@ -18,7 +18,7 @@ async function main() {
   switch (command) {
     case 'fetch': {
       const company = args[0];
-      if (!company) { console.error('Usage: jd-intel fetch <company> [--ats greenhouse|lever|ashby]'); process.exit(1); }
+      if (!company) { console.error('Usage: jd-intel fetch <company> [--ats <platform>]  (omit --ats to auto-detect; run "jd-intel" for the platform list)'); process.exit(1); }
       const getArg = (flag) => {
         const idx = args.indexOf(flag);
         return idx >= 0 ? args[idx + 1] : undefined;
@@ -112,7 +112,12 @@ Usage:
   jd-intel registry search <query>
 
 Fetch options:
-  --ats greenhouse|lever|ashby    Skip auto-detect
+  --ats <platform>                Skip auto-detect. One of: greenhouse, lever,
+                                  ashby, smartrecruiters, teamtailor, recruitee,
+                                  workday. Omit to auto-detect (registry-backed).
+                                  Workday is registry-only: fetch it by company
+                                  slug and let auto-detect route it, not via
+                                  --ats workday.
   --title-filter pattern          Regex matched against TITLE only (role identity)
   --filter pattern                Regex matched across title, department, description (topic/scope)
   --posted-within-days N          Only jobs posted in the last N days

@@ -2,7 +2,8 @@
  * jd-intel — JD intelligence toolkit: fetch, normalize, and search job descriptions across every major ATS.
  *
  * Fetches, normalizes, and enriches job data from public ATS APIs
- * (Greenhouse, Lever, Ashby) into a unified schema.
+ * (Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee,
+ * Workday) into a unified schema.
  */
 
 import { ADAPTERS, ATS_NAMES } from './adapters/index.js';
@@ -92,7 +93,7 @@ export { detectAts } from './registry.js';
 
 /**
  * Look up which ATS a slug belongs to in the registry (cached, no network).
- * Returns the ATS name ("greenhouse" | "lever" | "ashby") or null if not in registry.
+ * Returns the ATS name (e.g. "greenhouse", "workday") or null if not in registry.
  */
 export { findAtsBySlug } from './registry.js';
 
