@@ -1,6 +1,6 @@
 {
   "name": "jd-intel-mcp",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "MCP server for jd-intel. Your AI assistant fetches and reasons over full job descriptions, no copy-paste.",
   "type": "module",
   "main": "server.js",
@@ -22,11 +22,12 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "install:local": "node cli.js install",
-    "uninstall:local": "node cli.js uninstall"
+    "uninstall:local": "node cli.js uninstall",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "jd-intel": "^0.5.0",
+    "jd-intel": "^0.6.0",
     "zod": "^3.23.0"
   },
   "keywords": [

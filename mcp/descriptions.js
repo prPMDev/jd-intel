@@ -32,12 +32,14 @@ location_excludes: array. Drop jobs whose location contains any keyword. Use as 
 
 limit: default 100. Reduce for high-volume companies.
 
+workday: optional { tenant, env, site }. Use ONLY for a Workday company not in the registry when the user gives a careers URL. Derive from https://{tenant}.{env}.myworkdayjobs.com/{site}: tenant is the first label, env is the part like wd108, site is the path segment. Overrides the registry for that fetch. Never guess or fabricate these values; use only what the user supplied or what is literally in the careers URL. Omit this argument entirely if you do not have a real URL.
+
 RESPONSE: { status, data: [jobs], metadata: { attempted, succeeded, failed, notes } }. Check status first. "partial" means some adapters failed. Tell the user results may be incomplete.
 
 ERROR CODES:
 - company_not_found: slug not in registry, not detected
-- ats_unreachable: known ATS failed
-- invalid_args: missing/malformed args
+- ats_unreachable: known ATS failed, or a supplied workday {tenant,env,site} was rejected by Workday
+- invalid_args: missing/malformed args, including an incomplete workday triple
 - rate_limited: upstream 429`;
 
 export const SEARCH_REGISTRY = `Find companies in the indexed registry by name or sector.
