@@ -1,6 +1,6 @@
 # jd-intel-mcp
 
-MCP server for [jd-intel](https://github.com/prPMDev/jd-intel). Lets any AI assistant (Claude Desktop, Cursor, Windsurf) search open job listings across Greenhouse, Lever, and Ashby through natural conversation.
+MCP server for [jd-intel](https://github.com/prPMDev/jd-intel). Lets any AI assistant (Claude Desktop, Cursor, Windsurf) search open job listings across Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee, and Workday through natural conversation.
 
 > **Stop pasting job descriptions into AI assistants. Let your AI fetch them directly.**
 
@@ -9,7 +9,7 @@ MCP server for [jd-intel](https://github.com/prPMDev/jd-intel). Lets any AI assi
 ## What you can ask
 
 - "Is Stripe hiring PMs in the US?"
-- "Find remote engineering roles at fintech companies, posted in the last two weeks, then draft a cover letter for the best match."
+- "Find remote engineering roles at fintech companies, posted in the last two weeks, then rank them by fit for a senior backend profile."
 - "What companies in your index are in the developer tools space?"
 - "Does Figma use Greenhouse or Lever?"
 

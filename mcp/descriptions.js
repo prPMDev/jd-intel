@@ -8,7 +8,7 @@
  * the AI's behavior changes immediately when descriptions change.
  */
 
-export const FETCH_JOBS = `Fetch open job postings from a specific company's ATS (Greenhouse, Lever, or Ashby).
+export const FETCH_JOBS = `Fetch open job postings from a specific company's ATS (Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee, Workday).
 
 USE WHEN: the user asks about roles at a known company ("Is Stripe hiring?", "What's open at Figma?").
 
@@ -60,7 +60,7 @@ RESPONSE: { status, data: [{ slug, name, sector, ats }], metadata }. Each result
 ERROR CODES:
 - invalid_args: both query and sector missing`;
 
-export const DETECT_ATS = `Detect which ATS platform (Greenhouse, Lever, or Ashby) a company uses.
+export const DETECT_ATS = `Detect which ATS platform (Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee) a company uses by probing. Workday is registry-only and never returned here; find Workday-hosted companies via search_registry or fetch_jobs (which auto-detects from the registry).
 
 USE WHEN: user asks about the ATS platform explicitly ("What ATS does Stripe use?") or for debugging.
 
@@ -70,7 +70,7 @@ ARGUMENT GUIDE:
 
 company: company name or slug. Hyphens and spaces stripped automatically ("Cockroach Labs" → "cockroachlabs").
 
-RESPONSE: { status, data: "greenhouse" | "lever" | "ashby" | null, metadata }. data === null means no supported ATS hosts this company. "partial" status means some probes failed. Result may be incomplete.
+RESPONSE: { status, data: "greenhouse" | "lever" | "ashby" | "smartrecruiters" | "teamtailor" | "recruitee" | null, metadata }. data === null means none of the probeable ATS host this company (Workday is registry-only and never detected here). "partial" status means some probes failed. Result may be incomplete.
 
 ERROR CODES:
 - invalid_args: company arg missing
@@ -80,4 +80,4 @@ export const REGISTRY_RESOURCE = `The full jd-intel company registry, grouped by
 
 Use for broad surveys ("what fintech companies are indexed?", "tell me about the catalog"). Fetched once per session, then cached. Cheaper than repeated search_registry calls for multi-query reasoning.
 
-Shape: { greenhouse: [{slug, name, sector}], lever: [...], ashby: [...] }.`;
+Shape: { greenhouse: [{slug, name, sector}], lever: [...], ashby: [...], smartrecruiters: [...], teamtailor: [...], recruitee: [...], workday: [...] }.`;
