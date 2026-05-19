@@ -58,14 +58,21 @@ export async function searchRegistry(query) {
   return results;
 }
 
+// Slug match is case/punctuation-insensitive: registry slugs are stored
+// in each ATS's canonical form (SmartRecruiters uses PascalCase, e.g.
+// "Visa"), but callers pass a lowercased/alnum-stripped slug. Comparing
+// normalized forms keeps registry-first routing working for those.
+const normSlug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+
 /**
  * Look up which ATS a slug belongs to in the registry.
  * Returns the ATS name (e.g., "greenhouse") or null if not in registry.
  */
 export async function findAtsBySlug(slug) {
   const all = await loadRegistry();
+  const key = normSlug(slug);
   for (const [ats, companies] of Object.entries(all)) {
-    if (companies.some(c => c.slug === slug)) return ats;
+    if (companies.some(c => normSlug(c.slug) === key)) return ats;
   }
   return null;
 }
@@ -81,8 +88,9 @@ export async function findAtsBySlug(slug) {
  */
 export async function findEntryBySlug(slug) {
   const all = await loadRegistry();
+  const key = normSlug(slug);
   for (const [ats, companies] of Object.entries(all)) {
-    const entry = companies.find(c => c.slug === slug);
+    const entry = companies.find(c => normSlug(c.slug) === key);
     if (entry) return { ats, entry };
   }
   return null;

@@ -23,7 +23,7 @@ async function main() {
         const idx = args.indexOf(flag);
         return idx >= 0 ? args[idx + 1] : undefined;
       };
-      const ats = getArg('--ats');
+      let ats = getArg('--ats');
       const titleFilter = getArg('--title-filter');
       const filter = getArg('--filter');
       const postedWithinRaw = getArg('--posted-within-days');
@@ -35,6 +35,28 @@ async function main() {
       const limitRaw = getArg('--limit');
       const limit = limitRaw !== undefined ? Number(limitRaw) : undefined;
 
+      // Workday is keyed by a {tenant, env, site} triple, not a slug.
+      // Supplying it here makes a Workday board reachable without a
+      // registry entry; presence of the flags infers --ats workday.
+      const wdTenant = getArg('--workday-tenant');
+      const wdEnv = getArg('--workday-env');
+      const wdSite = getArg('--workday-site');
+      let config;
+      if (wdTenant || wdEnv || wdSite) {
+        if (!wdTenant || !wdEnv || !wdSite) {
+          console.error('Workday needs all three: --workday-tenant, --workday-env, --workday-site.');
+          console.error('Find them in the careers URL: https://{tenant}.{env}.myworkdayjobs.com/{site}');
+          console.error('e.g. https://expedia.wd108.myworkdayjobs.com/search  ->  --workday-tenant expedia --workday-env wd108 --workday-site search');
+          process.exit(1);
+        }
+        if (ats && ats !== 'workday') {
+          console.error(`--ats ${ats} conflicts with the --workday-* flags (workday is inferred). Drop one.`);
+          process.exit(1);
+        }
+        config = { tenant: wdTenant, env: wdEnv, site: wdSite };
+        ats = 'workday';
+      }
+
       const parts = [];
       if (titleFilter) parts.push(`title: ${titleFilter}`);
       if (filter) parts.push(`topic: ${filter}`);
@@ -43,10 +65,23 @@ async function main() {
       if (locationExcludes) parts.push(`loc-: ${locationExcludes.join('|')}`);
       const suffix = parts.length ? ` [${parts.join(', ')}]` : '';
 
-      console.log(`Fetching jobs from ${company}${ats ? ` (${ats})` : ' (auto-detect)'}${suffix}...`);
-      const jobs = await fetchJobs({
-        company, ats, titleFilter, filter, postedWithinDays, locationIncludes, locationExcludes, limit,
-      });
+      const atsLabel = config
+        ? ` (workday: ${config.tenant}/${config.env}/${config.site})`
+        : ats ? ` (${ats})` : ' (auto-detect)';
+      console.log(`Fetching jobs from ${company}${atsLabel}${suffix}...`);
+      let jobs;
+      try {
+        jobs = await fetchJobs({
+          company, ats, config, titleFilter, filter, postedWithinDays, locationIncludes, locationExcludes, limit,
+        });
+      } catch (err) {
+        if (config) {
+          console.error(`Could not reach that Workday board (${config.tenant}/${config.env}/${config.site}): ${err.message}`);
+          console.error('Verify the triple against the careers URL: https://{tenant}.{env}.myworkdayjobs.com/{site}');
+          process.exit(1);
+        }
+        throw err;
+      }
       console.log(`Found ${jobs.length} jobs\n`);
 
       for (const job of jobs.slice(0, 20)) {
@@ -115,9 +150,15 @@ Fetch options:
   --ats <platform>                Skip auto-detect. One of: greenhouse, lever,
                                   ashby, smartrecruiters, teamtailor, recruitee,
                                   workday. Omit to auto-detect (registry-backed).
-                                  Workday is registry-only: fetch it by company
-                                  slug and let auto-detect route it, not via
-                                  --ats workday.
+  --workday-tenant T              Workday is keyed by a {tenant, env, site}
+  --workday-env wdN               triple, not a slug. Registered Workday
+  --workday-site S                companies work via auto-detect or --ats
+                                  workday; for any other Workday board pass
+                                  all three, read from the careers URL
+                                  https://{tenant}.{env}.myworkdayjobs.com/{site}
+                                  e.g. https://expedia.wd108.myworkdayjobs.com/search
+                                  -> --workday-tenant expedia --workday-env wd108
+                                     --workday-site search
   --title-filter pattern          Regex matched against TITLE only (role identity)
   --filter pattern                Regex matched across title, department, description (topic/scope)
   --posted-within-days N          Only jobs posted in the last N days
@@ -137,6 +178,7 @@ Examples:
   jd-intel fetch stripe --title-filter "product manager" --filter "growth|platform"
   jd-intel fetch ramp --location-include "United States,US,Remote - US" --location-exclude "London,Dublin"
   jd-intel fetch notion --ats ashby --title-filter engineer --posted-within-days 14
+  jd-intel fetch expedia --workday-tenant expedia --workday-env wd108 --workday-site search
   jd-intel detect figma
   jd-intel registry search fintech`);
   }
