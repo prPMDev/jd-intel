@@ -16,6 +16,7 @@ import { applyFilters } from './filters.js';
  * @param {Object} options
  * @param {string} options.company - Company slug or name
  * @param {string} [options.ats] - Specific ATS platform. If omitted, auto-detects.
+ * @param {object} [options.config] - Adapter-specific config (e.g. Workday {tenant, env, site}). Bypasses the registry; the only way to reach a Workday company not in the registry.
  * @param {string} [options.titleFilter] - Regex matched against title only. Use for role identity ("product manager", "staff engineer").
  * @param {string} [options.filter] - Regex matched across title, department, description. Use for topic/scope.
  * @param {number} [options.postedWithinDays] - Only return jobs posted within N days.
@@ -27,6 +28,7 @@ import { applyFilters } from './filters.js';
 export async function fetchJobs({
   company,
   ats,
+  config,
   titleFilter,
   filter,
   postedWithinDays,
@@ -49,16 +51,33 @@ export async function fetchJobs({
   if (ats) {
     const adapter = ADAPTERS[ats];
     if (!adapter) throw new Error(`Unknown ATS: ${ats}. Supported: ${ATS_NAMES.join(', ')}`);
-    jobs = await adapter.fetch(slug, { filterContext });
+    // Explicit ATS: an explicitly passed config wins (the only path that
+    // can reach a Workday company not in the registry). With no explicit
+    // config, fall back to the registry so config-keyed adapters
+    // (Workday) and canonically-cased registry slugs (SmartRecruiters
+    // "Visa") also work on the explicit path, not just under auto-detect.
+    let fetchSlug = slug;
+    let cfg = config;
+    let companyName;
+    if (!cfg) {
+      const hit = await findEntryBySlug(slug);
+      if (hit && hit.ats === ats) {
+        fetchSlug = hit.entry.slug;
+        cfg = hit.entry.config;
+        companyName = hit.entry.name;
+      }
+    }
+    jobs = await adapter.fetch(fetchSlug, { config: cfg, companyName, filterContext });
   } else {
     // Consult registry first — if we know which ATS this company uses,
     // skip probing the others (saves API calls, clearer error semantics).
-    // The full entry is needed so adapter-specific config (e.g. the
-    // Workday {tenant,env,site} triple) reaches the adapter.
+    // The registry entry carries the canonical slug (so the adapter is
+    // called with the ATS's own casing, e.g. SmartRecruiters "Visa") and
+    // any adapter-specific config (the Workday {tenant,env,site} triple).
     const hit = await findEntryBySlug(slug);
     if (hit) {
-      jobs = await ADAPTERS[hit.ats].fetch(slug, {
-        config: hit.entry.config,
+      jobs = await ADAPTERS[hit.ats].fetch(hit.entry.slug, {
+        config: config || hit.entry.config,
         companyName: hit.entry.name,
         filterContext,
       });

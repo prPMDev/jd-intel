@@ -75,6 +75,14 @@ describe('findAtsBySlug', () => {
     assert.equal(await findAtsBySlug('plaid'), 'lever');
   });
 
+  test('matches case-insensitively (PascalCase SmartRecruiters slug)', async () => {
+    // Registry stores "Visa"; callers pass a lowercased/stripped slug.
+    // Pre-fix this returned null and every SR company missed registry
+    // routing (fell through to slow 7-adapter discovery probing).
+    assert.equal(await findAtsBySlug('visa'), 'smartrecruiters');
+    assert.equal(await findAtsBySlug('VISA'), 'smartrecruiters');
+  });
+
   test('returns null for unknown slug', async () => {
     const ats = await findAtsBySlug('zzzz-nonexistent-slug-zzzz');
     assert.equal(ats, null);
@@ -96,6 +104,13 @@ describe('findEntryBySlug', () => {
     assert.ok(hit);
     assert.equal(hit.ats, 'greenhouse');
     assert.equal(hit.entry.slug, 'stripe');
+  });
+
+  test('resolves a PascalCase slug from lowercase and returns canonical casing', async () => {
+    const hit = await findEntryBySlug('visa');
+    assert.ok(hit, 'Visa should resolve from "visa"');
+    assert.equal(hit.ats, 'smartrecruiters');
+    assert.equal(hit.entry.slug, 'Visa'); // canonical, not the lowercased input
   });
 
   test('returns null for unknown slug', async () => {
