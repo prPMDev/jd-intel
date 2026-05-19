@@ -21,7 +21,10 @@ import {
   DETECT_ATS,
 } from './descriptions.js';
 
-export function registerTools(server) {
+export function registerTools(server, deps = {}) {
+  const _fetchJobs = deps.fetchJobs || fetchJobs;
+  const _findAtsBySlug = deps.findAtsBySlug || findAtsBySlug;
+
   server.registerTool(
     'fetch_jobs',
     {
@@ -35,12 +38,37 @@ export function registerTools(server) {
         location_includes: z.array(z.string()).optional().describe('Keep jobs whose location contains any keyword'),
         location_excludes: z.array(z.string()).optional().describe('Drop jobs whose location contains any keyword'),
         limit: z.number().int().positive().optional().describe('Cap results (default 100)'),
+        workday: z
+          .object({
+            tenant: z.string().trim().min(1).describe('Workday tenant, the first URL label, e.g. "expedia"'),
+            env: z.string().trim().min(1).describe('Workday env/datacenter, e.g. "wd108", "wd5"'),
+            site: z.string().trim().min(1).describe('Workday career-site path, e.g. "search", "Cisco_Careers"'),
+          })
+          .strict()
+          .optional()
+          .describe('Override the registry for a Workday board not indexed. Derive all three from the careers URL https://{tenant}.{env}.myworkdayjobs.com/{site}. Never guess these.'),
       },
     },
     async (args) => {
+      let ats;
+      let config;
+      if (args.workday) {
+        const { tenant, env, site } = args.workday;
+        if (!tenant?.trim() || !env?.trim() || !site?.trim()) {
+          return error(
+            ERROR_CODES.INVALID_ARGS,
+            'workday requires all three of {tenant, env, site}. Read them from the careers URL https://{tenant}.{env}.myworkdayjobs.com/{site}.'
+          );
+        }
+        ats = 'workday';
+        config = { tenant, env, site };
+      }
+
       try {
-        const jobs = await fetchJobs({
+        const jobs = await _fetchJobs({
           company: args.company,
+          ats,
+          config,
           titleFilter: args.title_filter,
           filter: args.filter,
           postedWithinDays: args.posted_within_days,
@@ -50,15 +78,23 @@ export function registerTools(server) {
         });
 
         const normalizedSlug = args.company.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const registryAts = await findAtsBySlug(normalizedSlug);
+        const registryAts = await _findAtsBySlug(normalizedSlug);
 
         return success(jobs, {
           count: jobs.length,
           registry_hit: registryAts !== null,
-          ats: registryAts,
+          ats: config ? 'workday' : registryAts,
+          workday_override: Boolean(config),
         });
       } catch (err) {
-        return error(ERROR_CODES.INVALID_ARGS, err.message || 'Unknown error');
+        const msg = err.message || 'Unknown error';
+        if (config && /Workday API error/.test(msg)) {
+          return error(
+            ERROR_CODES.ATS_UNREACHABLE,
+            `Workday rejected ${config.tenant}/${config.env}/${config.site}: ${msg}. Verify the triple against the careers URL https://{tenant}.{env}.myworkdayjobs.com/{site}.`
+          );
+        }
+        return error(ERROR_CODES.INVALID_ARGS, msg);
       }
     }
   );
