@@ -40,6 +40,7 @@
             </a>
             <ul class="topnav-links">
                 <li><a href="#main" data-section="top">What is it</a></li>
+                <li><a href="#why" data-section="why">Why</a></li>
                 <li><a href="#install" data-section="install">Install</a></li>
                 <li><a href="#coverage" data-section="coverage">Coverage</a></li>
             </ul>
@@ -47,19 +48,14 @@
     </nav>
 
     <main id="main">
-        <header class="masthead">
+        <header class="masthead" id="top">
             <h1 class="visually-hidden">jd-intel</h1>
             <div class="masthead-headline">
                 <div class="masthead-intro-text">
                     <p class="hook">Ever wished you could ask your AI?</p>
-                    <p class="hero-tagline"><strong>jd-intel makes that possible.</strong> Full text. Structured. Every major ATS.</p>
+                    <p class="hero-tagline"><strong>jd-intel makes that possible.</strong> Your AI gets live access to real job postings across every major hiring platform. Full text, structured, ready to compare.</p>
+                    <p class="hero-cta"><a class="btn" href="#install">Install in one command</a></p>
                 </div>
-                <p class="badges">
-                    <img src="https://img.shields.io/npm/v/jd-intel?label=jd-intel&color=5b1a1a" alt="jd-intel npm version">
-                    <img src="https://badgen.net/npm/dt/jd-intel?label=jd-intel%20downloads&color=5b1a1a" alt="jd-intel total downloads">
-                    <img src="https://img.shields.io/npm/v/jd-intel-mcp?label=jd-intel-mcp&color=5b1a1a" alt="jd-intel-mcp npm version">
-                    <img src="https://badgen.net/npm/dt/jd-intel-mcp?label=jd-intel-mcp%20downloads&color=5b1a1a" alt="jd-intel-mcp total downloads">
-                </p>
             </div>
 
             <div class="masthead-grid">
@@ -91,15 +87,34 @@
                 <div class="masthead-col-right">
                     <figure class="proof-figure">
                         <figcaption class="proof-caption-top">See it in action</figcaption>
-                        <img src="jd-intel-chat-mockup.gif" alt="A user asks their AI for designer or PM roles at fintech companies posted in the last month, US only. The AI calls jd-intel and returns three matched roles with fit assessments." class="proof-gif" loading="eager">
+                        <button type="button" class="demo-trigger" data-gif="jd-intel-chat-mockup.gif" aria-label="Play the jd-intel demo at full size">
+                            <img src="jd-intel-chat-poster.webp" width="1080" height="1350" class="proof-gif" alt="A user asks their AI for designer or PM roles at fintech companies posted in the last month, US only. The AI calls jd-intel and returns three matched roles with fit assessments.">
+                            <span class="demo-play-badge" aria-hidden="true">&#9658; Play demo</span>
+                        </button>
                         <figcaption class="proof-caption">One query. Three ranked matches. No tab-switching.</figcaption>
                     </figure>
                 </div>
             </div>
         </header>
 
+        <section id="why" class="why" aria-labelledby="why-heading">
+            <h2 id="why-heading">Why this exists</h2>
+            <p class="why-lead">Everyone says start with the job boards. But how, exactly? Whichever way you chase an edge, you pay a leverage tax.</p>
+            <div class="why-tax-grid">
+                <div class="why-tax-card">
+                    <h3>Do it yourself with AI</h3>
+                    <p>You turn into the data clerk: copy-paste each job description, write a fresh prompt, repeat for the next role. None of the effort compounds.</p>
+                </div>
+                <div class="why-tax-card">
+                    <h3>Lean on the aggregators</h3>
+                    <p>They run their own AI and algorithms, ranking you in a black box tuned for their goals. You never see why a role surfaced, or which ones never did.</p>
+                </div>
+            </div>
+            <p class="why-resolve">jd-intel takes the tax off. It hands current, real postings straight to your AI, so your context does the ranking: PM, engineer, or designer roles matched to your background, not a board's. No copy-paste grind, no one else's algorithm deciding what you see.</p>
+        </section>
+
         <section class="what-it-is" aria-labelledby="what-it-is-heading">
-            <h2 id="what-it-is-heading" class="visually-hidden">What jd-intel is</h2>
+            <h2 id="what-it-is-heading">What jd-intel is</h2>
             <div class="what-grid">
                 <div class="what-col-positioning">
                     <p>Not another job board.</p>
@@ -112,7 +127,7 @@
                     <ol class="how-steps how-steps-compact">
                         <li><strong>You ask your AI</strong> for anything that needs current job data.</li>
                         <li><strong>jd-intel fetches</strong> via a small local MCP server.</li>
-                        <li><strong>Greenhouse, Lever, Ashby + 4 more return JDs.</strong> Public APIs, no scraping.</li>
+                        <li><strong>Greenhouse, Lever, Ashby + 4 more return JDs.</strong> Public APIs, not scraping: stable and permitted, where scrapers are fragile and get blocked.</li>
                     </ol>
                 </div>
             </div>
@@ -156,6 +171,12 @@
             <h3>Developer (CLI / library)</h3>
 <pre><code>npm install jd-intel</code></pre>
             <p>Library API and CLI usage in the <a href="https://github.com/prPMDev/jd-intel#for-developers" rel="noopener">README</a>.</p>
+            <p class="badges">
+                <img src="https://img.shields.io/npm/v/jd-intel?label=jd-intel&color=5b1a1a" alt="jd-intel npm version">
+                <img src="https://badgen.net/npm/dt/jd-intel?label=jd-intel%20downloads&color=5b1a1a" alt="jd-intel total downloads">
+                <img src="https://img.shields.io/npm/v/jd-intel-mcp?label=jd-intel-mcp&color=5b1a1a" alt="jd-intel-mcp npm version">
+                <img src="https://badgen.net/npm/dt/jd-intel-mcp?label=jd-intel-mcp%20downloads&color=5b1a1a" alt="jd-intel-mcp total downloads">
+            </p>
         </section>
 
         <section id="coverage" class="coverage" aria-labelledby="coverage-heading">
@@ -180,6 +201,7 @@
                         <li>Personio</li>
                         <li>Workable</li>
                     </ul>
+                    <p class="coverage-meta coverage-why">Personio fills the European gap a US-centric registry leaves. Workable adds broad small-company coverage.</p>
                     <p class="coverage-meta"><a href="https://github.com/prPMDev/jd-intel/issues/new" rel="noopener">Submit a company</a> that uses a supported ATS, <a href="https://github.com/prPMDev/jd-intel/issues/new" rel="noopener">suggest a new ATS</a>, or <a href="https://github.com/prPMDev/jd-intel" rel="noopener">contribute to the repo</a>.</p>
                 </div>
             </div>
@@ -197,13 +219,21 @@
         </footer>
     </main>
 
+    <div class="demo-modal" id="demoModal" role="dialog" aria-modal="true" aria-label="jd-intel demo" hidden>
+        <div class="demo-modal__backdrop" data-close></div>
+        <div class="demo-modal__panel">
+            <button type="button" class="demo-modal__close" aria-label="Close demo" data-close>&times;</button>
+            <img class="demo-modal__img" width="1080" height="1350" alt="jd-intel demo at full size: a user asks their AI for fintech PM and design roles posted in the last month, US only, and jd-intel returns three ranked matches with fit notes.">
+        </div>
+    </div>
+
     <script>
         document.getElementById('year').textContent = new Date().getFullYear();
 
         // Active section highlighting in topnav
         (function () {
             var navLinks = document.querySelectorAll('.topnav-links a[data-section]');
-            var sectionIds = ['prompts', 'install', 'how', 'coverage'];
+            var sectionIds = ['top', 'why', 'install', 'coverage'];
             var sections = sectionIds
                 .map(function (id) { return { id: id, el: document.getElementById(id) }; })
                 .filter(function (s) { return s.el; });
@@ -226,6 +256,36 @@
 
                 sections.forEach(function (s) { observer.observe(s.el); });
             }
+        })();
+
+        // Demo lightbox: click the poster to play the full-size GIF in a modal
+        (function () {
+            var modal = document.getElementById('demoModal');
+            if (!modal) return;
+            var trigger = document.querySelector('.demo-trigger');
+            var img = modal.querySelector('.demo-modal__img');
+            var closeBtn = modal.querySelector('.demo-modal__close');
+            function open() {
+                if (!img.getAttribute('src')) img.src = trigger.getAttribute('data-gif');
+                modal.hidden = false;
+                document.documentElement.style.overflow = 'hidden';
+                closeBtn.focus();
+                document.addEventListener('keydown', onKey);
+            }
+            function close() {
+                modal.hidden = true;
+                document.documentElement.style.overflow = '';
+                document.removeEventListener('keydown', onKey);
+                if (trigger && trigger.focus) trigger.focus();
+            }
+            function onKey(e) {
+                if (e.key === 'Escape') close();
+                else if (e.key === 'Tab') { e.preventDefault(); closeBtn.focus(); }
+            }
+            if (trigger) trigger.addEventListener('click', open);
+            modal.addEventListener('click', function (e) {
+                if (e.target.hasAttribute('data-close')) close();
+            });
         })();
     </script>
 </body>

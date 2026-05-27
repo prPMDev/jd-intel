@@ -17,6 +17,7 @@
   --nav-text: #ffffff;
   --nav-muted: #a0a0a0;
   --nav-accent: #d97a7a;
+  --overlay: rgba(0, 0, 0, 0.72);
   --max-width: 1400px;
 }
 
@@ -285,10 +286,27 @@ footer { margin-bottom: 0; }
   color: var(--text);
 }
 
-.masthead-headline .badges {
-  flex-shrink: 0;
-  margin: 0;
-  padding-top: 4px;
+.hero-cta {
+  margin: 20px 0 0;
+}
+
+.btn {
+  display: inline-block;
+  background: var(--link);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 13px 26px;
+  border-radius: 8px;
+  line-height: 1.2;
+  transition: background 0.15s ease;
+}
+
+.btn:hover {
+  background: var(--link-hover);
+  color: #fff;
+  text-decoration: none;
 }
 
 /* === HERO LEFT COL: prompts === */
@@ -326,6 +344,64 @@ footer { margin-bottom: 0; }
   color: var(--text-muted);
   font-style: normal;
   line-height: 1.45;
+}
+
+/* === WHY THIS EXISTS === */
+
+.why-lead {
+  font-size: 1.3rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--text);
+  margin: 0 0 24px;
+}
+
+.why-tax-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 0 0 28px;
+}
+
+@media (max-width: 760px) {
+  .why-tax-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.why-tax-card {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+}
+
+.why-tax-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.why-tax-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.why-resolve {
+  font-size: 1.2rem;
+  line-height: 1.55;
+  color: var(--text);
+  border-left: 3px solid var(--link);
+  padding-left: 20px;
+  margin: 0 0 28px;
+}
+
+.coverage-why {
+  margin-bottom: 14px;
 }
 
 /* === WHAT IT IS (below hero, 2-col) === */
@@ -555,6 +631,127 @@ footer { margin-bottom: 0; }
   color: var(--text-muted);
   margin-top: 10px;
   text-align: center;
+}
+
+/* === DEMO LIGHTBOX === */
+
+.demo-trigger {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  position: relative;
+  border-radius: 10px;
+}
+
+.demo-trigger:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 3px;
+}
+
+.demo-play-badge {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(26, 26, 26, 0.88);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 999px;
+  pointer-events: none;
+  transition: background 0.15s ease;
+}
+
+.demo-trigger:hover .demo-play-badge,
+.demo-trigger:focus-visible .demo-play-badge {
+  background: var(--link);
+}
+
+.demo-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.demo-modal[hidden] { display: none; }
+
+.demo-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--overlay);
+  animation: demoFade 0.18s ease-out;
+}
+
+.demo-modal__panel {
+  position: relative;
+  animation: demoPop 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.demo-modal__img {
+  display: block;
+  max-height: 88vh;
+  max-width: min(1080px, 92vw);
+  width: auto;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+.demo-modal__close {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 0;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.demo-modal__close:hover { background: var(--link); }
+
+.demo-modal__close:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+@keyframes demoFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes demoPop {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-modal__backdrop,
+  .demo-modal__panel { animation: none; }
+}
+
+@media (max-width: 600px) {
+  .demo-modal { padding: 16px; }
+  .demo-modal__close { top: 8px; right: 8px; }
 }
 
 /* === PROMPTS === */
