@@ -288,7 +288,14 @@ footer { margin-bottom: 0; }
 
 .hero-cta {
   margin: 0;
+}
+
+.masthead-right {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-end;
   align-self: center;
 }
 
