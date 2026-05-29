@@ -287,7 +287,9 @@ footer { margin-bottom: 0; }
 }
 
 .hero-cta {
-  margin: 20px 0 0;
+  margin: 0;
+  flex-shrink: 0;
+  align-self: center;
 }
 
 .btn {
