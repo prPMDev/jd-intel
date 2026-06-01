@@ -249,11 +249,11 @@ footer { margin-bottom: 0; }
 .masthead { padding-top: 8px; }
 
 .masthead-headline {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
   gap: 32px;
   margin: 0 0 28px;
-  flex-wrap: wrap;
 }
 
 .masthead-intro-text {
@@ -291,12 +291,20 @@ footer { margin-bottom: 0; }
 }
 
 .masthead-right {
-  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  align-items: flex-end;
-  align-self: center;
+  max-width: 400px;
+}
+
+.masthead-right .hero-cta {
+  align-self: flex-end;
+}
+
+@media (max-width: 760px) {
+  .masthead-headline { grid-template-columns: 1fr; }
+  .masthead-right { max-width: none; }
+  .masthead-right .hero-cta { align-self: flex-start; }
 }
 
 .btn {
