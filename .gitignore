@@ -8,6 +8,9 @@ store/
 scan*.mjs
 scan*.js
 
+# Scratch staging / verification reports
+tmp/
+
 # Private notes, drafts, learning logs
 notes/
 
