@@ -88,4 +88,15 @@ describe('mcp fetch_jobs — workday passthrough', () => {
     assert.equal(env.status, 'error');
     assert.equal(env.error.code, 'invalid_args');
   });
+
+  test('success metadata carries the server version and registry source', async () => {
+    const handler = getFetchJobsHandler({
+      fetchJobs: async () => [{ title: 'PM' }],
+      findAtsBySlug: async () => 'greenhouse',
+    });
+    const env = parse(await handler({ company: 'stripe' }));
+    assert.equal(env.status, 'success');
+    assert.match(env.metadata.version, /^\d+\.\d+\.\d+/);
+    assert.equal(typeof env.metadata.registry_source, 'string');
+  });
 });

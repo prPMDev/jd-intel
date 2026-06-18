@@ -5,36 +5,86 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REGISTRY_DIR = join(__dirname, '..', 'registry');
 
+const PLATFORMS = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'teamtailor', 'recruitee', 'workday'];
+
+// Network-first registry. A hosted copy lets installed bundles AND npx users
+// pick up newly-added companies without reinstalling; the on-disk copy that
+// ships with the package is the guaranteed offline fallback. The base URL is
+// resolved at call time so it stays overridable: point JD_INTEL_REGISTRY_URL
+// at a different host, or set it to '' to force disk-only (tests, air-gapped).
+const DEFAULT_REGISTRY_URL = 'https://prpmdev.github.io/jd-intel/registry';
+const FETCH_TIMEOUT_MS = 2500;
+
+function registryBaseUrl() {
+  return process.env.JD_INTEL_REGISTRY_URL !== undefined
+    ? process.env.JD_INTEL_REGISTRY_URL
+    : DEFAULT_REGISTRY_URL;
+}
+
 let cache = {};
+let sources = {}; // platform -> 'network' | 'disk-fallback'
+
+async function fetchPlatform(platform) {
+  const base = registryBaseUrl();
+  if (!base) throw new Error('registry network disabled');
+  const res = await fetch(`${base}/${platform}.json`, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+  if (!res.ok) throw new Error(`registry fetch ${platform}: HTTP ${res.status}`);
+  const data = await res.json();
+  if (!Array.isArray(data)) throw new Error(`registry fetch ${platform}: not an array`);
+  return data;
+}
+
+async function readPlatform(platform) {
+  const data = await readFile(join(REGISTRY_DIR, `${platform}.json`), 'utf-8');
+  return JSON.parse(data);
+}
+
+// Load one platform: hosted copy first, on-disk fallback on ANY failure
+// (offline, non-200, timeout, malformed). Cached per process after first load.
+async function loadPlatform(platform) {
+  if (cache[platform]) return cache[platform];
+  try {
+    cache[platform] = await fetchPlatform(platform);
+    sources[platform] = 'network';
+  } catch {
+    try {
+      cache[platform] = await readPlatform(platform);
+    } catch {
+      cache[platform] = [];
+    }
+    sources[platform] = 'disk-fallback';
+  }
+  return cache[platform];
+}
 
 /**
  * Load company registry for a specific ATS or all ATS platforms.
+ * Network-first with on-disk fallback (see registryBaseUrl).
  */
 export async function loadRegistry(ats) {
-  if (ats && cache[ats]) return cache[ats];
-
-  if (ats) {
-    try {
-      const data = await readFile(join(REGISTRY_DIR, `${ats}.json`), 'utf-8');
-      cache[ats] = JSON.parse(data);
-      return cache[ats];
-    } catch {
-      return [];
-    }
-  }
-
-  // Load all
+  if (ats) return loadPlatform(ats);
   const all = {};
-  for (const platform of ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'teamtailor', 'recruitee', 'workday']) {
-    try {
-      const data = await readFile(join(REGISTRY_DIR, `${platform}.json`), 'utf-8');
-      all[platform] = JSON.parse(data);
-      cache[platform] = all[platform];
-    } catch {
-      all[platform] = [];
-    }
-  }
+  await Promise.all(PLATFORMS.map(async (platform) => {
+    all[platform] = await loadPlatform(platform);
+  }));
   return all;
+}
+
+/**
+ * Where the registry data loaded this process came from:
+ *   'network'       every loaded platform came from the hosted copy
+ *   'disk-fallback' every loaded platform fell back to the bundled copy
+ *   'mixed'         some of each
+ *   'unknown'       nothing loaded yet
+ * Surfaced in MCP response metadata so the AI can tell the user whether the
+ * company list is live or the bundled snapshot.
+ */
+export function getRegistrySource() {
+  const vals = Object.values(sources);
+  if (vals.length === 0) return 'unknown';
+  if (vals.every((v) => v === 'network')) return 'network';
+  if (vals.every((v) => v === 'disk-fallback')) return 'disk-fallback';
+  return 'mixed';
 }
 
 /**

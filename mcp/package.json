@@ -1,6 +1,6 @@
 {
   "name": "jd-intel-mcp",
-  "version": "0.6.0",
+  "version": "0.8.0",
   "description": "MCP server for jd-intel. Your AI assistant fetches and reasons over full job descriptions, no copy-paste.",
   "type": "module",
   "main": "server.js",
@@ -16,6 +16,7 @@
     "errors.js",
     "descriptions.js",
     "install.js",
+    "version.js",
     "README.md"
   ],
   "scripts": {
@@ -27,7 +28,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "jd-intel": "^0.6.0",
+    "jd-intel": "^0.8.0",
     "zod": "^3.23.0"
   },
   "keywords": [

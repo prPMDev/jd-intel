@@ -2,6 +2,11 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadRegistry, searchRegistry, findAtsBySlug, findEntryBySlug } from '../src/registry.js';
 
+// Force the on-disk registry: these assertions are against the bundled
+// snapshot, not whatever the hosted copy happens to serve, and must not
+// depend on the network. (Registry is network-first by default.)
+process.env.JD_INTEL_REGISTRY_URL = '';
+
 const ATS_KEYS = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'teamtailor', 'recruitee', 'workday'];
 
 describe('loadRegistry', () => {

@@ -2,6 +2,10 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { fetchJobs } from '../src/index.js';
 
+// Force the on-disk registry so the global fetch mocks below only intercept
+// adapter calls, never the (now network-first) registry load.
+process.env.JD_INTEL_REGISTRY_URL = '';
+
 /**
  * fetchJobs routing: explicit-ATS config passthrough (Workday reachable
  * without a registry entry), registry fallback on the explicit path,

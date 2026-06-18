@@ -1,6 +1,6 @@
 {
   "name": "jd-intel",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Fetch and normalize job descriptions across every major ATS (Greenhouse, Lever, Ashby, Workday, and more) — for your AI assistant, no copy-paste.",
   "type": "module",
   "main": "src/index.js",
@@ -16,7 +16,10 @@
     "test": "node --test test/*.test.js",
     "fetch": "node src/cli.js fetch",
     "search": "node src/cli.js search",
-    "verify:registry": "node scripts/verify-registry.mjs"
+    "verify:registry": "node scripts/verify-registry.mjs",
+    "sync:registry-pages": "node scripts/sync-pages-registry.mjs",
+    "pack:mcpb": "node scripts/build-mcpb.mjs",
+    "smoke:mcpb": "node scripts/smoke-mcpb.mjs"
   },
   "keywords": [
     "jobs",

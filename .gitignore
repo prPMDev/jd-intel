@@ -16,3 +16,11 @@ notes/
 
 # Graphics / image working files
 graphics/
+
+# MCPB build artifacts (generated; the .mcpb ships as a Release asset)
+dist/
+mcpb-build/
+*.mcpb
+
+# Local agent / session config
+.claude/

@@ -7,7 +7,7 @@
  */
 
 import { ADAPTERS, ATS_NAMES } from './adapters/index.js';
-import { loadRegistry, searchRegistry, detectAts, findAtsBySlug, findEntryBySlug } from './registry.js';
+import { loadRegistry, searchRegistry, detectAts, findAtsBySlug, findEntryBySlug, getRegistrySource } from './registry.js';
 import { applyFilters } from './filters.js';
 
 /**
@@ -125,6 +125,7 @@ export const registry = {
   detect: detectAts,
   findAtsBySlug,
   findEntryBySlug,
+  getSource: getRegistrySource,
 };
 
 // Re-export individual adapters for direct use

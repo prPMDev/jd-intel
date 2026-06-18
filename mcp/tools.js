@@ -13,8 +13,12 @@ import { z } from 'zod';
 import { fetchJobs, detectAts as libDetectAts, registry } from 'jd-intel';
 
 const { search: searchRegistry, findAtsBySlug } = registry;
+// Tolerate an older jd-intel that predates getSource. The bundle always
+// vendors a matching version; this only guards a skewed local/global install.
+const getRegistrySource = registry.getSource || (() => 'unknown');
 import { success, partial, error } from './envelope.js';
 import { ERROR_CODES } from './errors.js';
+import { VERSION } from './version.js';
 import {
   FETCH_JOBS,
   SEARCH_REGISTRY,
@@ -85,6 +89,8 @@ export function registerTools(server, deps = {}) {
           registry_hit: registryAts !== null,
           ats: config ? 'workday' : registryAts,
           workday_override: Boolean(config),
+          version: VERSION,
+          registry_source: getRegistrySource(),
         });
       } catch (err) {
         const msg = err.message || 'Unknown error';
@@ -128,6 +134,8 @@ export function registerTools(server, deps = {}) {
         count: filtered.length,
         query: args.query || null,
         sector: args.sector || null,
+        version: VERSION,
+        registry_source: getRegistrySource(),
       });
     }
   );

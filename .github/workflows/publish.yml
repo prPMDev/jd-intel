@@ -76,10 +76,19 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # Tag pushes only: cut (or update) the GitHub Release with
-      # auto-generated notes. workflow_dispatch (no tag) skips this.
+      # Tag pushes only: build the one-click .mcpb bundle and attach it to the
+      # Release. pack:mcpb bundles THIS repo's library via npm pack, so the
+      # bundle always matches the tagged commit (no dependence on npm
+      # propagation). Runs after the publishes so the npm side is already live.
+      - name: Build MCPB bundle
+        if: startsWith(github.ref, 'refs/tags/')
+        run: npm run pack:mcpb
+
+      # Cut (or update) the GitHub Release with auto-generated notes and the
+      # .mcpb attached as a downloadable asset. workflow_dispatch skips this.
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          files: dist/jd-intel.mcpb
