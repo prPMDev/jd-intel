@@ -1,7 +1,7 @@
 {
   "name": "jd-intel",
   "version": "0.8.1",
-  "description": "Fetch and normalize job descriptions across every major ATS (Greenhouse, Lever, Ashby, Workday, and more), for your AI assistant. No copy-paste.",
+  "description": "Fetch and normalize job descriptions across seven major ATS (Greenhouse, Lever, Ashby, Workday, and more), for your AI assistant. No copy-paste.",
   "type": "module",
   "main": "src/index.js",
   "bin": {
