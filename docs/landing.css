@@ -25,7 +25,7 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 64px;
+  scroll-padding-top: 76px;
 }
 
 body {
@@ -77,7 +77,7 @@ main {
 }
 
 .topnav-brand-img {
-  height: 32px;
+  height: 44px;
   width: auto;
   display: block;
   transition: opacity 0.15s ease;
