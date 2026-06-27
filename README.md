@@ -9,7 +9,7 @@
 
 > **Stop pasting job descriptions into AI assistants. Let your AI fetch them directly.**
 
-Full text. Clean structure. Across every major ATS. No copy-paste. No context loss.
+Full text. Clean structure. Across seven major ATS. No copy-paste. No context loss.
 
 ---
 
@@ -40,9 +40,9 @@ Done.
 Because scraping breaks where jd-intel doesn't:
 
 - **Full JDs when browsing fails.** SPA-rendered boards, slow loads, auth walls, and geo-restrictions block a browser. They don't block a public API call.
-- **Structured data, not HTML soup.** Salary, location type, department, and clean markdown, normalized across every ATS.
+- **Structured data, not HTML soup.** Salary, location type, department, and clean markdown, normalized across seven ATS.
 - **No keys, no browser.** Public APIs only. Runs anywhere your AI does.
-- **One schema, every platform.** Greenhouse, Lever, Ashby, SmartRecruiters, TeamTailor, Recruitee, Workday return the same shape.
+- **One schema, every platform.** Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee, Workday return the same shape.
 
 ---
 
@@ -60,34 +60,57 @@ The toolkit fetches. Your AI thinks.
 
 ## Install
 
-Works with MCP-aware AI clients: Claude Desktop, Claude Code, Cursor, Windsurf. ChatGPT, Gemini, and other non-MCP clients don't support this yet. They use different tool-calling systems. (We wish they did. The protocol works the same way regardless of which AI you talk to.)
+Works with MCP-aware AI clients: Claude Desktop, Claude Code, Cursor, Windsurf, VS Code. ChatGPT, Gemini, and other non-MCP clients don't support this yet. They use different tool-calling systems. (We wish they did. The protocol works the same way regardless of which AI you talk to.)
 
-You'll need [Node.js 18 or newer](https://nodejs.org/). To check: open a terminal and run `node --version`. If it's missing or older, install from nodejs.org first.
+### Claude Desktop (one-file install, no terminal)
 
-### For Claude Desktop (one command)
+The simplest path. No Node.js, no terminal: Claude Desktop runs the server on its own bundled runtime.
 
-1. **Open a terminal.** It's just a text window. Nothing destructive happens here.
-   - **macOS:** Spotlight (`⌘ Space`), type "Terminal", hit Enter.
-   - **Windows:** Start menu, type "PowerShell", hit Enter.
+1. **Download** the extension: [jd-intel.mcpb](https://github.com/prPMDev/jd-intel/releases/latest/download/jd-intel.mcpb).
+2. In Claude Desktop, open **Settings**, then **Extensions**, then **Advanced settings**, and click **Install Extension**. Pick the file you downloaded.
+3. Review the access summary, click **Install**, then start a new chat. The tools appear automatically.
 
-2. **Paste this and hit Enter:**
-   ```bash
-   npx jd-intel-mcp install
-   ```
+Shortcuts: drag the `.mcpb` onto the Settings window, or double-click it when your system opens `.mcpb` files with Claude Desktop. The extension is open source and unsigned, so Claude Desktop shows an "unverified" notice. Choose **Install Anyway**.
 
-3. **Quit and reopen Claude Desktop.** The tools appear automatically.
+Prefer the terminal, or on an older Claude Desktop? Install [Node.js 18+](https://nodejs.org/), run `npx jd-intel-mcp install`, then reopen Claude Desktop. Or edit the config file directly, see [Manual install](#manual-install-fallback).
 
-Try: *"Find product roles at devtools companies."*
+### Other clients (Claude Code, Cursor, Windsurf, VS Code)
 
-If something goes wrong or you'd rather edit the config file directly, see [Manual install](#manual-install-fallback) below.
+One-file `.mcpb` install is a Claude Desktop feature; these clients run the same server via `npx` and need [Node.js 18+](https://nodejs.org/).
 
-### For Cursor and Windsurf
+**Claude Code**
+```bash
+claude mcp add jd-intel -- npx -y jd-intel-mcp
+```
 
-These clients have their own MCP setup flows. Follow their docs:
-- Cursor: [docs.cursor.com](https://docs.cursor.com)
-- Windsurf: [docs.windsurf.com](https://docs.windsurf.com)
+**Cursor** (Settings, then Tools & MCP, then New MCP Server, or edit `~/.cursor/mcp.json`):
+```json
+{
+  "mcpServers": {
+    "jd-intel": { "command": "npx", "args": ["-y", "jd-intel-mcp"] }
+  }
+}
+```
 
-Use this server config: `command: "npx"`, `args: ["-y", "jd-intel-mcp"]`.
+**Windsurf** (Settings, then Tools, then Windsurf Settings, then Add Server, or View Raw Config to edit `mcp_config.json`). Use the same `mcpServers` block as Cursor, then press refresh.
+
+**VS Code** (Copilot agent mode): run the **MCP: Add Server** command, or create `.vscode/mcp.json`. The key is `servers` and the type is `stdio`:
+```json
+{
+  "servers": {
+    "jd-intel": { "type": "stdio", "command": "npx", "args": ["-y", "jd-intel-mcp"] }
+  }
+}
+```
+
+### Confirm it's working
+
+Start a new chat and ask: **"What fintech companies are in your jd-intel registry?"** If it lists companies, you're set. Then try the real thing: *"Find senior PM roles open right now that I'd be a fit for."*
+
+**Tools not appearing?**
+- Fully quit and reopen the client (quit, do not just close the window). Claude Desktop: system tray then Quit (Windows), or ⌘Q (macOS).
+- For npx clients (Claude Code, Cursor, Windsurf, VS Code), run `npx clear-npx-cache`, then restart.
+- Confirm `node --version` is 18 or newer for the npx paths. The one-click `.mcpb` does not need Node.
 
 ### For developers
 
@@ -133,21 +156,11 @@ Restart Claude Desktop.
 
 ### Updating
 
-`npx -y jd-intel-mcp` auto-updates within ~24 hours via npm's cache. To force an update immediately:
+- **Claude Desktop extension (`.mcpb`):** install a newer `.mcpb` over the current one, or manage it in Settings, then Extensions. Remove and reinstall to reset.
+- **npx clients (Claude Code, Cursor, Windsurf, VS Code):** `npx -y jd-intel-mcp` picks up new versions from npm's cache (within ~24h). Force it now with `npx clear-npx-cache`, then restart the client.
+- **Library or CLI:** `npm install jd-intel@latest` (force latest) or `npm update jd-intel` (respect semver).
 
-```bash
-npx clear-npx-cache
-```
-
-Then quit and reopen Claude Desktop.
-
-If you installed the library or CLI directly:
-
-```bash
-npm install jd-intel@latest       # force latest
-# or
-npm update jd-intel               # respect semver
-```
+The company registry refreshes on its own: jd-intel fetches the current list at startup and falls back to the bundled copy offline, so new companies show up without reinstalling.
 
 ---
 
@@ -208,7 +221,7 @@ No custom parsing per company.
 | Ashby | Shipped | Growing fast with startups |
 | Lever | Shipped | Common at mid-stage companies |
 | SmartRecruiters | Shipped | Enterprise and mid-market |
-| TeamTailor | Shipped | European startups and scale-ups |
+| Teamtailor | Shipped | European startups and scale-ups |
 | Recruitee | Shipped | Dutch / EU SMBs and scale-ups |
 | Workday | Shipped | Large enterprises (registry-keyed) |
 | Personio | Planned | German / EU mid-market |
@@ -236,17 +249,17 @@ All filters AND together. Deep dive on patterns and gotchas: [docs/filters.md](d
 
 **Shipped**
 - Library, CLI, and MCP server (three surfaces of one toolkit)
-- Greenhouse, Ashby, Lever, SmartRecruiters, TeamTailor, Recruitee, Workday adapters
+- Greenhouse, Ashby, Lever, SmartRecruiters, Teamtailor, Recruitee, Workday adapters
 - Title, topic, location, and date filters
 - Salary extraction from JD text
-- Verified company registry (160+ companies)
+- Verified company registry (300+ companies)
 
 **Next**
 - Personio adapter (German / EU mid-market)
+- Workable adapter (widget API; broad SMB coverage)
 - Anthropic MCP marketplace submission
 
 **Planned**
-- Workable adapter (parked — needs SPA shortcode resolution)
 - Temporal tracking (when roles open, close, reopen)
 - Change detection
 - Resume-aware fit scoring

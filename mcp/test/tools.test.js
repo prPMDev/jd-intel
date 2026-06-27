@@ -99,4 +99,67 @@ describe('mcp fetch_jobs — workday passthrough', () => {
     assert.match(env.metadata.version, /^\d+\.\d+\.\d+/);
     assert.equal(typeof env.metadata.registry_source, 'string');
   });
+
+  test('rate-limited adapter error -> rate_limited', async () => {
+    const handler = getFetchJobsHandler({
+      fetchJobs: async () => { throw new Error('Greenhouse API error for stripe: 429'); },
+      findAtsBySlug: async () => 'greenhouse',
+    });
+    const env = parse(await handler({ company: 'stripe' }));
+    assert.equal(env.status, 'error');
+    assert.equal(env.error.code, 'rate_limited');
+  });
+
+  test('non-429 adapter API error -> ats_unreachable', async () => {
+    const handler = getFetchJobsHandler({
+      fetchJobs: async () => { throw new Error('Lever API error for foo: 500'); },
+      findAtsBySlug: async () => 'lever',
+    });
+    const env = parse(await handler({ company: 'foo' }));
+    assert.equal(env.status, 'error');
+    assert.equal(env.error.code, 'ats_unreachable');
+  });
+
+  test('a "429" inside the slug (not the status) stays ats_unreachable', async () => {
+    const handler = getFetchJobsHandler({
+      fetchJobs: async () => { throw new Error('Greenhouse API error for slug429: 404'); },
+      findAtsBySlug: async () => 'greenhouse',
+    });
+    const env = parse(await handler({ company: 'slug429' }));
+    assert.equal(env.error.code, 'ats_unreachable');
+  });
+
+  test('discovery miss (no registry hit, no jobs) -> company_not_found', async () => {
+    const handler = getFetchJobsHandler({
+      fetchJobs: async () => [],
+      findAtsBySlug: async () => null,
+    });
+    const env = parse(await handler({ company: 'zzzznotacompany' }));
+    assert.equal(env.status, 'error');
+    assert.equal(env.error.code, 'company_not_found');
+  });
+
+  test('registry hit with zero open roles stays success([])', async () => {
+    const handler = getFetchJobsHandler({
+      fetchJobs: async () => [],
+      findAtsBySlug: async () => 'greenhouse',
+    });
+    const env = parse(await handler({ company: 'stripe' }));
+    assert.equal(env.status, 'success');
+    assert.equal(env.data.length, 0);
+    assert.equal(env.metadata.registry_hit, true);
+  });
+
+  test('workday override returning zero jobs stays success (not company_not_found)', async () => {
+    const handler = getFetchJobsHandler({
+      fetchJobs: async () => [],
+      findAtsBySlug: async () => null,
+    });
+    const env = parse(await handler({
+      company: 'x',
+      workday: { tenant: 'a', env: 'b', site: 'c' },
+    }));
+    assert.equal(env.status, 'success');
+    assert.equal(env.metadata.workday_override, true);
+  });
 });

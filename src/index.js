@@ -135,3 +135,7 @@ export { fetchAshby } from './adapters/ashby.js';
 
 // Re-export filter logic for reuse (e.g., by the MCP server)
 export { applyFilters } from './filters.js';
+
+// Re-export the list of supported ATS names (e.g. so the MCP layer can report
+// the full set detectAts probes, instead of hardcoding a stale subset).
+export { ATS_NAMES };

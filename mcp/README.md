@@ -1,6 +1,6 @@
 # jd-intel-mcp
 
-MCP server for [jd-intel](https://github.com/prPMDev/jd-intel). Lets any AI assistant (Claude Desktop, Cursor, Windsurf) search open job listings across Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee, and Workday through natural conversation.
+MCP server for [jd-intel](https://github.com/prPMDev/jd-intel). Lets any AI assistant (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code) search open job listings across Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee, and Workday through natural conversation.
 
 > **Stop pasting job descriptions into AI assistants. Let your AI fetch them directly.**
 
@@ -17,9 +17,31 @@ The AI handles the phrasing. The MCP server handles the calls, filters, and norm
 
 ---
 
-## Install (Claude Desktop)
+## Install
 
-Add this to your Claude Desktop config file:
+### Claude Desktop (one-file install, no terminal)
+
+Download [jd-intel.mcpb](https://github.com/prPMDev/jd-intel/releases/latest/download/jd-intel.mcpb), then in Claude Desktop open **Settings**, then **Extensions**, then **Advanced settings**, and click **Install Extension**. Pick the file, review the access summary, click **Install**, and start a new chat. No Node.js needed (Claude Desktop runs it on its own bundled runtime). It's open source and unsigned, so choose **Install Anyway** if prompted.
+
+Prefer the terminal? Install [Node.js 18+](https://nodejs.org/), then run:
+
+```bash
+npx jd-intel-mcp install
+```
+
+This locates the Claude Desktop config, adds the entry alongside any existing servers, and writes back valid JSON. Quit and reopen Claude Desktop.
+
+### Other clients (Claude Code, Cursor, Windsurf, VS Code)
+
+The same server runs via `npx` (needs Node.js 18+):
+
+- **Claude Code:** `claude mcp add jd-intel -- npx -y jd-intel-mcp`
+- **Cursor / Windsurf:** add under `mcpServers` (`command: "npx"`, `args: ["-y", "jd-intel-mcp"]`) in the client's MCP config.
+- **VS Code (Copilot agent):** add under `servers` with `"type": "stdio"` in `.vscode/mcp.json`.
+
+### Manual config (fallback)
+
+Edit Claude Desktop's config file directly:
 
 **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
@@ -36,13 +58,6 @@ Add this to your Claude Desktop config file:
 ```
 
 Restart Claude Desktop. The tools appear automatically.
-
-**One-command install (avoids hand-editing the config):**
-```bash
-npx jd-intel-mcp install
-```
-
-This detects your OS, locates the Claude Desktop config, adds the entry alongside any existing servers, and writes back valid JSON. Prevents the "paste-a-snippet-into-existing-config" hand-editing error.
 
 ---
 

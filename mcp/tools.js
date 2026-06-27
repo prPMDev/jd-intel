@@ -10,7 +10,7 @@
  */
 
 import { z } from 'zod';
-import { fetchJobs, detectAts as libDetectAts, registry } from 'jd-intel';
+import { fetchJobs, detectAts as libDetectAts, registry, ATS_NAMES } from 'jd-intel';
 
 const { search: searchRegistry, findAtsBySlug } = registry;
 // Tolerate an older jd-intel that predates getSource. The bundle always
@@ -84,6 +84,16 @@ export function registerTools(server, deps = {}) {
         const normalizedSlug = args.company.toLowerCase().replace(/[^a-z0-9]/g, '');
         const registryAts = await _findAtsBySlug(normalizedSlug);
 
+        // Discovery miss: not in the registry and no board returned anything.
+        // Guard on !config so a valid Workday override that returns 0 jobs is not
+        // mislabeled; a registry hit with 0 open roles stays a success([]).
+        if (!config && registryAts === null && jobs.length === 0) {
+          return error(
+            ERROR_CODES.COMPANY_NOT_FOUND,
+            `No board found for "${args.company}" on any supported ATS. Check the slug, or pass an explicit workday {tenant,env,site} for a Workday board.`
+          );
+        }
+
         return success(jobs, {
           count: jobs.length,
           registry_hit: registryAts !== null,
@@ -94,11 +104,22 @@ export function registerTools(server, deps = {}) {
         });
       } catch (err) {
         const msg = err.message || 'Unknown error';
+        // Map the library error to the advertised taxonomy. Order matters: a rate
+        // limit surfaces as "...API error...: 429", so the 429 check must run
+        // before the generic /API error/ check. This string-matches the adapters'
+        // message wording (the contained trade-off vs typed errors in the library).
         if (config && /Workday API error/.test(msg)) {
+          // Keep the Workday triple-repair hint even on a 429.
           return error(
             ERROR_CODES.ATS_UNREACHABLE,
             `Workday rejected ${config.tenant}/${config.env}/${config.site}: ${msg}. Verify the triple against the careers URL https://{tenant}.{env}.myworkdayjobs.com/{site}.`
           );
+        }
+        if (/:\s*429\b/.test(msg)) {
+          return error(ERROR_CODES.RATE_LIMITED, msg);
+        }
+        if (/API error/.test(msg)) {
+          return error(ERROR_CODES.ATS_UNREACHABLE, msg);
         }
         return error(ERROR_CODES.INVALID_ARGS, msg);
       }
@@ -153,12 +174,12 @@ export function registerTools(server, deps = {}) {
       const results = await libDetectAts(args.company);
 
       if (results.length === 0) {
-        return success(null, { attempted: ['greenhouse', 'lever', 'ashby'], succeeded: [] });
+        return success(null, { attempted: ATS_NAMES, succeeded: [] });
       }
 
       if (results.length === 1) {
         return success(results[0].ats, {
-          attempted: ['greenhouse', 'lever', 'ashby'],
+          attempted: ATS_NAMES,
           succeeded: [results[0].ats],
         });
       }
@@ -167,7 +188,7 @@ export function registerTools(server, deps = {}) {
       return partial(
         results[0].ats,
         {
-          attempted: ['greenhouse', 'lever', 'ashby'],
+          attempted: ATS_NAMES,
           succeeded: results.map((r) => r.ats),
           notes: [`Company found on multiple platforms: ${results.map((r) => r.ats).join(', ')}. Returning first match.`],
         }

@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchSmartrecruiters } from '../src/adapters/smartrecruiters.js';
+import { fetchSmartrecruiters, hasSmartrecruiters } from '../src/adapters/smartrecruiters.js';
 
 /**
  * SmartRecruiters is a two-call adapter (list + per-posting detail).
@@ -132,5 +132,22 @@ describe('fetchSmartrecruiters', () => {
     mockFetch(t, { list: { content: [], totalFound: 0 } });
     const jobs = await fetchSmartrecruiters('emptyco');
     assert.deepEqual(jobs, []);
+  });
+});
+
+describe('hasSmartrecruiters', () => {
+  test('false for an unknown company (SmartRecruiters returns 200-empty, not 404)', async (t) => {
+    t.mock.method(global, 'fetch', async () => ({ ok: true, status: 200, json: async () => ({ totalFound: 0, content: [] }) }));
+    assert.equal(await hasSmartrecruiters('zzzznotacompany'), false);
+  });
+
+  test('true for a company with at least one posting', async (t) => {
+    t.mock.method(global, 'fetch', async () => ({ ok: true, status: 200, json: async () => ({ totalFound: 1, content: [{ id: '1' }] }) }));
+    assert.equal(await hasSmartrecruiters('testco'), true);
+  });
+
+  test('false on a 404', async (t) => {
+    t.mock.method(global, 'fetch', async () => ({ ok: false, status: 404, json: async () => ({}) }));
+    assert.equal(await hasSmartrecruiters('nope'), false);
   });
 });

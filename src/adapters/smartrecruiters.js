@@ -101,7 +101,12 @@ export async function fetchSmartrecruiters(slug) {
 export async function hasSmartrecruiters(slug) {
   try {
     const resp = await fetch(`${BASE_URL}/${slug}/postings?limit=1`);
-    return resp.ok;
+    if (!resp.ok) return false;
+    // SmartRecruiters returns 200 with an empty page (not 404) for unknown
+    // companies, so resp.ok alone false-positives on any slug. Confirm at
+    // least one real posting exists before claiming a match.
+    const data = await resp.json();
+    return (data.totalFound || 0) > 0 || (data.content || []).length > 0;
   } catch {
     return false;
   }

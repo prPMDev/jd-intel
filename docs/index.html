@@ -52,8 +52,8 @@
             <h1 class="visually-hidden">jd-intel</h1>
             <div class="masthead-headline">
                 <div class="masthead-intro-text">
-                    <p class="hook">Ever wished you could ask your AI?</p>
-                    <p class="hero-tagline"><strong>jd-intel makes that possible.</strong> Your AI gets live access to real job postings across every major hiring platform. Full text, structured, ready to compare.</p>
+                    <p class="hook">Search job posting data from inside your AI. No more copy pasting of job descriptions.</p>
+                    <p class="hero-tagline"><strong>jd-intel</strong> gives your AI live access to real openings across seven major hiring platforms. Full text, structured, ready to compare.</p>
                 </div>
                 <div class="masthead-right">
                     <p class="badges">
@@ -142,16 +142,16 @@
         <section id="install" class="install" aria-labelledby="install-heading">
             <h2 id="install-heading">Install</h2>
 
-            <p>Works with MCP-aware AI clients: Claude Desktop, Claude Code, Cursor, Windsurf.</p>
+            <p>Works with any MCP-aware AI client. Claude Desktop gets a one-click install. Every other client uses a small config, shown below.</p>
 
-            <h3>Add to Claude Desktop (one click)</h3>
-            <p>No terminal, no Node.js. Claude Desktop runs it for you.</p>
+            <h3>Add to Claude Desktop (no terminal)</h3>
+            <p>No terminal, no Node.js. Claude Desktop runs it for you. One-click install is a Claude Desktop feature; other clients use the config further down.</p>
             <ol class="install-steps">
                 <li><a href="https://github.com/prPMDev/jd-intel/releases/latest/download/jd-intel.mcpb" rel="noopener">Download the jd-intel extension</a> (a <code>.mcpb</code> file).</li>
-                <li>Double-click it, or open Claude Desktop, go to Settings, then Extensions, and choose Install.</li>
-                <li>Start a new chat. The tools appear automatically.</li>
+                <li>In Claude Desktop, open <strong>Settings</strong>, then <strong>Extensions</strong>, then <strong>Advanced settings</strong>, and click <strong>Install Extension</strong>. Pick the file you downloaded.</li>
+                <li>Review the access summary, click <strong>Install</strong>, then start a new chat. The tools appear automatically.</li>
             </ol>
-            <p class="install-note">The extension is open source and unsigned. If your system or Claude Desktop warns about that, choose Install anyway.</p>
+            <p class="install-note">Shortcuts: you can also drag the <code>.mcpb</code> onto the Settings window, or double-click it when your system opens <code>.mcpb</code> files with Claude Desktop. The extension is open source and unsigned, so Claude Desktop shows an "unverified" notice. Choose <strong>Install Anyway</strong>.</p>
 
             <h3>Claude Desktop (command line)</h3>
             <p>Prefer the terminal, or on an older Claude Desktop? You'll need <a href="https://nodejs.org" rel="noopener">Node.js</a> 18 or newer first (check with <code>node --version</code>).</p>
@@ -163,8 +163,18 @@
                 <li>Quit and reopen Claude Desktop. The tools appear automatically.</li>
             </ol>
 
-            <h3>Cursor and Windsurf</h3>
-            <p>These clients have their own MCP setup flow. Add a server with <code>command: "npx"</code> and <code>args: ["-y", "jd-intel-mcp"]</code>. See <a href="https://docs.cursor.com" rel="noopener">docs.cursor.com</a> and <a href="https://docs.windsurf.com" rel="noopener">docs.windsurf.com</a>.</p>
+            <h3>Other clients (Claude Code, Cursor, Windsurf, VS Code)</h3>
+            <p>One-click <code>.mcpb</code> install is a Claude Desktop feature. These clients run the same server, defined as <code>command: "npx"</code>, <code>args: ["-y", "jd-intel-mcp"]</code>, and need Node.js 18+. Only the wrapper differs:</p>
+            <ul class="config-paths">
+                <li><strong>Claude Code:</strong> run <code>claude mcp add jd-intel -- npx -y jd-intel-mcp</code>.</li>
+                <li><strong>Cursor:</strong> add it under <code>mcpServers</code> in <code>~/.cursor/mcp.json</code> (or Settings, Tools &amp; MCP). See <a href="https://docs.cursor.com" rel="noopener">docs.cursor.com</a>.</li>
+                <li><strong>Windsurf:</strong> add it under <code>mcpServers</code> via Settings, Tools, Add Server. See <a href="https://docs.windsurf.com" rel="noopener">docs.windsurf.com</a>.</li>
+                <li><strong>VS Code (Copilot agent):</strong> add it under <code>servers</code> with <code>"type": "stdio"</code> in <code>.vscode/mcp.json</code>.</li>
+            </ul>
+
+            <h3>Confirm it's working</h3>
+            <p>Start a new chat and ask: <em>"What fintech companies are in your jd-intel registry?"</em> If it lists companies, you're set.</p>
+            <p class="install-note"><strong>Tools not appearing?</strong> Fully quit and reopen the client (quit, do not just close the window). For npx clients, run <code>npx clear-npx-cache</code> and restart, and check that <code>node --version</code> is 18 or newer. The one-click <code>.mcpb</code> needs no Node.</p>
 
             <h3>Manual config (fallback)</h3>
             <p>If the one-command install fails, edit Claude Desktop's config file directly:</p>
@@ -182,6 +192,10 @@
 }</code></pre>
             <p>Restart Claude Desktop after editing.</p>
 
+            <h3>Updating</h3>
+            <p>The one-click <code>.mcpb</code> is built for convenience, and the trade-off is updates. A self-installed extension does not auto-update, so to move to a newer version, <a href="https://github.com/prPMDev/jd-intel/releases/latest/download/jd-intel.mcpb" rel="noopener">download the latest <code>.mcpb</code></a> and install it over the current one. If an update misbehaves, remove the old extension under Settings, then Extensions, and reinstall.</p>
+            <p>The <code>npx</code> path updates on its own: each restart runs the published version from npm. To always pull the newest, pin <code>jd-intel-mcp@latest</code> in your config.</p>
+
             <h3>Developer (CLI / library)</h3>
 <pre><code>npm install jd-intel</code></pre>
             <p>Library API and CLI usage in the <a href="https://github.com/prPMDev/jd-intel#for-developers" rel="noopener">README</a>.</p>
@@ -197,11 +211,11 @@
                         <li>Ashby</li>
                         <li>Lever</li>
                         <li>SmartRecruiters</li>
-                        <li>TeamTailor</li>
+                        <li>Teamtailor</li>
                         <li>Recruitee</li>
                         <li>Workday</li>
                     </ul>
-                    <p class="coverage-meta">160+ verified companies in the registry.</p>
+                    <p class="coverage-meta">300+ verified companies in the registry.</p>
                 </div>
                 <div>
                     <h3>Next</h3>
@@ -222,7 +236,7 @@
                 <a href="https://github.com/prPMDev/jd-intel" rel="noopener">GitHub</a> ·
                 <a href="https://www.npmjs.com/package/jd-intel-mcp" rel="noopener">npm</a>
             </p>
-            <p class="copyright">&copy; <span id="year"></span> Prashant Rana. MIT licensed.</p>
+            <p class="copyright">&copy; <span id="year"></span> Prashant R. MIT licensed.</p>
         </footer>
     </main>
 

@@ -39,6 +39,11 @@ async function main() {
     if (existsSync(join(MCP, f))) await copyFile(join(MCP, f), join(BUILD, f));
   }
 
+  // Bundle the project icon if present. It lives at the repo root (docs/),
+  // not in mcp/files, so the loop above does not pick it up.
+  const hasIcon = existsSync(join(ROOT, 'docs', 'icon.png'));
+  if (hasIcon) await copyFile(join(ROOT, 'docs', 'icon.png'), join(BUILD, 'icon.png'));
+
   // 3. Pack the local library so the bundle carries THIS repo's jd-intel
   //    (a real copy via tarball, not a symlink; works pre-publish).
   sh(`npm pack --pack-destination ${q(DIST)}`, ROOT);
@@ -54,11 +59,23 @@ async function main() {
 
   // 5. Generate the manifest (version/desc from the mcp package = single
   //    source of truth, so the bundle version can never drift).
-  const author = typeof mcpPkg.author === 'string' ? { name: mcpPkg.author } : mcpPkg.author;
+  const author = {
+    name: typeof mcpPkg.author === 'string' ? mcpPkg.author : mcpPkg.author.name,
+    url: 'https://prashantrana.xyz',
+  };
+  // Honest, plain-language access disclosure. Verified against the code: the
+  // server reads no user files and runs no commands; it only fetches public
+  // job-board APIs. This cannot remove Claude Desktop's generic warnings, but
+  // it states the truth next to them.
+  const longDescription = [
+    'jd-intel gives your AI assistant direct access to live job postings across seven applicant tracking systems: Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee, and Workday. It reads available job listings to find roles, filter by title and location, and pull full descriptions, no copy-paste.',
+    'What it can access: it makes outbound HTTPS requests to public job-board APIs to read publicly listed postings, plus one request to refresh its own hosted company list. It does not read your personal files, does not run commands on your computer, and writes nothing to your disk. The only file it reads is its own bundled list of companies. It sends only the company names and search terms needed to look up postings, never your resume, identity, or any personal data.',
+    'Open source (MIT). Source and issues: https://github.com/prPMDev/jd-intel',
+  ].join('\n\n');
   const manifest = {
     manifest_version: '0.2',
     name: mcpPkg.name,
-    display_name: 'jd-intel: job descriptions for your AI',
+    display_name: 'JD Intel',
     version: mcpPkg.version,
     description: mcpPkg.description,
     author,
@@ -66,15 +83,18 @@ async function main() {
     documentation: 'https://prpmdev.github.io/jd-intel/',
     repository: { type: 'git', url: mcpPkg.repository?.url },
     license: mcpPkg.license,
+    support: 'https://github.com/prPMDev/jd-intel/issues',
+    long_description: longDescription,
+    ...(hasIcon ? { icon: 'icon.png' } : {}),
     server: {
       type: 'node',
       entry_point: 'server.js',
       mcp_config: { command: 'node', args: ['${__dirname}/server.js'], env: {} },
     },
     tools: [
-      { name: 'fetch_jobs', description: "Fetch open jobs from a company's ATS" },
-      { name: 'search_registry', description: 'Find indexed companies by name or sector' },
-      { name: 'detect_ats', description: 'Detect which ATS a company uses' },
+      { name: 'fetch_jobs', description: "Fetch a company's open roles from its hiring system" },
+      { name: 'search_registry', description: 'Find supported companies by name or sector' },
+      { name: 'detect_ats', description: 'Identify which hiring platform a company uses' },
     ],
     compatibility: {
       runtimes: { node: '>=18.0.0' },
