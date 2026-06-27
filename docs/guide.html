@@ -1,220 +1,254 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script>
-      var allowedHostnames = ['prpmdev.github.io', 'localhost'];
-      if (allowedHostnames.includes(location.hostname)) {
-        var s = document.createElement('script');
-        s.async = true;
-        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-342XCVT9FL';
-        document.head.appendChild(s);
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-342XCVT9FL');
-      }
-    </script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>jd-intel guide: setup, usage, and troubleshooting</title>
-    <meta name="description" content="Set up jd-intel in Claude Desktop, Claude Code, Cursor, Windsurf, or VS Code. Example queries, filters, and fixes for common issues.">
-    <link rel="stylesheet" href="landing.css?v=20260627b">
-    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <script>
+    var allowedHostnames = ['prpmdev.github.io', 'localhost'];
+    if (allowedHostnames.includes(location.hostname)) {
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-342XCVT9FL';
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-342XCVT9FL');
+    }
+  </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>jd-intel guide: setup, usage, and troubleshooting</title>
+  <meta name="description" content="Set up jd-intel in Claude Desktop, Claude Code, Cursor, Windsurf, or VS Code. Usage, filters, and fixes for common issues.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="jd-intel guide">
+  <meta property="og:description" content="Setup, usage, and troubleshooting for jd-intel.">
+  <meta property="og:url" content="https://prpmdev.github.io/jd-intel/guide.html">
+  <meta property="og:image" content="https://prpmdev.github.io/jd-intel/wordmark.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="jd-intel guide">
+  <meta name="twitter:description" content="Setup, usage, and troubleshooting for jd-intel.">
+  <meta name="twitter:image" content="https://prpmdev.github.io/jd-intel/wordmark.png">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('jdintel-theme')||'light';}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="styles.css?v=20260627c">
+  <script defer src="theme.js?v=20260627c"></script>
 </head>
 <body>
-    <a href="#main" class="skip-link">Skip to main content</a>
+<div style="background:var(--bg); color:var(--fg); font-family:'Schibsted Grotesk',sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased;">
 
-    <nav class="topnav" aria-label="Page navigation">
-        <div class="topnav-inner">
-            <a href="index.html" class="topnav-brand" aria-label="jd-intel home">
-                <img src="wordmark.png" alt="" class="topnav-brand-img" aria-hidden="true">
-            </a>
-            <ul class="topnav-links">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="#setup">Setup</a></li>
-                <li><a href="#use">Using it</a></li>
-                <li><a href="#troubleshooting">Troubleshooting</a></li>
-            </ul>
+  <nav style="position:sticky; top:0; z-index:20; border-bottom:1px solid var(--line); background:color-mix(in srgb, var(--bg) 84%, transparent); backdrop-filter:saturate(180%) blur(10px); -webkit-backdrop-filter:saturate(180%) blur(10px);">
+    <div style="max-width:1120px; margin:0 auto; padding:0 40px; height:64px; display:flex; align-items:center; justify-content:space-between;">
+      <a href="index.html" style="font:600 17px/1 'JetBrains Mono',monospace; letter-spacing:-.02em; color:var(--fg); text-decoration:none;">jd-intel</a>
+      <div style="display:flex; align-items:center; gap:30px;">
+        <a href="index.html#why" style="font:500 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Why</a>
+        <a href="index.html#how" style="font:500 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">How it works</a>
+        <a href="index.html#coverage" style="font:500 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Coverage</a>
+        <a href="demo.html" style="font:500 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Demo</a>
+        <a href="guide.html" style="font:600 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg); text-decoration:none;">Guide</a>
+        <button onclick="jdToggleTheme()" data-theme-icon aria-label="Toggle theme" style="width:34px; height:34px; border:1px solid var(--line-2); border-radius:999px; background:transparent; color:var(--fg-2); font-size:14px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;">☾</button>
+        <a href="#setup" style="font:600 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--ink-fg); background:var(--ink); border-radius:9px; padding:10px 16px; text-decoration:none;">Install</a>
+      </div>
+    </div>
+  </nav>
+
+  <header style="max-width:1120px; margin:0 auto; padding:calc(72px * var(--pad-scale)) 40px calc(40px * var(--pad-scale));">
+    <div style="font:500 12.5px/1 'JetBrains Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--fg-3); margin-bottom:24px;">Documentation</div>
+    <h1 style="font-family:var(--display-font); font-weight:500; font-size:clamp(40px,5vw,60px); line-height:1.03; letter-spacing:-.025em; margin:0 0 22px; max-width:16ch;">Setup, usage, and troubleshooting.</h1>
+    <p style="font:400 19px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); max-width:600px; margin:0;">Install jd-intel in your AI client, learn what to ask, and fix the common snags. New here? Start on the <a href="index.html" style="color:var(--fg); text-decoration:none; border-bottom:1px solid var(--line-2);">home page</a>.</p>
+  </header>
+
+  <div style="max-width:1120px; margin:0 auto; padding:0 40px calc(80px * var(--pad-scale)); display:grid; grid-template-columns:200px 1fr; gap:64px; align-items:start;">
+
+    <aside style="position:sticky; top:96px; display:flex; flex-direction:column; gap:7px;">
+      <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin-bottom:8px;">On this page</div>
+      <a href="#setup" style="font:500 14px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none; padding:3px 0;">Setup</a>
+      <a href="#confirm" style="font:400 13.5px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-3); text-decoration:none; padding:2px 0 2px 14px;">Confirm it works</a>
+      <a href="#usage" style="font:500 14px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none; padding:3px 0; margin-top:8px;">Using it</a>
+      <a href="#tools" style="font:400 13.5px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-3); text-decoration:none; padding:2px 0 2px 14px;">The tools</a>
+      <a href="#filters" style="font:400 13.5px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-3); text-decoration:none; padding:2px 0 2px 14px;">Filtering</a>
+      <a href="#schema" style="font:400 13.5px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-3); text-decoration:none; padding:2px 0 2px 14px;">What you get back</a>
+      <a href="#troubleshooting" style="font:500 14px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none; padding:3px 0; margin-top:8px;">Troubleshooting</a>
+    </aside>
+
+    <main style="min-width:0; max-width:var(--measure);">
+
+      <section id="setup" style="scroll-margin-top:90px;">
+        <h2 style="font-family:var(--display-font); font-weight:500; font-size:34px; line-height:1.1; letter-spacing:-.02em; margin:0 0 14px;">Setup</h2>
+        <p style="font:400 16.5px/1.62 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0 0 36px;">Works with any MCP-aware AI client: Claude Desktop, Claude Code, Cursor, Windsurf, VS Code. ChatGPT, Gemini, and other non-MCP clients are not supported yet, since they use different tool-calling systems.</p>
+
+        <div style="border:1px solid var(--line-2); border-radius:15px; padding:30px 32px; background:var(--surface); box-shadow:var(--shadow); margin-bottom:24px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+            <h3 style="font:600 19px/1.3 'Schibsted Grotesk',sans-serif; margin:0; letter-spacing:-.01em;">Claude Desktop</h3>
+            <span style="font:600 11px/1 'JetBrains Mono',monospace; color:var(--ink-fg); background:var(--ink); border-radius:999px; padding:5px 9px;">Recommended</span>
+          </div>
+          <p style="font:400 15.5px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0 0 24px;">The simplest path. No terminal, no Node.js. Claude Desktop runs the server on its own bundled runtime.</p>
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <div style="display:grid; grid-template-columns:28px 1fr; gap:15px; align-items:start;">
+              <span style="font:600 12.5px/1 'JetBrains Mono',monospace; color:var(--fg-3); border:1px solid var(--line-2); border-radius:999px; width:27px; height:27px; display:inline-flex; align-items:center; justify-content:center;">1</span>
+              <p style="font:400 15.5px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg); margin:2px 0 0;">Download the jd-intel extension, a <span style="font-family:'JetBrains Mono',monospace; font-size:.9em;">.mcpb</span> file.</p>
+            </div>
+            <div style="display:grid; grid-template-columns:28px 1fr; gap:15px; align-items:start;">
+              <span style="font:600 12.5px/1 'JetBrains Mono',monospace; color:var(--fg-3); border:1px solid var(--line-2); border-radius:999px; width:27px; height:27px; display:inline-flex; align-items:center; justify-content:center;">2</span>
+              <p style="font:400 15.5px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg); margin:2px 0 0;">In Settings, open Extensions, then Advanced settings, and click Install Extension. Pick the file you downloaded.</p>
+            </div>
+            <div style="display:grid; grid-template-columns:28px 1fr; gap:15px; align-items:start;">
+              <span style="font:600 12.5px/1 'JetBrains Mono',monospace; color:var(--fg-3); border:1px solid var(--line-2); border-radius:999px; width:27px; height:27px; display:inline-flex; align-items:center; justify-content:center;">3</span>
+              <p style="font:400 15.5px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg); margin:2px 0 0;">Review the access summary, click Install, then start a new chat. The tools appear automatically.</p>
+            </div>
+          </div>
+          <a href="https://github.com/prPMDev/jd-intel/releases/latest/download/jd-intel.mcpb" style="display:inline-block; margin-top:26px; font:600 15px/1 'Schibsted Grotesk',sans-serif; color:var(--ink-fg); background:var(--ink); border-radius:10px; padding:13px 20px; text-decoration:none;">Download the extension</a>
+          <p style="font:400 13.5px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-3); margin:18px 0 0;">The extension is open source and unsigned, so Claude Desktop shows an "unverified" notice. Choose Install Anyway.</p>
         </div>
-    </nav>
 
-    <main id="main">
-        <header class="masthead" style="padding-top: 8px;">
-            <h1 class="hook">Setup &amp; usage guide</h1>
-            <p class="hero-tagline">Install jd-intel in your AI client, learn what to ask, and fix the common snags. New here? Start on the <a href="index.html">home page</a>.</p>
-        </header>
+        <div style="border:1px solid var(--line); border-radius:15px; padding:28px 32px; background:var(--surface); margin-bottom:24px;">
+          <h3 style="font:600 17.5px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 10px; letter-spacing:-.01em;">Prefer the command line?</h3>
+          <p style="font:400 15px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0 0 16px;">You will need Node.js 18 or newer first. Then run:</p>
+          <pre style="margin:0; font:500 13.5px/1.5 'JetBrains Mono',monospace; color:var(--fg); background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow-x:auto;">npx jd-intel-mcp install</pre>
+          <p style="font:400 14px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-3); margin:14px 0 0;">Quit and reopen Claude Desktop. The tools appear automatically.</p>
+        </div>
 
-        <section id="setup" aria-labelledby="setup-heading">
-            <h2 id="setup-heading">Setup</h2>
-            <p>Works with any MCP-aware AI client: Claude Desktop, Claude Code, Cursor, Windsurf, VS Code. ChatGPT, Gemini, and other non-MCP clients do not support this yet (they use different tool-calling systems).</p>
-
-            <h3>Claude Desktop (one-file, no terminal)</h3>
-            <p>The simplest path. No terminal, no Node.js: Claude Desktop runs the server on its own bundled runtime.</p>
-            <ol class="install-steps">
-                <li><a href="https://github.com/prPMDev/jd-intel/releases/latest/download/jd-intel.mcpb" rel="noopener">Download the jd-intel extension</a> (a <code>.mcpb</code> file).</li>
-                <li>In Claude Desktop, open <strong>Settings</strong>, then <strong>Extensions</strong>, then <strong>Advanced settings</strong>, and click <strong>Install Extension</strong>. Pick the file you downloaded.</li>
-                <li>Review the access summary, click <strong>Install</strong>, then start a new chat. The tools appear automatically.</li>
-            </ol>
-            <p class="install-note">Shortcuts: you can also drag the <code>.mcpb</code> onto the Settings window, or double-click it when your system opens <code>.mcpb</code> files with Claude Desktop. The extension is open source and unsigned, so Claude Desktop shows an "unverified" notice. Choose <strong>Install Anyway</strong>.</p>
-
-            <h3>Claude Desktop (command line)</h3>
-            <p>Prefer the terminal, or on an older Claude Desktop? You'll need <a href="https://nodejs.org" rel="noopener">Node.js</a> 18 or newer first (check with <code>node --version</code>).</p>
-            <ol class="install-steps">
-                <li>Open Terminal (macOS) or PowerShell (Windows). It's just a text window. Nothing destructive happens.</li>
-                <li>Paste this and hit Enter:
-<pre><code>npx jd-intel-mcp install</code></pre>
-                </li>
-                <li>Quit and reopen Claude Desktop. The tools appear automatically.</li>
-            </ol>
-
-            <h3>Other clients (Claude Code, Cursor, Windsurf, VS Code)</h3>
-            <p>One-click <code>.mcpb</code> install is a Claude Desktop feature. These clients run the same server, defined as <code>command: "npx"</code>, <code>args: ["-y", "jd-intel-mcp"]</code>, and need Node.js 18+. Only the wrapper differs:</p>
-            <ul class="config-paths">
-                <li><strong>Claude Code:</strong> run <code>claude mcp add jd-intel -- npx -y jd-intel-mcp</code>.</li>
-                <li><strong>Cursor:</strong> add it under <code>mcpServers</code> in <code>~/.cursor/mcp.json</code> (or Settings, Tools &amp; MCP). See <a href="https://docs.cursor.com" rel="noopener">docs.cursor.com</a>.</li>
-                <li><strong>Windsurf:</strong> add it under <code>mcpServers</code> via Settings, Tools, Add Server. See <a href="https://docs.windsurf.com" rel="noopener">docs.windsurf.com</a>.</li>
-                <li><strong>VS Code (Copilot agent):</strong> add it under <code>servers</code> with <code>"type": "stdio"</code> in <code>.vscode/mcp.json</code>.</li>
-            </ul>
-<pre><code>{
+        <div style="border:1px solid var(--line); border-radius:15px; padding:28px 32px; background:var(--surface); margin-bottom:36px;">
+          <h3 style="font:600 17.5px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 10px; letter-spacing:-.01em;">Claude Code, Cursor, Windsurf, VS Code</h3>
+          <p style="font:400 15px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0 0 16px;">These run the same server and need Node.js 18+. Only the wrapper differs.</p>
+          <ul style="margin:0 0 18px; padding:0; list-style:none; display:flex; flex-direction:column; gap:11px;">
+            <li style="font:400 15px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg-2);"><span style="color:var(--fg); font-weight:600;">Claude Code:</span> run <span style="font-family:'JetBrains Mono',monospace; font-size:.88em; background:var(--surface-2); border:1px solid var(--line); border-radius:5px; padding:2px 6px;">claude mcp add jd-intel -- npx -y jd-intel-mcp</span></li>
+            <li style="font:400 15px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg-2);"><span style="color:var(--fg); font-weight:600;">Cursor:</span> add it under mcpServers in Settings, Tools and MCP.</li>
+            <li style="font:400 15px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg-2);"><span style="color:var(--fg); font-weight:600;">Windsurf:</span> Settings, Tools, Add Server.</li>
+            <li style="font:400 15px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg-2);"><span style="color:var(--fg); font-weight:600;">VS Code:</span> add it under servers with type stdio in .vscode/mcp.json.</li>
+          </ul>
+          <pre style="margin:0; font:500 13px/1.6 'JetBrains Mono',monospace; color:var(--fg); background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:16px 18px; overflow-x:auto;">{
   "mcpServers": {
     "jd-intel": {
       "command": "npx",
       "args": ["-y", "jd-intel-mcp"]
     }
   }
-}</code></pre>
-            <p class="install-note">VS Code uses a <code>servers</code> key with <code>"type": "stdio"</code> instead of <code>mcpServers</code>.</p>
+}</pre>
+        </div>
 
-            <h3>Manual config for Claude Desktop (fallback)</h3>
-            <p>If the one-command install fails, edit Claude Desktop's config file directly:</p>
-            <ul class="config-paths">
-                <li><strong>macOS:</strong> <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
-                <li><strong>Windows:</strong> <code>%APPDATA%\Claude\claude_desktop_config.json</code></li>
-            </ul>
-<pre><code>{
-  "mcpServers": {
-    "jd-intel": {
-      "command": "npx",
-      "args": ["-y", "jd-intel-mcp"]
-    }
-  }
-}</code></pre>
-            <p>Restart Claude Desktop after editing.</p>
+        <div id="confirm" style="scroll-margin-top:90px; border-left:2px solid var(--line-2); padding:4px 0 4px 24px;">
+          <h3 style="font:600 17.5px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 10px; letter-spacing:-.01em;">Confirm it works</h3>
+          <p style="font:400 15.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0;">Start a new chat and ask: <span style="color:var(--fg);">"What fintech companies are in your jd-intel registry?"</span> If it lists companies, you are set. Then try the real thing: <span style="color:var(--fg);">"Find senior PM roles open right now that I would be a fit for."</span></p>
+        </div>
+      </section>
 
-            <h3>Developer (CLI / library)</h3>
-<pre><code>npm install jd-intel</code></pre>
-            <p>Library API and CLI usage in the <a href="https://github.com/prPMDev/jd-intel#for-developers" rel="noopener">README</a>.</p>
+      <section id="usage" style="scroll-margin-top:90px; padding-top:calc(64px * var(--pad-scale)); margin-top:calc(56px * var(--pad-scale)); border-top:1px solid var(--line);">
+        <h2 style="font-family:var(--display-font); font-weight:500; font-size:34px; line-height:1.1; letter-spacing:-.02em; margin:0 0 14px;">Using it</h2>
+        <p style="font:400 16.5px/1.62 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0 0 32px;">jd-intel fetches. Your AI thinks. Ask in plain language and your assistant calls the tools, then reasons over the results with everything it already knows about you.</p>
 
-            <h3>Confirm it's working</h3>
-            <p>Start a new chat and ask: <em>"What fintech companies are in your jd-intel registry?"</em> If it lists companies, you're set. Then try the real thing: <em>"Find senior PM roles open right now that I'd be a fit for."</em> Not seeing the tools? See <a href="#troubleshooting">Troubleshooting</a>.</p>
-        </section>
+        <h3 style="font:600 17px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 16px; letter-spacing:-.01em;">Things to ask</h3>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:36px;">
+          <div style="font:400 15.5px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg); background:var(--surface-2); border:1px solid var(--line); border-radius:11px; padding:14px 18px;">"What senior PM roles are open right now that I would be a fit for?"</div>
+          <div style="font:400 15.5px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg); background:var(--surface-2); border:1px solid var(--line); border-radius:11px; padding:14px 18px;">"Show me design lead roles open at fintechs."</div>
+          <div style="font:400 15.5px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg); background:var(--surface-2); border:1px solid var(--line); border-radius:11px; padding:14px 18px;">"Compare scope across the four staff PM roles I am looking at."</div>
+        </div>
 
-        <section id="use" aria-labelledby="use-heading">
-            <h2 id="use-heading">Using jd-intel</h2>
-            <p>jd-intel fetches. Your AI thinks. Ask in plain language; your assistant calls the tools and reasons over the results with everything it already knows about you.</p>
+        <h3 id="tools" style="scroll-margin-top:90px; font:600 17px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 16px; letter-spacing:-.01em;">The tools your AI calls</h3>
+        <div style="display:flex; flex-direction:column; gap:0; margin-bottom:36px; border:1px solid var(--line); border-radius:13px; overflow:hidden;">
+          <div style="display:grid; grid-template-columns:160px 1fr; gap:18px; padding:18px 22px; border-bottom:1px solid var(--line);">
+            <span style="font:600 14px/1.4 'JetBrains Mono',monospace; color:var(--fg);">fetch_jobs</span>
+            <span style="font:400 15px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Get a company's open roles, with filters for role type, topic, location, and recency.</span>
+          </div>
+          <div style="display:grid; grid-template-columns:160px 1fr; gap:18px; padding:18px 22px; border-bottom:1px solid var(--line);">
+            <span style="font:600 14px/1.4 'JetBrains Mono',monospace; color:var(--fg);">search_registry</span>
+            <span style="font:400 15px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Find supported companies by name or sector.</span>
+          </div>
+          <div style="display:grid; grid-template-columns:160px 1fr; gap:18px; padding:18px 22px;">
+            <span style="font:600 14px/1.4 'JetBrains Mono',monospace; color:var(--fg);">detect_ats</span>
+            <span style="font:400 15px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Identify which hiring platform a company uses.</span>
+          </div>
+        </div>
 
-            <h3>Things to ask</h3>
-            <ul class="prompt-list hero-prompts">
-                <li class="prompt-pair">
-                    <span class="prompt-q">"What senior PM roles are open right now that I'd be a fit for?"</span>
-                    <span class="prompt-a">&rarr; jd-intel pulls current openings, your AI ranks by your background.</span>
-                </li>
-                <li class="prompt-pair">
-                    <span class="prompt-q">"Show me design lead roles open at fintechs."</span>
-                    <span class="prompt-a">&rarr; jd-intel sweeps the sector, your AI filters by what fits.</span>
-                </li>
-                <li class="prompt-pair">
-                    <span class="prompt-q">"Find engineering roles at series-B startups that match my background."</span>
-                    <span class="prompt-a">&rarr; jd-intel sweeps the registry, your AI ranks by fit.</span>
-                </li>
-                <li class="prompt-pair">
-                    <span class="prompt-q">"Compare scope across the four staff PM roles I'm looking at."</span>
-                    <span class="prompt-a">&rarr; jd-intel pulls each JD, your AI maps the differences.</span>
-                </li>
-            </ul>
+        <h3 id="filters" style="scroll-margin-top:90px; font:600 17px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 12px; letter-spacing:-.01em;">Filtering</h3>
+        <p style="font:400 15.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0 0 18px;">Filters narrow what comes back, and they AND together.</p>
+        <ul style="margin:0 0 36px; padding:0; list-style:none; display:flex; flex-direction:column; gap:9px;">
+          <li style="font:400 15px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg-2);"><span style="font-family:'JetBrains Mono',monospace; font-size:.88em; color:var(--fg);">title</span> &nbsp;matches the job title only.</li>
+          <li style="font:400 15px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg-2);"><span style="font-family:'JetBrains Mono',monospace; font-size:.88em; color:var(--fg);">topic</span> &nbsp;matches title, department, and description.</li>
+          <li style="font:400 15px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg-2);"><span style="font-family:'JetBrains Mono',monospace; font-size:.88em; color:var(--fg);">posted within days</span> &nbsp;recency cuts.</li>
+          <li style="font:400 15px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg-2);"><span style="font-family:'JetBrains Mono',monospace; font-size:.88em; color:var(--fg);">location include / exclude</span> &nbsp;region targeting.</li>
+          <li style="font:400 15px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg-2);"><span style="font-family:'JetBrains Mono',monospace; font-size:.88em; color:var(--fg);">limit</span> &nbsp;cap the number of results.</li>
+        </ul>
 
-            <h3>What you can do</h3>
-            <ul>
-                <li>Look up open roles at any supported company, no copy-paste.</li>
-                <li>Tailor your resume across several roles in one conversation.</li>
-                <li>Rank openings by fit with your background.</li>
-                <li>Scan a whole sector: "Pull open roles at fintech companies posted this week."</li>
-                <li>Research teams by reading their job descriptions in bulk.</li>
-            </ul>
-
-            <h3>The tools your AI calls</h3>
-            <ul class="config-paths">
-                <li><strong>fetch_jobs</strong>:&nbsp;get a company's open roles, with filters for role type, topic, location, and recency.</li>
-                <li><strong>search_registry</strong>:&nbsp;find supported companies by name or sector.</li>
-                <li><strong>detect_ats</strong>:&nbsp;identify which hiring platform a company uses.</li>
-            </ul>
-
-            <h3>Filtering</h3>
-            <p>Filters narrow what comes back. They AND together.</p>
-            <ul class="config-paths">
-                <li><strong>title</strong>:&nbsp;matches the job title only (role identity: PM, engineer, designer).</li>
-                <li><strong>topic</strong>:&nbsp;matches title, department, and description (scope: integrations, growth).</li>
-                <li><strong>posted within days</strong>:&nbsp;recency cuts.</li>
-                <li><strong>location include / exclude</strong>:&nbsp;region targeting.</li>
-                <li><strong>limit</strong>:&nbsp;cap the number of results.</li>
-            </ul>
-            <p>Full design notes and gotchas: <a href="https://github.com/prPMDev/jd-intel/blob/master/docs/filters.md" rel="noopener">filter reference</a>.</p>
-
-            <h3>What you get back</h3>
-            <p>Every job normalizes to one schema across every platform:</p>
-<pre><code>{
+        <h3 id="schema" style="scroll-margin-top:90px; font:600 17px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 12px; letter-spacing:-.01em;">What you get back</h3>
+        <p style="font:400 15.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0 0 10px;">Every job normalizes to one consistent schema across every platform. This part is for your AI to read, not for you.</p>
+        <p style="font:400 15.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0 0 18px;">How those roles come back <span style="color:var(--fg);">to you</span> is a separate thing entirely: a quick list, a side-by-side comparison, a shortlist with fit notes. That is up to the assistant and what you asked for.</p>
+        <pre style="margin:0; font:500 13px/1.65 'JetBrains Mono',monospace; color:var(--fg); background:var(--surface-2); border:1px solid var(--line); border-radius:12px; padding:20px 22px; overflow-x:auto;">{
   "company": "Example Co",
   "title": "Senior Software Engineer, Platform",
   "department": "Engineering",
   "location": "Remote - US",
   "locationType": "remote",
   "salary": { "min": 180000, "max": 240000, "currency": "USD" },
-  "description": "Design and build the API surface...",
   "url": "https://boards.example.com/jobs/12345",
   "postedAt": "2026-04-10T14:30:00Z"
-}</code></pre>
-            <p>Full field reference in the <a href="https://github.com/prPMDev/jd-intel#what-you-get-back" rel="noopener">README</a>.</p>
-        </section>
+}</pre>
+      </section>
 
-        <section id="troubleshooting" aria-labelledby="troubleshooting-heading">
-            <h2 id="troubleshooting-heading">Troubleshooting &amp; maintenance</h2>
+      <section id="troubleshooting" style="scroll-margin-top:90px; padding-top:calc(64px * var(--pad-scale)); margin-top:calc(56px * var(--pad-scale)); border-top:1px solid var(--line);">
+        <h2 style="font-family:var(--display-font); font-weight:500; font-size:34px; line-height:1.1; letter-spacing:-.02em; margin:0 0 32px;">Troubleshooting</h2>
 
-            <h3>Tools not appearing?</h3>
-            <ul class="config-paths">
-                <li>Fully quit and reopen the client (quit, do not just close the window). Claude Desktop: system tray then Quit on Windows, or &#8984;Q on macOS.</li>
-                <li>For npx clients (Claude Code, Cursor, Windsurf, VS Code), run <code>npx clear-npx-cache</code>, then restart.</li>
-                <li>Confirm <code>node --version</code> is 18 or newer for the npx paths. The one-click <code>.mcpb</code> does not need Node.</li>
-                <li>Check the client's MCP or error log for a startup message. jd-intel logs a line like <code>[jd-intel] runtime check: Node v20...</code> when it starts.</li>
-            </ul>
+        <div style="display:flex; flex-direction:column; gap:0; border-top:1px solid var(--line);">
+          <div style="padding:24px 0; border-bottom:1px solid var(--line);">
+            <h3 style="font:600 17px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 10px; letter-spacing:-.01em;">Tools not appearing?</h3>
+            <p style="font:400 15.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0;">Fully quit and reopen the client, do not just close the window. For npx clients, run <span style="font-family:'JetBrains Mono',monospace; font-size:.88em; background:var(--surface-2); border:1px solid var(--line); border-radius:5px; padding:2px 6px;">npx clear-npx-cache</span> then restart. Confirm <span style="font-family:'JetBrains Mono',monospace; font-size:.88em;">node --version</span> is 18 or newer for the npx paths.</p>
+          </div>
+          <div style="padding:24px 0; border-bottom:1px solid var(--line);">
+            <h3 style="font:600 17px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 10px; letter-spacing:-.01em;">"Unverified" warning at install</h3>
+            <p style="font:400 15.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0;">Expected. The extension is open source and unsigned, so Claude Desktop flags it. Choose Install Anyway. The source is on GitHub if you want to read it first.</p>
+          </div>
+          <div style="padding:24px 0; border-bottom:1px solid var(--line);">
+            <h3 style="font:600 17px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 10px; letter-spacing:-.01em;">Am I current?</h3>
+            <p style="font:400 15.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0;">Every result includes the running version in its metadata, so you can ask your AI which version it is on. The registry refreshes on its own at startup, so new companies show up without reinstalling.</p>
+          </div>
+          <div style="padding:24px 0; border-bottom:1px solid var(--line);">
+            <h3 style="font:600 17px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 10px; letter-spacing:-.01em;">Updating</h3>
+            <p style="font:400 15.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0;">The one-click extension does not auto-update: download the latest <span style="font-family:'JetBrains Mono',monospace; font-size:.88em;">.mcpb</span> and install over it. The npx path updates on its own, running the published version each restart.</p>
+          </div>
+          <div style="padding:24px 0;">
+            <h3 style="font:600 17px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 10px; letter-spacing:-.01em;">Uninstalling</h3>
+            <p style="font:400 15.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0;">Extension: remove it under Settings, then Extensions. Command-line install: run <span style="font-family:'JetBrains Mono',monospace; font-size:.88em; background:var(--surface-2); border:1px solid var(--line); border-radius:5px; padding:2px 6px;">npx jd-intel-mcp uninstall</span>, then restart Claude Desktop.</p>
+          </div>
+        </div>
 
-            <h3>"Unverified" warning at install</h3>
-            <p>Expected. The extension is open source and unsigned, so Claude Desktop flags it. Choose <strong>Install Anyway</strong>. The source is on <a href="https://github.com/prPMDev/jd-intel" rel="noopener">GitHub</a> if you want to read it first.</p>
+        <div style="margin-top:40px; border:1px solid var(--line); border-radius:15px; padding:26px 30px; background:var(--surface-2); display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+          <div>
+            <div style="font:600 16px/1.3 'Schibsted Grotesk',sans-serif; color:var(--fg); margin-bottom:5px;">Still stuck?</div>
+            <div style="font:400 14.5px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Open an issue or read the source on GitHub.</div>
+          </div>
+          <a href="https://github.com/prPMDev/jd-intel" style="font:600 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--ink-fg); background:var(--ink); border-radius:10px; padding:12px 18px; text-decoration:none; white-space:nowrap;">Go to GitHub</a>
+        </div>
+      </section>
 
-            <h3>Am I current?</h3>
-            <p>Every result includes the running version in its metadata, so you can ask your AI <em>"what version of jd-intel are you running?"</em> The company registry refreshes on its own: jd-intel fetches the current list at startup and falls back to the bundled copy offline, so new companies show up without reinstalling.</p>
-
-            <h3>Updating</h3>
-            <p>The one-click <code>.mcpb</code> does not auto-update. To move to a newer version, <a href="https://github.com/prPMDev/jd-intel/releases/latest/download/jd-intel.mcpb" rel="noopener">download the latest <code>.mcpb</code></a> and install it over the current one. The <code>npx</code> path updates on its own: each restart runs the published version from npm. Library or CLI: <code>npm install jd-intel@latest</code>.</p>
-
-            <h3>Uninstalling</h3>
-            <p>Claude Desktop extension: remove it under Settings, then Extensions. Command-line install: run <code>npx jd-intel-mcp uninstall</code>, then restart Claude Desktop.</p>
-        </section>
-
-        <footer>
-            <p class="built-by">Built by <a href="https://prashantrana.xyz" rel="noopener">Prashant R</a>. PM who builds. I try out and build what really matters below the AI hype.</p>
-            <p class="footer-links">
-                <a href="index.html">home</a> &middot;
-                <a href="https://prashantrana.xyz" rel="noopener">portfolio</a> &middot;
-                <a href="https://www.linkedin.com/in/prashant-rana/" rel="noopener">LinkedIn</a> &middot;
-                <a href="https://github.com/prPMDev/jd-intel" rel="noopener">GitHub</a> &middot;
-                <a href="https://www.npmjs.com/package/jd-intel-mcp" rel="noopener">npm</a>
-            </p>
-            <p class="copyright">&copy; <span id="year"></span> Prashant R. MIT licensed.</p>
-        </footer>
     </main>
+  </div>
 
-    <script>
-        document.getElementById('year').textContent = new Date().getFullYear();
-    </script>
+  <footer style="border-top:1px solid var(--line); padding:46px 0 56px; background:var(--surface-2);">
+    <div style="max-width:1120px; margin:0 auto; padding:0 40px; display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start; justify-content:space-between;">
+      <div style="max-width:460px;">
+        <div style="font:600 16px/1 'JetBrains Mono',monospace; letter-spacing:-.02em; color:var(--fg); margin-bottom:14px;">jd-intel</div>
+        <p style="font:400 14.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0;">Built by Prashant R, a PM who builds. Trying out and shipping what really matters below the AI hype.</p>
+      </div>
+      <div style="display:flex; gap:40px; flex-wrap:wrap;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <span style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--fg-3); margin-bottom:2px;">Project</span>
+          <a href="index.html" style="font:500 14px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Home</a>
+          <a href="https://github.com/prPMDev/jd-intel" style="font:500 14px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">GitHub</a>
+          <a href="https://www.npmjs.com/package/jd-intel-mcp" style="font:500 14px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">npm</a>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <span style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--fg-3); margin-bottom:2px;">Maker</span>
+          <a href="https://prashantrana.xyz" style="font:500 14px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Portfolio</a>
+          <a href="https://www.linkedin.com/in/prashant-rana/" style="font:500 14px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">LinkedIn</a>
+        </div>
+      </div>
+    </div>
+    <div style="max-width:1120px; margin:34px auto 0; padding:0 40px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+      <span style="font:400 13px/1 'JetBrains Mono',monospace; color:var(--fg-3);">© Prashant R</span>
+      <span style="font:400 13px/1 'JetBrains Mono',monospace; color:var(--fg-3);">MIT licensed</span>
+    </div>
+  </footer>
+
+</div>
 </body>
 </html>
