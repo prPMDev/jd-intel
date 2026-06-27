@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+      var allowedHostnames = ['prpmdev.github.io', 'localhost'];
+      if (allowedHostnames.includes(location.hostname)) {
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-342XCVT9FL';
+        document.head.appendChild(s);
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-342XCVT9FL');
+      }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>jd-intel guide: setup, usage, and troubleshooting</title>
+    <meta name="description" content="Set up jd-intel in Claude Desktop, Claude Code, Cursor, Windsurf, or VS Code. Example queries, filters, and fixes for common issues.">
+    <link rel="stylesheet" href="landing.css?v=20260516">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+</head>
+<body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+
+    <nav class="topnav" aria-label="Page navigation">
+        <div class="topnav-inner">
+            <a href="index.html" class="topnav-brand" aria-label="jd-intel home">
+                <img src="wordmark.png" alt="" class="topnav-brand-img" aria-hidden="true">
+            </a>
+            <ul class="topnav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="#setup">Setup</a></li>
+                <li><a href="#use">Using it</a></li>
+                <li><a href="#troubleshooting">Troubleshooting</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main id="main">
+        <header class="masthead" style="padding-top: 8px;">
+            <h1 class="hook">Setup &amp; usage guide</h1>
+            <p class="hero-tagline">Install jd-intel in your AI client, learn what to ask, and fix the common snags. New here? Start on the <a href="index.html">home page</a>.</p>
+        </header>
+
+        <section id="setup" aria-labelledby="setup-heading">
+            <h2 id="setup-heading">Setup</h2>
+            <p>Works with any MCP-aware AI client: Claude Desktop, Claude Code, Cursor, Windsurf, VS Code. ChatGPT, Gemini, and other non-MCP clients do not support this yet (they use different tool-calling systems).</p>
+
+            <h3>Claude Desktop (one-file, no terminal)</h3>
+            <p>The simplest path. No terminal, no Node.js: Claude Desktop runs the server on its own bundled runtime.</p>
+            <ol class="install-steps">
+                <li><a href="https://github.com/prPMDev/jd-intel/releases/latest/download/jd-intel.mcpb" rel="noopener">Download the jd-intel extension</a> (a <code>.mcpb</code> file).</li>
+                <li>In Claude Desktop, open <strong>Settings</strong>, then <strong>Extensions</strong>, then <strong>Advanced settings</strong>, and click <strong>Install Extension</strong>. Pick the file you downloaded.</li>
+                <li>Review the access summary, click <strong>Install</strong>, then start a new chat. The tools appear automatically.</li>
+            </ol>
+            <p class="install-note">Shortcuts: you can also drag the <code>.mcpb</code> onto the Settings window, or double-click it when your system opens <code>.mcpb</code> files with Claude Desktop. The extension is open source and unsigned, so Claude Desktop shows an "unverified" notice. Choose <strong>Install Anyway</strong>.</p>
+
+            <h3>Claude Desktop (command line)</h3>
+            <p>Prefer the terminal, or on an older Claude Desktop? You'll need <a href="https://nodejs.org" rel="noopener">Node.js</a> 18 or newer first (check with <code>node --version</code>).</p>
+            <ol class="install-steps">
+                <li>Open Terminal (macOS) or PowerShell (Windows). It's just a text window. Nothing destructive happens.</li>
+                <li>Paste this and hit Enter:
+<pre><code>npx jd-intel-mcp install</code></pre>
+                </li>
+                <li>Quit and reopen Claude Desktop. The tools appear automatically.</li>
+            </ol>
+
+            <h3>Other clients (Claude Code, Cursor, Windsurf, VS Code)</h3>
+            <p>One-click <code>.mcpb</code> install is a Claude Desktop feature. These clients run the same server, defined as <code>command: "npx"</code>, <code>args: ["-y", "jd-intel-mcp"]</code>, and need Node.js 18+. Only the wrapper differs:</p>
+            <ul class="config-paths">
+                <li><strong>Claude Code:</strong> run <code>claude mcp add jd-intel -- npx -y jd-intel-mcp</code>.</li>
+                <li><strong>Cursor:</strong> add it under <code>mcpServers</code> in <code>~/.cursor/mcp.json</code> (or Settings, Tools &amp; MCP). See <a href="https://docs.cursor.com" rel="noopener">docs.cursor.com</a>.</li>
+                <li><strong>Windsurf:</strong> add it under <code>mcpServers</code> via Settings, Tools, Add Server. See <a href="https://docs.windsurf.com" rel="noopener">docs.windsurf.com</a>.</li>
+                <li><strong>VS Code (Copilot agent):</strong> add it under <code>servers</code> with <code>"type": "stdio"</code> in <code>.vscode/mcp.json</code>.</li>
+            </ul>
+<pre><code>{
+  "mcpServers": {
+    "jd-intel": {
+      "command": "npx",
+      "args": ["-y", "jd-intel-mcp"]
+    }
+  }
+}</code></pre>
+            <p class="install-note">VS Code uses a <code>servers</code> key with <code>"type": "stdio"</code> instead of <code>mcpServers</code>.</p>
+
+            <h3>Manual config for Claude Desktop (fallback)</h3>
+            <p>If the one-command install fails, edit Claude Desktop's config file directly:</p>
+            <ul class="config-paths">
+                <li><strong>macOS:</strong> <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
+                <li><strong>Windows:</strong> <code>%APPDATA%\Claude\claude_desktop_config.json</code></li>
+            </ul>
+<pre><code>{
+  "mcpServers": {
+    "jd-intel": {
+      "command": "npx",
+      "args": ["-y", "jd-intel-mcp"]
+    }
+  }
+}</code></pre>
+            <p>Restart Claude Desktop after editing.</p>
+
+            <h3>Developer (CLI / library)</h3>
+<pre><code>npm install jd-intel</code></pre>
+            <p>Library API and CLI usage in the <a href="https://github.com/prPMDev/jd-intel#for-developers" rel="noopener">README</a>.</p>
+
+            <h3>Confirm it's working</h3>
+            <p>Start a new chat and ask: <em>"What fintech companies are in your jd-intel registry?"</em> If it lists companies, you're set. Then try the real thing: <em>"Find senior PM roles open right now that I'd be a fit for."</em> Not seeing the tools? See <a href="#troubleshooting">Troubleshooting</a>.</p>
+        </section>
+
+        <section id="use" aria-labelledby="use-heading">
+            <h2 id="use-heading">Using jd-intel</h2>
+            <p>jd-intel fetches. Your AI thinks. Ask in plain language; your assistant calls the tools and reasons over the results with everything it already knows about you.</p>
+
+            <h3>Things to ask</h3>
+            <ul class="prompt-list hero-prompts">
+                <li class="prompt-pair">
+                    <span class="prompt-q">"What senior PM roles are open right now that I'd be a fit for?"</span>
+                    <span class="prompt-a">&rarr; jd-intel pulls current openings, your AI ranks by your background.</span>
+                </li>
+                <li class="prompt-pair">
+                    <span class="prompt-q">"Show me design lead roles open at fintechs."</span>
+                    <span class="prompt-a">&rarr; jd-intel sweeps the sector, your AI filters by what fits.</span>
+                </li>
+                <li class="prompt-pair">
+                    <span class="prompt-q">"Find engineering roles at series-B startups that match my background."</span>
+                    <span class="prompt-a">&rarr; jd-intel sweeps the registry, your AI ranks by fit.</span>
+                </li>
+                <li class="prompt-pair">
+                    <span class="prompt-q">"Compare scope across the four staff PM roles I'm looking at."</span>
+                    <span class="prompt-a">&rarr; jd-intel pulls each JD, your AI maps the differences.</span>
+                </li>
+            </ul>
+
+            <h3>What you can do</h3>
+            <ul>
+                <li>Look up open roles at any supported company, no copy-paste.</li>
+                <li>Tailor your resume across several roles in one conversation.</li>
+                <li>Rank openings by fit with your background.</li>
+                <li>Scan a whole sector: "Pull open roles at fintech companies posted this week."</li>
+                <li>Research teams by reading their job descriptions in bulk.</li>
+            </ul>
+
+            <h3>The tools your AI calls</h3>
+            <ul class="config-paths">
+                <li><strong>fetch_jobs</strong>:&nbsp;get a company's open roles, with filters for role type, topic, location, and recency.</li>
+                <li><strong>search_registry</strong>:&nbsp;find supported companies by name or sector.</li>
+                <li><strong>detect_ats</strong>:&nbsp;identify which hiring platform a company uses.</li>
+            </ul>
+
+            <h3>Filtering</h3>
+            <p>Filters narrow what comes back. They AND together.</p>
+            <ul class="config-paths">
+                <li><strong>title</strong>:&nbsp;matches the job title only (role identity: PM, engineer, designer).</li>
+                <li><strong>topic</strong>:&nbsp;matches title, department, and description (scope: integrations, growth).</li>
+                <li><strong>posted within days</strong>:&nbsp;recency cuts.</li>
+                <li><strong>location include / exclude</strong>:&nbsp;region targeting.</li>
+                <li><strong>limit</strong>:&nbsp;cap the number of results.</li>
+            </ul>
+            <p>Full design notes and gotchas: <a href="https://github.com/prPMDev/jd-intel/blob/master/docs/filters.md" rel="noopener">filter reference</a>.</p>
+
+            <h3>What you get back</h3>
+            <p>Every job normalizes to one schema across every platform:</p>
+<pre><code>{
+  "company": "Example Co",
+  "title": "Senior Software Engineer, Platform",
+  "department": "Engineering",
+  "location": "Remote - US",
+  "locationType": "remote",
+  "salary": { "min": 180000, "max": 240000, "currency": "USD" },
+  "description": "Design and build the API surface...",
+  "url": "https://boards.example.com/jobs/12345",
+  "postedAt": "2026-04-10T14:30:00Z"
+}</code></pre>
+            <p>Full field reference in the <a href="https://github.com/prPMDev/jd-intel#what-you-get-back" rel="noopener">README</a>.</p>
+        </section>
+
+        <section id="troubleshooting" aria-labelledby="troubleshooting-heading">
+            <h2 id="troubleshooting-heading">Troubleshooting &amp; maintenance</h2>
+
+            <h3>Tools not appearing?</h3>
+            <ul class="config-paths">
+                <li>Fully quit and reopen the client (quit, do not just close the window). Claude Desktop: system tray then Quit on Windows, or &#8984;Q on macOS.</li>
+                <li>For npx clients (Claude Code, Cursor, Windsurf, VS Code), run <code>npx clear-npx-cache</code>, then restart.</li>
+                <li>Confirm <code>node --version</code> is 18 or newer for the npx paths. The one-click <code>.mcpb</code> does not need Node.</li>
+                <li>Check the client's MCP or error log for a startup message. jd-intel logs a line like <code>[jd-intel] runtime check: Node v20...</code> when it starts.</li>
+            </ul>
+
+            <h3>"Unverified" warning at install</h3>
+            <p>Expected. The extension is open source and unsigned, so Claude Desktop flags it. Choose <strong>Install Anyway</strong>. The source is on <a href="https://github.com/prPMDev/jd-intel" rel="noopener">GitHub</a> if you want to read it first.</p>
+
+            <h3>Am I current?</h3>
+            <p>Every result includes the running version in its metadata, so you can ask your AI <em>"what version of jd-intel are you running?"</em> The company registry refreshes on its own: jd-intel fetches the current list at startup and falls back to the bundled copy offline, so new companies show up without reinstalling.</p>
+
+            <h3>Updating</h3>
+            <p>The one-click <code>.mcpb</code> does not auto-update. To move to a newer version, <a href="https://github.com/prPMDev/jd-intel/releases/latest/download/jd-intel.mcpb" rel="noopener">download the latest <code>.mcpb</code></a> and install it over the current one. The <code>npx</code> path updates on its own: each restart runs the published version from npm. Library or CLI: <code>npm install jd-intel@latest</code>.</p>
+
+            <h3>Uninstalling</h3>
+            <p>Claude Desktop extension: remove it under Settings, then Extensions. Command-line install: run <code>npx jd-intel-mcp uninstall</code>, then restart Claude Desktop.</p>
+        </section>
+
+        <footer>
+            <p class="built-by">Built by <a href="https://prashantrana.xyz" rel="noopener">Prashant R</a>. PM who builds. I try out and build what really matters below the AI hype.</p>
+            <p class="footer-links">
+                <a href="index.html">home</a> &middot;
+                <a href="https://prashantrana.xyz" rel="noopener">portfolio</a> &middot;
+                <a href="https://www.linkedin.com/in/prashant-rana/" rel="noopener">LinkedIn</a> &middot;
+                <a href="https://github.com/prPMDev/jd-intel" rel="noopener">GitHub</a> &middot;
+                <a href="https://www.npmjs.com/package/jd-intel-mcp" rel="noopener">npm</a>
+            </p>
+            <p class="copyright">&copy; <span id="year"></span> Prashant R. MIT licensed.</p>
+        </footer>
+    </main>
+
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+</body>
+</html>
