@@ -1,4 +1,5 @@
 import { normalize } from '../normalizer.js';
+import { atsErrorFromStatus } from '../errors.js';
 
 const API_URL = 'https://jobs.ashbyhq.com/api/non-user-graphql';
 const BOARD_URL = 'https://api.ashbyhq.com/posting-api/job-board';
@@ -28,7 +29,7 @@ async function fetchAshbyRest(slug) {
 
   if (!resp.ok) {
     if (resp.status === 404) return [];
-    throw new Error(`Ashby REST API error for ${slug}: ${resp.status}`);
+    throw atsErrorFromStatus(resp.status, `Ashby REST API error for ${slug}: ${resp.status}`);
   }
 
   const data = await resp.json();

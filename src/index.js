@@ -139,3 +139,8 @@ export { applyFilters } from './filters.js';
 // Re-export the list of supported ATS names (e.g. so the MCP layer can report
 // the full set detectAts probes, instead of hardcoding a stale subset).
 export { ATS_NAMES };
+
+// Error taxonomy + typed error. Adapters throw AtsError with a stable .code
+// (ats_unreachable / rate_limited) so the MCP layer maps failures without
+// parsing messages. ERROR_CODES is the single source of truth for both.
+export { ERROR_CODES, AtsError } from './errors.js';

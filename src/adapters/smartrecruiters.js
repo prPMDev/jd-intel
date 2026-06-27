@@ -1,4 +1,5 @@
 import { normalize, stripHtml } from '../normalizer.js';
+import { atsErrorFromStatus } from '../errors.js';
 
 const BASE_URL = 'https://api.smartrecruiters.com/v1/companies';
 const PAGE_SIZE = 100;
@@ -30,7 +31,7 @@ export async function fetchSmartrecruiters(slug) {
 
     if (!resp.ok) {
       if (resp.status === 404) return []; // Company not found
-      throw new Error(`SmartRecruiters API error for ${slug}: ${resp.status}`);
+      throw atsErrorFromStatus(resp.status, `SmartRecruiters API error for ${slug}: ${resp.status}`);
     }
 
     const data = await resp.json();

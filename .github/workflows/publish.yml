@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   publish:
@@ -92,3 +93,16 @@ jobs:
         with:
           generate_release_notes: true
           files: dist/jd-intel.mcpb
+
+      # List jd-intel-mcp in the official MCP Registry so it surfaces in client
+      # catalogs. Best-effort: continue-on-error keeps a registry hiccup from
+      # failing the npm release. Auth via GitHub OIDC for the io.github.prPMDev
+      # namespace (uses the id-token permission above; no secret needed).
+      - name: Publish to MCP Registry
+        if: startsWith(github.ref, 'refs/tags/')
+        continue-on-error: true
+        working-directory: mcp
+        run: |
+          curl -sL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish

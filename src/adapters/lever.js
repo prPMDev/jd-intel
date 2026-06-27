@@ -1,4 +1,5 @@
 import { normalize, stripHtml } from '../normalizer.js';
+import { atsErrorFromStatus } from '../errors.js';
 
 const BASE_URL = 'https://api.lever.co/v0/postings';
 
@@ -15,7 +16,7 @@ export async function fetchLever(slug) {
 
   if (!resp.ok) {
     if (resp.status === 404) return [];
-    throw new Error(`Lever API error for ${slug}: ${resp.status}`);
+    throw atsErrorFromStatus(resp.status, `Lever API error for ${slug}: ${resp.status}`);
   }
 
   const jobs = await resp.json();

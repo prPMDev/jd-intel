@@ -1,4 +1,5 @@
 import { normalize, stripHtml } from '../normalizer.js';
+import { atsErrorFromStatus } from '../errors.js';
 
 const BASE_URL = 'https://boards-api.greenhouse.io/v1/boards';
 
@@ -16,7 +17,7 @@ export async function fetchGreenhouse(slug) {
 
   if (!resp.ok) {
     if (resp.status === 404) return []; // Company not found or no jobs
-    throw new Error(`Greenhouse API error for ${slug}: ${resp.status}`);
+    throw atsErrorFromStatus(resp.status, `Greenhouse API error for ${slug}: ${resp.status}`);
   }
 
   const data = await resp.json();

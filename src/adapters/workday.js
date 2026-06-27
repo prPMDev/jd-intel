@@ -1,4 +1,5 @@
 import { normalize, stripHtml } from '../normalizer.js';
+import { atsErrorFromStatus } from '../errors.js';
 
 const MAX_DETAIL_FETCHES = 100;
 const LIST_PAGE_SIZE = 20;
@@ -49,7 +50,7 @@ export async function fetchWorkday(slug, ctx = {}) {
     if (!resp.ok) {
       if (resp.status === 404) return []; // wrong site / no such board
       if (offset === 0) {
-        throw new Error(`Workday API error for ${slug} (${tenant}/${env}/${site}): ${resp.status}`);
+        throw atsErrorFromStatus(resp.status, `Workday API error for ${slug} (${tenant}/${env}/${site}): ${resp.status}`);
       }
       break; // mid-paging failure: keep what we have
     }

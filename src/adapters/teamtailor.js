@@ -1,4 +1,5 @@
 import { normalize, stripHtml } from '../normalizer.js';
+import { atsErrorFromStatus } from '../errors.js';
 
 /**
  * Fetch jobs from a TeamTailor career site via its public RSS feed.
@@ -43,7 +44,7 @@ async function resolveFeed(slug, method = 'GET') {
     });
     if (resp.ok) return resp;
     if (resp.status !== 404) {
-      throw new Error(`TeamTailor RSS error for ${slug}: ${resp.status}`);
+      throw atsErrorFromStatus(resp.status, `TeamTailor RSS error for ${slug}: ${resp.status}`);
     }
     // 404 on this host — try the next region.
   }

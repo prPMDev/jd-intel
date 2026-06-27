@@ -1,4 +1,5 @@
 import { normalize, stripHtml } from '../normalizer.js';
+import { atsErrorFromStatus } from '../errors.js';
 
 /**
  * Fetch jobs from a Recruitee career site.
@@ -18,7 +19,7 @@ export async function fetchRecruitee(slug) {
 
   if (!resp.ok) {
     if (resp.status === 404) return []; // No Recruitee site for this slug
-    throw new Error(`Recruitee API error for ${slug}: ${resp.status}`);
+    throw atsErrorFromStatus(resp.status, `Recruitee API error for ${slug}: ${resp.status}`);
   }
 
   const data = await resp.json();

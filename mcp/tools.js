@@ -10,7 +10,7 @@
  */
 
 import { z } from 'zod';
-import { fetchJobs, detectAts as libDetectAts, registry, ATS_NAMES } from 'jd-intel';
+import { fetchJobs, detectAts as libDetectAts, registry, ATS_NAMES, AtsError } from 'jd-intel';
 
 const { search: searchRegistry, findAtsBySlug } = registry;
 // Tolerate an older jd-intel that predates getSource. The bundle always
@@ -104,23 +104,19 @@ export function registerTools(server, deps = {}) {
         });
       } catch (err) {
         const msg = err.message || 'Unknown error';
-        // Map the library error to the advertised taxonomy. Order matters: a rate
-        // limit surfaces as "...API error...: 429", so the 429 check must run
-        // before the generic /API error/ check. This string-matches the adapters'
-        // message wording (the contained trade-off vs typed errors in the library).
-        if (config && /Workday API error/.test(msg)) {
-          // Keep the Workday triple-repair hint even on a 429.
-          return error(
-            ERROR_CODES.ATS_UNREACHABLE,
-            `Workday rejected ${config.tenant}/${config.env}/${config.site}: ${msg}. Verify the triple against the careers URL https://{tenant}.{env}.myworkdayjobs.com/{site}.`
-          );
+        // AtsError carries a stable .code from the adapter (ats_unreachable /
+        // rate_limited), so we map by code, not by parsing the message.
+        if (err instanceof AtsError) {
+          if (config && err.code === ERROR_CODES.ATS_UNREACHABLE) {
+            // Keep the Workday triple-repair hint.
+            return error(
+              ERROR_CODES.ATS_UNREACHABLE,
+              `Workday rejected ${config.tenant}/${config.env}/${config.site}: ${msg}. Verify the triple against the careers URL https://{tenant}.{env}.myworkdayjobs.com/{site}.`
+            );
+          }
+          return error(err.code, msg);
         }
-        if (/:\s*429\b/.test(msg)) {
-          return error(ERROR_CODES.RATE_LIMITED, msg);
-        }
-        if (/API error/.test(msg)) {
-          return error(ERROR_CODES.ATS_UNREACHABLE, msg);
-        }
+        // Anything else is an arg-validation error from the library.
         return error(ERROR_CODES.INVALID_ARGS, msg);
       }
     }

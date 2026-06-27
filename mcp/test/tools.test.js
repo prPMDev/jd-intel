@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { registerTools } from '../tools.js';
+import { AtsError } from 'jd-intel';
 
 /**
  * First automated MCP test. Uses the registerTools(server, deps) seam to
@@ -69,7 +70,7 @@ describe('mcp fetch_jobs — workday passthrough', () => {
 
   test('library Workday API error with a triple -> ats_unreachable', async () => {
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => { throw new Error('Workday API error for x (a/b/c): 422'); },
+      fetchJobs: async () => { throw new AtsError('ats_unreachable', 'Workday API error for x (a/b/c): 422'); },
       findAtsBySlug: async () => null,
     });
     const result = await handler({ company: 'x', workday: { tenant: 'a', env: 'b', site: 'c' } });
@@ -102,7 +103,7 @@ describe('mcp fetch_jobs — workday passthrough', () => {
 
   test('rate-limited adapter error -> rate_limited', async () => {
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => { throw new Error('Greenhouse API error for stripe: 429'); },
+      fetchJobs: async () => { throw new AtsError('rate_limited', 'Greenhouse API error for stripe: 429'); },
       findAtsBySlug: async () => 'greenhouse',
     });
     const env = parse(await handler({ company: 'stripe' }));
@@ -112,7 +113,7 @@ describe('mcp fetch_jobs — workday passthrough', () => {
 
   test('non-429 adapter API error -> ats_unreachable', async () => {
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => { throw new Error('Lever API error for foo: 500'); },
+      fetchJobs: async () => { throw new AtsError('ats_unreachable', 'Lever API error for foo: 500'); },
       findAtsBySlug: async () => 'lever',
     });
     const env = parse(await handler({ company: 'foo' }));
@@ -120,13 +121,13 @@ describe('mcp fetch_jobs — workday passthrough', () => {
     assert.equal(env.error.code, 'ats_unreachable');
   });
 
-  test('a "429" inside the slug (not the status) stays ats_unreachable', async () => {
+  test('a non-AtsError (plain Error) maps to invalid_args', async () => {
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => { throw new Error('Greenhouse API error for slug429: 404'); },
+      fetchJobs: async () => { throw new Error('some unexpected failure'); },
       findAtsBySlug: async () => 'greenhouse',
     });
-    const env = parse(await handler({ company: 'slug429' }));
-    assert.equal(env.error.code, 'ats_unreachable');
+    const env = parse(await handler({ company: 'stripe' }));
+    assert.equal(env.error.code, 'invalid_args');
   });
 
   test('discovery miss (no registry hit, no jobs) -> company_not_found', async () => {
