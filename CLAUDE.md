@@ -219,6 +219,15 @@ For npm publish flow: token in `.npmrc`, `npm publish` from root for jd-intel, f
 
 ---
 
+## Site deploy (GitHub Pages)
+
+- The site is `docs/` served by GitHub Pages: push to `master` and Pages redeploys. `publish.yml` fires only on `v*` tags (npm/MCPB releases, not the site).
+- Cache-busting: pages load `styles.css` / `theme.js` / the demo-loop iframe with a `?v=YYYYMMDD` suffix. Bump the suffix whenever the underlying file changes, or browsers serve stale.
+- **Demo loop update flow:** source of truth is `graphics/jd-intel-loop.html` (`graphics/` is gitignored, stays private). On any update: copy it to `docs/jd-intel-loop.html`, then bump the `?v=` on the iframe src in `docs/index.html`.
+- Every `docs/` page carries the GA gtag snippet and the inline no-flash theme snippet BEFORE the stylesheet link. Keep both when adding a page.
+
+---
+
 ## Versioning policy (SemVer)
 
 | Change type | Bump | Examples |
