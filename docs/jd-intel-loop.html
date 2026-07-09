@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jd-intel — live demo loop</title>
+<!--
+  jd-intel demo loop — self-contained, no dependencies, no build step.
+
+  FOR THE WEB DESIGNER — two ways to use it:
+
+  1) IFRAME (recommended, zero risk to the page):
+       Copy this file into docs/ next to index.html, then where the current
+       static demo card sits, place:
+
+       <iframe src="jd-intel-loop.html" title="jd-intel live demo"
+               loading="lazy"
+               style="width:100%; aspect-ratio:1060/700; border:0; display:block;"></iframe>
+
+  2) INLINE (if you want it in the page DOM):
+       Copy the <style> block, the <div id="jdFit">…</div>, and the <script>
+       into the page. Everything is scoped (ids prefixed jd/one IIFE, no globals).
+
+  Notes:
+  - Scales fluidly to any container width (design size 1060×700).
+  - No webfonts loaded — system stacks only.
+  - Respects prefers-reduced-motion (shows a single finished answer, no loop).
+  - Pacing: change SPEED in the script (1 = normal, 1.5 = faster).
+  - The window intentionally has no drop shadow; add elevation on the
+    embedding element if the page calls for it.
+-->
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; }
+  #jdFit { position: relative; width: 100%; aspect-ratio: 1060 / 700; overflow: hidden; }
+  #jdWin {
+    position: absolute; top: 0; left: 0; width: 1060px; height: 700px;
+    transform-origin: 0 0;
+    display: flex; flex-direction: column;
+    background: #1e1c18; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  }
+  .jd-mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+  .jd-serif { font-family: Georgia, 'Times New Roman', serif; }
+
+  /* titlebar */
+  .jd-titlebar { display: flex; align-items: center; height: 40px; flex: none; padding: 0 16px; gap: 18px; color: #8a857a; }
+  .jd-burger { display: flex; flex-direction: column; gap: 3.5px; width: 15px; }
+  .jd-burger div { height: 1.5px; background: #8a857a; }
+
+  /* sidebar */
+  .jd-body { display: flex; flex: 1; min-height: 0; }
+  .jd-side { width: 236px; flex: none; background: #26231e; border-right: 1px solid #32302a; display: flex; flex-direction: column; padding: 10px 12px 14px; box-sizing: border-box; overflow: hidden; }
+  .jd-tabs { display: flex; background: #1e1c18; border-radius: 10px; padding: 3px; gap: 3px; }
+  .jd-tab { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; padding: 7px 0; font-size: 13px; color: #8a857a; }
+  .jd-tab.on { background: #32302a; font-weight: 600; color: #e6dfd0; }
+  .jd-newtask { display: flex; align-items: center; gap: 10px; padding: 10px; margin-top: 8px; font-size: 13.5px; font-weight: 600; color: #e6dfd0; }
+  .jd-navitem { padding: 7px 10px; font-size: 13.5px; color: #b5af9f; }
+  .jd-beta { font-size: 10px; font-weight: 700; background: #3a362f; border-radius: 4px; padding: 2px 6px; margin-left: 4px; }
+  .jd-recents-label { font-size: 11.5px; font-weight: 600; color: #6b6558; padding: 14px 10px 6px; }
+  .jd-recent { border-radius: 8px; padding: 8px 10px; font-size: 13px; color: #8a857a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .jd-recent.on { background: #32302a; color: #e6dfd0; }
+  .jd-account { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 8px 0; border-top: 1px solid #32302a; }
+  .jd-avatar { width: 26px; height: 26px; border-radius: 50%; background: #5b1a1a; color: #e6dfd0; display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700; flex: none; }
+
+  /* main */
+  .jd-main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
+  .jd-chathead { flex: none; padding: 14px 40px 6px; display: flex; align-items: center; gap: 8px; }
+  .jd-thread { flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 16px; padding: 16px 40px 12px; }
+
+  .jd-bubble { align-self: flex-end; max-width: 480px; background: #2b2822; border-radius: 14px; padding: 13px 18px; font-size: 14.5px; line-height: 1.55; color: #e6dfd0; }
+  .jd-runline { display: flex; align-items: center; gap: 10px; font-size: 15.5px; color: #8a857a; }
+  .jd-chip { display: inline-flex; align-self: flex-start; align-items: center; gap: 10px; border: 1px solid #3a362f; border-radius: 999px; padding: 8px 15px; font-size: 12px; color: #b5af9f; }
+  .jd-dot { width: 7px; height: 7px; border-radius: 50%; background: #d97a7a; flex: none; }
+  .jd-done { font-size: 14px; color: #8a857a; }
+  .jd-intro { font-size: 16px; color: #e6dfd0; line-height: 1.6; }
+  .jd-row { display: flex; gap: 14px; padding: 5px 0; border-bottom: 1px solid #2b2822; }
+  .jd-rank { font-size: 16.5px; font-weight: 700; color: #d97a7a; }
+  .jd-rtitle { font-size: 16px; font-weight: 700; color: #e6dfd0; }
+  .jd-rmeta { font-size: 11.5px; color: #6b6558; margin-top: 2px; }
+  .jd-rwhy { font-size: 14.5px; color: #b5af9f; line-height: 1.45; margin-top: 2px; }
+  .jd-next { font-size: 13.5px; color: #6b6558; line-height: 1.5; }
+
+  /* menus */
+  .jd-menu { position: absolute; bottom: 112px; left: 40px; width: 240px; background: #26231e; border: 1px solid #3a362f; border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.5); padding: 8px; z-index: 10; }
+  .jd-submenu { position: absolute; bottom: 200px; left: 296px; width: 292px; background: #26231e; border: 1px solid #3a362f; border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.5); padding: 8px; z-index: 11; }
+  .jd-mrow { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; font-size: 13.5px; color: #e6dfd0; border-radius: 8px; }
+  .jd-mrow .jd-dim { color: #6b6558; }
+  .jd-mdiv { height: 1px; background: #32302a; margin: 5px 4px; }
+  .jd-jdrow { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 10px; border: 1px solid transparent; }
+  .jd-jdrow.on { border-color: #d97a7a; background: #2b2520; }
+  .jd-jdicon { width: 20px; height: 20px; border-radius: 6px; background: #1a1a1a; color: #e6dfd0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; flex: none; }
+  .jd-track { margin-left: auto; width: 34px; height: 20px; border-radius: 999px; padding: 2px; box-sizing: border-box; display: flex; background: #4a463e; }
+  .jd-track.on { background: #d97a7a; }
+  .jd-knob { width: 16px; height: 16px; border-radius: 50%; background: #8a857a; }
+  .jd-track.on .jd-knob { background: #1e1c18; }
+
+  /* composer */
+  .jd-composerwrap { flex: none; padding: 0 40px 10px; }
+  .jd-composer { background: #26231e; border: 1px solid #3a362f; border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; }
+  .jd-input { font-size: 14.5px; min-height: 22px; line-height: 1.5; overflow-wrap: break-word; }
+  .jd-caret { display: inline-block; width: 2px; height: 15px; background: #d97a7a; vertical-align: -2px; margin-left: 1px; }
+  .jd-crow { display: flex; align-items: center; gap: 16px; }
+  .jd-plus { font-size: 20px; line-height: 1; color: #b5af9f; }
+  .jd-drawerbtn { width: 32px; height: 32px; border-radius: 10px; background: #32302a; display: flex; align-items: center; justify-content: center; }
+  .jd-drawer { width: 16px; height: 13px; border: 1.5px solid #9db7e8; border-radius: 3.5px; position: relative; box-sizing: border-box; }
+  .jd-drawer div { position: absolute; left: 2.5px; right: 2.5px; top: -1.5px; height: 4px; border: 1.5px solid #9db7e8; border-top: none; border-radius: 0 0 3px 3px; box-sizing: border-box; background: #32302a; }
+  .jd-cright { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+  .jd-model { font-size: 13.5px; color: #b5af9f; }
+  .jd-mic { position: relative; width: 14px; height: 18px; }
+  .jd-mic div:nth-child(1) { position: absolute; top: 0; left: 3.5px; width: 7px; height: 11px; border: 1.5px solid #8a857a; border-radius: 4px; box-sizing: border-box; }
+  .jd-mic div:nth-child(2) { position: absolute; top: 5px; left: 0; width: 14px; height: 9px; border: 1.5px solid #8a857a; border-top: none; border-radius: 0 0 7px 7px; box-sizing: border-box; }
+  .jd-mic div:nth-child(3) { position: absolute; bottom: 0; left: 6.25px; width: 1.5px; height: 3px; background: #8a857a; }
+  .jd-wave { display: flex; align-items: flex-end; gap: 2.5px; height: 16px; }
+  .jd-wave div { width: 2.5px; background: #8a857a; border-radius: 2px; }
+  .jd-send { width: 28px; height: 28px; border-radius: 50%; background: #d97a7a; color: #1e1c18; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .jd-disclaim { text-align: center; font-size: 11px; color: #6b6558; padding: 8px 0 2px; }
+</style>
+</head>
+<body>
+
+<div id="jdFit">
+  <div id="jdWin" data-om-exportable-video-with-duration-secs="70" data-screen-label="jd-intel loop">
+
+    <div class="jd-titlebar">
+      <div class="jd-burger"><div></div><div></div><div></div></div>
+      <div style="width: 13px; height: 11px; border: 1.5px solid #8a857a; border-radius: 2px;"></div>
+      <div style="font-size: 15px;">‹</div>
+      <div style="font-size: 15px; color: #4a463e;">›</div>
+      <div style="margin-left: auto; display: flex; gap: 22px; font-size: 12px; align-items: center;"><span>─</span><span style="font-size: 10px;">▢</span><span>✕</span></div>
+    </div>
+
+    <div class="jd-body">
+      <div class="jd-side">
+        <div class="jd-tabs">
+          <div class="jd-tab on">⌂ Home</div>
+          <div class="jd-tab">‹/› Code</div>
+        </div>
+        <div class="jd-newtask"><span style="color: #b5af9f;">＋</span> New task</div>
+        <div class="jd-navitem">Projects</div>
+        <div class="jd-navitem">Artifacts</div>
+        <div class="jd-navitem">Scheduled</div>
+        <div class="jd-navitem">Dispatch <span class="jd-beta">Beta</span></div>
+        <div class="jd-navitem">Customize</div>
+        <div class="jd-recents-label">Recents</div>
+        <div class="jd-recent on" id="jdRecent">Fintech senior PM search</div>
+        <div class="jd-recent">Tools for validating MCP servers</div>
+        <div class="jd-recent">Intro note drafts</div>
+        <div class="jd-recent">Resume tightening pass</div>
+        <div class="jd-recent">Comp research — staff PM</div>
+        <div class="jd-account">
+          <div class="jd-avatar">PR</div>
+          <div style="font-size: 13px; color: #e6dfd0;">Prashant</div>
+          <div style="margin-left: auto; color: #8a857a; font-size: 11px;">⌄</div>
+        </div>
+      </div>
+
+      <div class="jd-main">
+        <div class="jd-chathead">
+          <div style="font-size: 15px; font-weight: 600; color: #e6dfd0;" id="jdTitle">Fintech senior PM search</div>
+          <div style="color: #8a857a; font-size: 11px;">⌄</div>
+        </div>
+
+        <div class="jd-thread" id="jdThread"></div>
+
+        <div class="jd-menu" id="jdMenu" style="display: none;">
+          <div class="jd-mrow"><span>Add files or photos</span><span class="jd-dim" style="font-size: 11px;">Ctrl+U</span></div>
+          <div class="jd-mrow"><span>Add from GitHub</span></div>
+          <div class="jd-mdiv"></div>
+          <div class="jd-mrow" id="jdConnRow"><span>Connectors</span><span class="jd-dim">›</span></div>
+          <div class="jd-mrow"><span>Plugins</span><span class="jd-dim">›</span></div>
+          <div class="jd-mdiv"></div>
+          <div class="jd-mrow"><span>Research</span></div>
+          <div class="jd-mrow"><span>Web search</span><span style="color: #7da87d;">✓</span></div>
+        </div>
+
+        <div class="jd-submenu" id="jdSubmenu" style="display: none;">
+          <div class="jd-mrow"><span><span style="color: #b5af9f; font-weight: 700;">＋</span> Add connector</span><span class="jd-dim">›</span></div>
+          <div class="jd-mrow"><span>Manage connectors</span></div>
+          <div class="jd-mdiv"></div>
+          <div class="jd-jdrow" id="jdRow">
+            <div class="jd-jdicon jd-mono">jd</div>
+            <span style="font-size: 13.5px; font-weight: 700; color: #e6dfd0;">JD Intel</span>
+            <div class="jd-track" id="jdTrack"><div class="jd-knob" id="jdKnob"></div></div>
+          </div>
+          <div class="jd-mdiv"></div>
+          <div class="jd-mrow"><span>Tool access</span><span class="jd-dim">›</span></div>
+        </div>
+
+        <div class="jd-composerwrap">
+          <div class="jd-composer">
+            <div class="jd-input">
+              <span style="color: #e6dfd0;" id="jdTyped"></span><span class="jd-caret" id="jdCaret" style="display: none;"></span>
+              <span style="color: #6b6558;" id="jdPh">Write a message…</span>
+            </div>
+            <div class="jd-crow">
+              <div class="jd-plus" id="jdPlus">＋</div>
+              <div class="jd-drawerbtn"><div class="jd-drawer"><div></div></div></div>
+              <div class="jd-cright">
+                <div class="jd-model">Sonnet 5 <span style="color: #6b6558;">⌄</span></div>
+                <div class="jd-mic"><div></div><div></div><div></div></div>
+                <div class="jd-wave" id="jdWave"><div style="height: 8px;"></div><div style="height: 15px;"></div><div style="height: 10px;"></div><div style="height: 13px;"></div></div>
+                <div class="jd-send" id="jdSend" style="display: none;">↑</div>
+              </div>
+            </div>
+          </div>
+          <div class="jd-disclaim">Claude is AI and can make mistakes. Please double-check responses.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var SPEED = 1; // 1 = normal pacing; raise to speed the whole loop up
+
+  var PERSONAS = [
+    {
+      title: 'Fintech senior PM search',
+      q: 'Find senior PM roles at fintechs posted this month, US only. Rank them for my background.',
+      scope: 'fintech · us',
+      running: 'Scanning fintech ATS boards for senior product roles',
+      done: 'Retrieved 18 live roles and ranked them against your profile',
+      intro: 'Top three senior PM roles for your background:',
+      results: [
+        ['Senior PM, Payments — Series C fintech', 'remote, us · posted 5d ago · greenhouse', 'Closest match on the list: same payments domain, one level up. Nothing in the posting you have not already done.'],
+        ['Staff PM, Money Movement — Series D neobank', 'remote, us · posted 3d ago · ashby', 'A title stretch, but the domain is yours. Worth applying — staff postings in this space stay open for weeks.'],
+        ['Senior PM, Platform APIs — payments network', 'chicago hybrid · posted 6d ago · workday', 'Your platform and API work covers most requirements. The hybrid Chicago setup is the real trade-off to weigh.']
+      ]
+    },
+    {
+      title: 'PMM roles — B2B SaaS',
+      q: 'Any product marketing roles at B2B SaaS companies, remote? I have eight years of experience, mostly running launches.',
+      scope: 'b2b saas · remote',
+      running: 'Querying B2B SaaS boards for product marketing openings',
+      done: 'Retrieved 14 live roles and ranked them against your profile',
+      intro: 'Three product marketing roles that fit your launch experience:',
+      results: [
+        ['PMM Lead, Platform — API-first startup', 'remote · posted 2d ago · lever', 'You would own launches end to end, like your last two roles. The product is more technical than what you have sold.'],
+        ['Senior PMM — infra scaleup', 'remote, us · posted 4d ago · ashby', 'The audience is engineers, which matches how you position developer tools. Lateral title, noticeably bigger scope.'],
+        ['Director, Product Marketing — public workflow company', 'ny hybrid · posted 9d ago · greenhouse', 'The step up to managing a team. Your launch record supports it; expect questions on category strategy.']
+      ]
+    },
+    {
+      title: 'Enterprise AE openings',
+      q: 'Show me enterprise AE openings posted this week — fintech or dev tools preferred.',
+      scope: 'fintech + dev tools',
+      running: 'Pulling enterprise sales roles posted in the last 7 days',
+      done: 'Retrieved 11 live roles and ranked them against your profile',
+      intro: 'Three enterprise AE roles from this week:',
+      results: [
+        ['Enterprise AE — payments network', 'remote, us · posted 1d ago · greenhouse', 'Same buyer and deal size you close today, in an established territory. Fastest ramp of the three.'],
+        ['Strategic AE — data platform', 'remote · posted 3d ago · ashby', 'Named accounts and a technical sale, which suits you. The product is new ground — budget a learning curve.'],
+        ['Enterprise AE, New Verticals — dev-tools scaleup', 'austin hybrid · posted 5d ago · lever', 'Open territory, pipeline from zero. Higher comp upside if building from scratch does not put you off.']
+      ]
+    },
+    {
+      title: 'Backend roles — Go + payments',
+      q: 'Which backend roles match my Go and payments-infrastructure background?',
+      scope: 'fintech · backend',
+      running: 'Matching backend openings to Go + payments experience',
+      done: 'Retrieved 21 live roles and ranked them against your profile',
+      intro: 'Three backend roles built for your stack:',
+      results: [
+        ['Senior Backend Eng, Ledger — Series C fintech', 'remote, us · posted 2d ago · greenhouse', 'The stack matches yours: Go services, ledger work. Day one looks like your current job, at a smaller company.'],
+        ['Staff Eng, Payments Infra — Series D neobank', 'remote · posted 6d ago · ashby', 'Staff scope in systems you already build. The jump is in influence and coordination, not technology.'],
+        ['Platform Engineer — public marketplace', 'seattle hybrid · posted 8d ago · workday', 'Familiar work at ten times the scale. Interesting if throughput problems appeal; hybrid Seattle is the catch.']
+      ]
+    },
+    {
+      title: 'Staff product design search',
+      q: 'Any staff product design roles at fintechs, remote-first? Systems-heavy portfolio.',
+      scope: 'fintech · remote-first',
+      running: 'Searching fintech boards for staff design roles',
+      done: 'Retrieved 9 live roles and ranked them against your profile',
+      intro: 'Three staff design roles for a systems portfolio:',
+      results: [
+        ['Staff Product Designer — Series D fintech', 'remote · posted 3d ago · ashby', 'Centered on design systems, the strongest part of your portfolio. Level and remote setup both line up.'],
+        ['Design Lead — spend-mgmt scaleup', 'remote, us · posted 5d ago · greenhouse', 'Onboarding flows at real scale. Your systems background applies; the title reads senior to the actual scope.'],
+        ['Senior Designer, Core Product — Series B credit platform', 'ny hybrid · posted 7d ago · lever', 'Smaller team, wider surface. Slower title growth, but the fastest route to owning a whole product area.']
+      ]
+    }
+  ];
+
+  // timeline constants (ms, at SPEED=1)
+  var T_MENU = 900, T_SUB = 1900, T_TYPE = 3000, CHAR = 24;
+  var A_ASK = 400, A_TOOL = 1000, A_ANS = 3200, A_NEXT = 9000;
+
+  function personaDur(p) { return T_TYPE + p.q.length * CHAR + A_NEXT; }
+  var TOTAL = 0, STARTS = [];
+  for (var i = 0; i < PERSONAS.length; i++) { STARTS.push(TOTAL); TOTAL += personaDur(PERSONAS[i]); }
+
+  var win = document.getElementById('jdWin');
+  win.setAttribute('data-om-exportable-video-with-duration-secs', String(Math.ceil(TOTAL / 1000 / SPEED)));
+
+  var el = {
+    fit: document.getElementById('jdFit'),
+    thread: document.getElementById('jdThread'),
+    title: document.getElementById('jdTitle'),
+    recent: document.getElementById('jdRecent'),
+    menu: document.getElementById('jdMenu'),
+    submenu: document.getElementById('jdSubmenu'),
+    connRow: document.getElementById('jdConnRow'),
+    row: document.getElementById('jdRow'),
+    track: document.getElementById('jdTrack'),
+    typed: document.getElementById('jdTyped'),
+    caret: document.getElementById('jdCaret'),
+    ph: document.getElementById('jdPh'),
+    plus: document.getElementById('jdPlus'),
+    wave: document.getElementById('jdWave'),
+    send: document.getElementById('jdSend')
+  };
+
+  function easeOut(x) { x = Math.max(0, Math.min(1, x)); return 1 - (1 - x) * (1 - x); }
+
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+  var lastKey = '';
+  function buildThread(pi, phase, p, tAsk, tTool, tAns) {
+    var key = pi + ':' + phase;
+    if (key === lastKey) return;
+    lastKey = key;
+    var h = '';
+    if (phase === 'asked' || phase === 'tool' || phase === 'answer') {
+      h += '<div class="jd-bubble" data-in="' + tAsk + '">' + esc(p.q) + '</div>';
+    }
+    if (phase === 'tool') {
+      h += '<div class="jd-serif" style="display:flex; flex-direction:column; gap:12px;" data-in="' + tTool + '">' +
+        '<div class="jd-runline"><span class="jd-dot" data-pulse></span><span>' + esc(p.running) + '</span></div>' +
+        '<div class="jd-chip jd-mono" data-in="' + tTool + '"><span class="jd-dot" data-pulse data-pulse-until="' + (tTool + 700) + '"></span>jd-intel › search_registry — ' + esc(p.scope) + '</div>' +
+        '<div class="jd-chip jd-mono" data-in="' + (tTool + 700) + '"><span class="jd-dot" data-pulse></span>jd-intel › fetch_jobs — greenhouse · ashby · lever · workday</div>' +
+        '</div>';
+    }
+    if (phase === 'answer') {
+      h += '<div class="jd-serif" style="display:flex; flex-direction:column; gap:10px; max-width:680px;">' +
+        '<div class="jd-done" data-in="' + tAns + '">' + esc(p.done) + '</div>' +
+        '<div class="jd-intro" data-in="' + (tAns + 100) + '">' + esc(p.intro) + '</div>' +
+        '<div style="display:flex; flex-direction:column;">';
+      for (var i = 0; i < p.results.length; i++) {
+        var r = p.results[i];
+        h += '<div class="jd-row" data-in="' + (tAns + 250 + i * 250) + '">' +
+          '<div class="jd-rank jd-mono">' + (i + 1) + '.</div>' +
+          '<div style="min-width:0;">' +
+          '<div class="jd-rtitle">' + esc(r[0]) + '</div>' +
+          '<div class="jd-rmeta jd-mono">' + esc(r[1]) + '</div>' +
+          '<div class="jd-rwhy">' + esc(r[2]) + '</div>' +
+          '</div></div>';
+      }
+      h += '</div>' +
+        '<div class="jd-next" data-in="' + (tAns + 1150) + '">Which one should we go deeper on? I can pull the full posting and evaluate it properly.<span data-blink style="display:inline-block; width:8px; height:14px; background:#6b6558; margin-left:6px; vertical-align:-2px;"></span></div>' +
+        '</div>';
+    }
+    el.thread.innerHTML = h;
+  }
+
+  function applyEntrances(container, local) {
+    var nodes = container.querySelectorAll('[data-in]');
+    for (var i = 0; i < nodes.length; i++) {
+      var start = parseFloat(nodes[i].getAttribute('data-in'));
+      var pr = easeOut((local - start) / 400);
+      nodes[i].style.opacity = pr;
+      nodes[i].style.transform = 'translateY(' + (12 * (1 - pr)) + 'px)';
+    }
+  }
+
+  function renderAt(t) {
+    t = ((t % TOTAL) + TOTAL) % TOTAL;
+    var pi = 0;
+    for (var i = PERSONAS.length - 1; i >= 0; i--) { if (t >= STARTS[i]) { pi = i; break; } }
+    var p = PERSONAS[pi];
+    var local = t - STARTS[pi];
+    var typeEnd = T_TYPE + p.q.length * CHAR;
+    var tAsk = typeEnd + A_ASK, tTool = typeEnd + A_TOOL, tAns = typeEnd + A_ANS;
+
+    var phase = local < T_TYPE
+      ? (local < T_MENU ? 'menu' : (local < T_SUB ? 'submenu' : 'toggle'))
+      : (local < tAsk ? 'typing' : (local < tTool ? 'asked' : (local < tAns ? 'tool' : 'answer')));
+
+    // sidebar + header
+    el.title.textContent = p.title;
+    el.recent.textContent = p.title;
+
+    // menus
+    var menusOn = local < T_TYPE;
+    el.menu.style.display = menusOn ? 'block' : 'none';
+    el.submenu.style.display = (menusOn && local >= T_MENU) ? 'block' : 'none';
+    if (menusOn) {
+      var mpr = easeOut(local / 250);
+      el.menu.style.opacity = mpr;
+      el.menu.style.transform = 'translateY(' + (10 * (1 - mpr)) + 'px)';
+      el.connRow.style.background = local >= T_MENU ? '#32302a' : 'transparent';
+      if (local >= T_MENU) {
+        var spr = easeOut((local - T_MENU) / 250);
+        el.submenu.style.opacity = spr;
+        el.submenu.style.transform = 'translateY(' + (10 * (1 - spr)) + 'px)';
+      }
+      var tg = easeOut((local - T_SUB) / 250);
+      el.row.className = 'jd-jdrow' + (tg > 0.4 ? ' on' : '');
+      el.track.className = 'jd-track' + (tg > 0.4 ? ' on' : '');
+      el.track.firstElementChild.style.transform = 'translateX(' + (14 * tg) + 'px)';
+    }
+    el.plus.style.color = menusOn ? '#d97a7a' : '#b5af9f';
+
+    // composer
+    var typing = phase === 'typing';
+    var chars = typing ? Math.min(p.q.length, Math.floor((local - T_TYPE) / CHAR)) : 0;
+    el.typed.textContent = typing ? p.q.slice(0, chars) : '';
+    el.caret.style.display = typing ? 'inline-block' : 'none';
+    el.caret.style.opacity = (Math.floor(t / 425) % 2) ? 0.15 : 1;
+    el.ph.style.display = typing ? 'none' : 'inline';
+    el.wave.style.display = typing ? 'none' : 'flex';
+    el.send.style.display = typing ? 'flex' : 'none';
+
+    // thread
+    buildThread(pi, phase, p, tAsk, tTool, tAns);
+    applyEntrances(el.thread, local);
+    var pulses = el.thread.querySelectorAll('[data-pulse]');
+    for (var k = 0; k < pulses.length; k++) {
+      var until = pulses[k].getAttribute('data-pulse-until');
+      pulses[k].style.opacity = (until && local >= parseFloat(until)) ? 1 : 0.35 + 0.65 * Math.abs(Math.sin(t / 300));
+    }
+    var blinks = el.thread.querySelectorAll('[data-blink]');
+    for (var b = 0; b < blinks.length; b++) {
+      blinks[b].style.opacity = (Math.floor(t / 550) % 2) ? 0 : 1;
+    }
+
+    // timestamp label for review comments
+    var sec = Math.floor(t / 1000);
+    if (win.getAttribute('data-screen-label') !== 'jd-intel loop t=' + sec + 's') {
+      win.setAttribute('data-screen-label', 'jd-intel loop t=' + sec + 's');
+    }
+  }
+
+  // fluid scaling
+  function fit() {
+    var w = el.fit.clientWidth;
+    win.style.transform = 'scale(' + (w / 1060) + ')';
+  }
+  if (window.ResizeObserver) { new ResizeObserver(fit).observe(el.fit); }
+  window.addEventListener('resize', fit);
+  fit();
+
+  // playback + export seek
+  var paused = false;
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  win.addEventListener('data-om-seek-to-time-frame', function (e) {
+    paused = true;
+    lastKey = '';
+    renderAt(e.detail.time * 1000 * SPEED);
+  });
+
+  if (reduced) {
+    var p0 = PERSONAS[0];
+    renderAt(T_TYPE + p0.q.length * CHAR + A_ANS + 2500); // finished answer, persona 1
+  } else {
+    var start = performance.now();
+    (function tick(now) {
+      if (!paused) renderAt((now - start) * SPEED);
+      requestAnimationFrame(tick);
+    })(performance.now());
+  }
+})();
+</script>
+</body>
+</html>

@@ -43,10 +43,10 @@
     <div style="max-width:1120px; margin:0 auto; padding:0 40px; height:64px; display:flex; align-items:center; justify-content:space-between;">
       <a href="#top" style="font:600 17px/1 'JetBrains Mono',monospace; letter-spacing:-.02em; color:var(--fg); text-decoration:none;">jd-intel</a>
       <div style="display:flex; align-items:center; gap:30px;">
+        <a href="#demo" style="font:500 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Demo</a>
         <a href="#why" style="font:500 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Why</a>
         <a href="#how" style="font:500 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">How it works</a>
         <a href="#coverage" style="font:500 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Coverage</a>
-        <a href="demo.html" style="font:500 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Demo</a>
         <a href="guide.html" style="font:500 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Guide</a>
         <button onclick="jdToggleTheme()" data-theme-icon aria-label="Toggle theme" style="width:34px; height:34px; border:1px solid var(--line-2); border-radius:999px; background:transparent; color:var(--fg-2); font-size:14px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;">☾</button>
         <a href="#install" style="font:600 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--ink-fg); background:var(--ink); border-radius:9px; padding:10px 16px; text-decoration:none;">Install</a>
@@ -63,35 +63,19 @@
       <h1 style="font-family:var(--display-font); font-weight:500; font-size:clamp(44px,6.1vw,70px); line-height:1.02; letter-spacing:-.025em; margin:0 0 28px; max-width:16ch;">Stop pasting job descriptions into your AI.</h1>
       <p style="font:400 21px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); max-width:600px; margin:0 0 38px;">jd-intel gives your assistant a direct line to real, current job openings. You ask in plain language. It finds the roles that fit you and ranks them against your background. No copy and paste, no new tool to learn.</p>
       <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
-        <a href="#how" style="font:600 16px/1 'Schibsted Grotesk',sans-serif; color:var(--ink-fg); background:var(--ink); border-radius:11px; padding:15px 24px; text-decoration:none;">See how it works</a>
+        <a href="#demo" style="font:600 16px/1 'Schibsted Grotesk',sans-serif; color:var(--ink-fg); background:var(--ink); border-radius:11px; padding:15px 24px; text-decoration:none;">See the demo</a>
         <a href="#install" style="font:600 16px/1 'Schibsted Grotesk',sans-serif; color:var(--fg); border:1px solid var(--line-2); border-radius:11px; padding:15px 24px; text-decoration:none;">Install in 2 minutes</a>
       </div>
     </section>
 
-    <!-- ============ DEMO (the AI's tailored answer) ============ -->
-    <section style="padding:0 0 calc(40px * var(--pad-scale));">
-      <div style="border:1px solid var(--line); border-radius:16px; overflow:hidden; background:var(--surface); box-shadow:var(--shadow);">
-        <div style="display:flex; align-items:center; gap:8px; padding:14px 18px; border-bottom:1px solid var(--line); background:var(--surface-2);">
-          <span style="width:11px; height:11px; border-radius:999px; background:var(--line-2);"></span>
-          <span style="width:11px; height:11px; border-radius:999px; background:var(--line-2);"></span>
-          <span style="width:11px; height:11px; border-radius:999px; background:var(--line-2);"></span>
-          <span style="margin-left:8px; font:500 12px/1 'JetBrains Mono',monospace; color:var(--fg-3);">Claude Desktop · jd-intel</span>
-        </div>
-        <div style="padding:30px 34px;">
-          <div style="display:flex; justify-content:flex-end; margin-bottom:22px;">
-            <div style="max-width:560px; font:400 15.5px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg); background:var(--surface-2); border:1px solid var(--line); border-radius:14px 14px 4px 14px; padding:13px 17px;">Find senior PM and design roles at fintechs posted this month, US only. Rank them for my background.</div>
-          </div>
-          <div style="display:inline-flex; align-items:center; gap:8px; font:500 12px/1 'JetBrains Mono',monospace; color:var(--fg-2); background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:9px 13px; margin-bottom:20px;"><span style="width:6px; height:6px; border-radius:999px; background:var(--fg-3);"></span>Used jd-intel · fetch_jobs · 18 results</div>
-          <p style="font:400 15.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg); margin:0 0 16px; max-width:620px;">Here are the three strongest matches for your background. I weighed them against the payments and zero-to-one work on your resume.</p>
-          <ol style="margin:0; padding-left:24px; max-width:660px; display:flex; flex-direction:column; gap:14px;">
-            <li style="font:400 15.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg); padding-left:4px;"><span style="font-weight:700; text-decoration:underline; text-underline-offset:2px; text-decoration-color:var(--line-2);">Staff PM, Payments · Stripe</span> · Remote, US · 6 days ago<br>Your strongest match: a direct line from your payments work, one level up.</li>
-            <li style="font:400 15.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg); padding-left:4px;"><span style="font-weight:700; text-decoration:underline; text-underline-offset:2px; text-decoration-color:var(--line-2);">Senior PM, Growth · Ramp</span> · Remote, US · 3 days ago<br>A lateral move toward the growth scope you mentioned.</li>
-            <li style="font:400 15.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg); padding-left:4px;"><span style="font-weight:700; text-decoration:underline; text-underline-offset:2px; text-decoration-color:var(--line-2);">Product Designer, Core · Plaid</span> · New York · 12 days ago<br>Worth a look if you would consider a design-lead track in fintech.</li>
-          </ol>
-          <div style="font:400 13.5px/1.5 'Schibsted Grotesk',sans-serif; color:var(--fg-3); margin-top:18px;">Want me to draft a tailored resume bullet for the Stripe role?<span style="display:inline-block; width:8px; height:15px; background:var(--fg-3); margin-left:6px; vertical-align:-2px; animation:blink 1.1s steps(1) infinite;"></span></div>
-        </div>
+    <!-- ============ WATCH A DEMO ============ -->
+    <section id="demo" style="padding:calc(92px * var(--pad-scale)) 0; border-top:1px solid var(--line);">
+      <div style="font:500 12.5px/1 'JetBrains Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--fg-3); margin-bottom:22px;">Watch a demo</div>
+      <h2 style="font-family:var(--display-font); font-weight:500; font-size:clamp(32px,3.8vw,44px); line-height:1.08; letter-spacing:-.02em; margin:0 0 56px; max-width:18ch;">One question, then a conversation.</h2>
+      <div style="border:1px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:var(--shadow); background:#1e1c18;">
+        <iframe src="jd-intel-loop.html?v=20260708" title="jd-intel demo: a simulated session, on a loop" loading="lazy" style="width:100%; aspect-ratio:1060/700; border:0; display:block;"></iframe>
       </div>
-      <div style="font:400 13px/1.5 'JetBrains Mono',monospace; color:var(--fg-3); text-align:center; margin-top:16px;">This is your assistant's ordinary chat reply, shaped to the request. jd-intel just hands it the real roles, on demand.</div>
+      <div style="font:400 13px/1.5 'JetBrains Mono',monospace; color:var(--fg-3); text-align:center; margin-top:16px;">A simulated session, drawn from real use. jd-intel hands your assistant the current roles; your AI does the ranking.</div>
     </section>
 
     <!-- ============ WHY ============ -->

@@ -62,6 +62,8 @@ The toolkit fetches. Your AI thinks.
 
 Works with MCP-aware AI clients: Claude Desktop, Claude Code, Cursor, Windsurf, VS Code. ChatGPT, Gemini, and other non-MCP clients don't support this yet. They use different tool-calling systems. (We wish they did. The protocol works the same way regardless of which AI you talk to.)
 
+Everything runs locally on your machine. That also means desktop only: mobile apps can't run a local MCP server, so jd-intel isn't available on phones or tablets.
+
 ### Claude Desktop (one-file install, no terminal)
 
 The simplest path. No Node.js, no terminal: Claude Desktop runs the server on its own bundled runtime.
