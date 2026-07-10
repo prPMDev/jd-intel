@@ -29,5 +29,9 @@
   {"slug": "finteqhub",                       "name": "FinteqHub",              "sector": "fintech / payments"},
   {"slug": "goodgamestudios",                 "name": "Goodgame Studios",       "sector": "gaming"},
   {"slug": "estonew",                         "name": "ESTO",                   "sector": "fintech / consumer credit"},
-  {"slug": "cigames",                         "name": "CI Games",               "sector": "gaming"}
+  {"slug": "cigames",                         "name": "CI Games",               "sector": "gaming"},
+  {"slug": "ardoq",                           "name": "Ardoq",                  "sector": "enterprise software"},
+  {"slug": "sellpy",                          "name": "Sellpy",                 "sector": "ecommerce"},
+  {"slug": "planhat",                         "name": "Planhat",                "sector": "saas"},
+  {"slug": "incentro",                        "name": "Incentro",               "sector": "it consultancy"}
 ]
