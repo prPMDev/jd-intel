@@ -45,7 +45,7 @@ A toolkit (three surfaces, one core) for fetching and normalizing job descriptio
 - **CLI** (`npx jd-intel fetch <slug>`) — same capabilities from the terminal.
 - **MCP server** (`jd-intel-mcp`) — exposes the toolkit to AI assistants via the Model Context Protocol.
 
-Seven ATS adapters shipped: Greenhouse, Lever, Ashby, SmartRecruiters, TeamTailor, Recruitee, Workday. 160+ company verified registry.
+Seven ATS adapters shipped: Greenhouse, Lever, Ashby, SmartRecruiters, TeamTailor, Recruitee, Workday. 300+ company verified registry.
 
 ---
 
@@ -202,6 +202,19 @@ For shipped work and current priorities:
 - Test fixture at `test/{name}.test.js` using `t.mock.method(global, 'fetch', mockFn)` — fetch mock auto-restores per test, no afterEach needed
 - Seed `registry/{name}.json` with verified company entries (`{slug, name, sector}`) — live-verify each entry against the ATS's API before adding
 - Verified candidates ready to implement: see `notes/expansion-research.md`
+
+---
+
+## Automated registry expansion (weekly routine)
+
+A scheduled cloud agent expands the registry weekly, staging everything as a PR on a `registry/expansion-YYYY-MM-DD` branch. Rules for ANY agent doing registry data work:
+
+- Candidates file shape: `{ "<ats>": [ {slug, name, sector, config?}, ... ] }` — `config` is Workday-only (`{tenant, env, site}`)
+- Gate, then append: `node scripts/verify-registry.mjs --candidates tmp/candidates.json --limit 50`, then `node scripts/append-registry.mjs` (writes `survivorsByAts` from the report; never hand-edit the column-aligned registry JSON)
+- Never add an entry that didn't pass the live gate in the same run
+- Additions by default. The only permitted change to an existing entry is a migration: it failed on its recorded ATS AND live-verified on another ATS in the same run. Deletions never.
+- One company, one ATS — skip candidates whose normalized slug or name (lowercase, alphanumerics only) already exists in any registry file
+- After appending: `npm run sync:registry-pages` (the Pages copy must move with `registry/`), then `node --test test/*.test.js`
 
 ---
 

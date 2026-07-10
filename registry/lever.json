@@ -6,7 +6,6 @@
   {"slug": "clari",           "name": "Clari",            "sector": "sales tech"},
   {"slug": "netflix",         "name": "Netflix",          "sector": "media"},
   {"slug": "lever",           "name": "Lever",            "sector": "recruiting tech"},
-  {"slug": "postman",         "name": "Postman",          "sector": "developer tools"},
   {"slug": "agiloft",         "name": "Agiloft",          "sector": "contract management"},
   {"slug": "gohighlevel",     "name": "HighLevel",        "sector": "marketing saas"},
   {"slug": "veeva",           "name": "Veeva Systems",    "sector": "life sciences"},
@@ -28,5 +27,6 @@
   {"slug": "panopto",         "name": "Panopto",          "sector": "video saas"},
   {"slug": "mulliganfunding", "name": "Mulligan Funding", "sector": "smb lending"},
   {"slug": "immutable",       "name": "Immutable",        "sector": "web3 / blockchain gaming"},
-  {"slug": "fundrise",        "name": "Fundrise",         "sector": "real-estate investing"}
+  {"slug": "fundrise",        "name": "Fundrise",         "sector": "real-estate investing"},
+  {"slug": "jobgether",       "name": "Jobgether",        "sector": "recruiting tech"}
 ]
