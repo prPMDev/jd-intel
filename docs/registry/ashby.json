@@ -45,5 +45,9 @@
   {"slug": "sentry",         "name": "Sentry",         "sector": "observability"},
   {"slug": "cartesia",       "name": "Cartesia",       "sector": "voice ai"},
   {"slug": "workos",         "name": "WorkOS",         "sector": "auth / sso dev tools"},
-  {"slug": "posthog",        "name": "PostHog",        "sector": "product analytics"}
+  {"slug": "posthog",        "name": "PostHog",        "sector": "product analytics"},
+  {"slug": "openevidence",   "name": "OpenEvidence",   "sector": "healthcare ai"},
+  {"slug": "antimetal",      "name": "Antimetal",      "sector": "developer tools"},
+  {"slug": "maintainx",      "name": "MaintainX",      "sector": "industrial saas"},
+  {"slug": "sparrow",        "name": "Sparrow",        "sector": "hr tech"}
 ]

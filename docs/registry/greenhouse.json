@@ -50,7 +50,6 @@
   {"slug": "fleetio",               "name": "Fleetio",                 "sector": "fleet management"},
   {"slug": "engine",                "name": "Engine",                  "sector": "travel tech"},
   {"slug": "axon",                  "name": "Axon",                    "sector": "public safety"},
-  {"slug": "sparrow",               "name": "Sparrow",                 "sector": "hr tech"},
   {"slug": "remotecom",             "name": "Remote",                  "sector": "hr tech"},
   {"slug": "weedmaps77",            "name": "Weedmaps",                "sector": "cannabis"},
   {"slug": "patterndata",           "name": "Pattern",                 "sector": "ecommerce data"},
@@ -59,7 +58,6 @@
   {"slug": "eltropyinc",            "name": "Eltropy",                 "sector": "fintech"},
   {"slug": "ziprecruiter",          "name": "ZipRecruiter",            "sector": "recruiting tech"},
   {"slug": "cognitiv",              "name": "Cognitiv",                "sector": "adtech"},
-  {"slug": "maintainx",             "name": "MaintainX",               "sector": "industrial saas"},
   {"slug": "betterhelpcom",         "name": "BetterHelp",              "sector": "mental health"},
   {"slug": "shopmonkey",            "name": "Shopmonkey",              "sector": "automotive saas"},
   {"slug": "ezcaterinc",            "name": "ezCater",                 "sector": "food tech"},
@@ -127,5 +125,15 @@
   {"slug": "modernhealth",          "name": "Modern Health",           "sector": "mental health"},
   {"slug": "bitwarden",             "name": "Bitwarden",               "sector": "security"},
   {"slug": "descript",              "name": "Descript",                "sector": "media tools"},
-  {"slug": "assemblyai",            "name": "AssemblyAI",              "sector": "ai speech"}
+  {"slug": "assemblyai",            "name": "AssemblyAI",              "sector": "ai speech"},
+  {"slug": "coherehealth",          "name": "Cohere Health",           "sector": "healthcare ai"},
+  {"slug": "thirtymadison",         "name": "Thirty Madison",          "sector": "healthcare"},
+  {"slug": "ginkgobioworks",        "name": "Ginkgo Bioworks",         "sector": "biotech"},
+  {"slug": "truveta",               "name": "Truveta",                 "sector": "health data"},
+  {"slug": "komodohealth",          "name": "Komodo Health",           "sector": "health data"},
+  {"slug": "oshihealth",            "name": "Oshi Health",             "sector": "healthcare"},
+  {"slug": "redwoodmaterials",      "name": "Redwood Materials",       "sector": "materials"},
+  {"slug": "antora",                "name": "Antora Energy",           "sector": "energy"},
+  {"slug": "palmetto",              "name": "Palmetto",                "sector": "energy"},
+  {"slug": "rondoenergy",           "name": "Rondo Energy",            "sector": "energy"}
 ]
