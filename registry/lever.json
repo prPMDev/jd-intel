@@ -28,5 +28,12 @@
   {"slug": "mulliganfunding", "name": "Mulligan Funding", "sector": "smb lending"},
   {"slug": "immutable",       "name": "Immutable",        "sector": "web3 / blockchain gaming"},
   {"slug": "fundrise",        "name": "Fundrise",         "sector": "real-estate investing"},
-  {"slug": "jobgether",       "name": "Jobgether",        "sector": "recruiting tech"}
+  {"slug": "jobgether",       "name": "Jobgether",        "sector": "recruiting tech"},
+  {"slug": "payjoy",          "name": "PayJoy",           "sector": "fintech"},
+  {"slug": "Flex",            "name": "Flex",             "sector": "fintech"},
+  {"slug": "goodleap",        "name": "GoodLeap",         "sector": "fintech / financing"},
+  {"slug": "startengine",     "name": "StartEngine",      "sector": "fintech"},
+  {"slug": "moonpay",         "name": "MoonPay",          "sector": "fintech / crypto"},
+  {"slug": "angellist",       "name": "AngelList",        "sector": "fintech"},
+  {"slug": "paytm",           "name": "Paytm",            "sector": "fintech / payments"}
 ]

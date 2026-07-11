@@ -26,5 +26,6 @@
   {"slug": "cityandcountyofsanfrancisco1", "name": "City & County of San Francisco", "sector": "government"},
   {"slug": "DeltaElectronics",             "name": "Delta Electronics",              "sector": "electronics / power"},
   {"slug": "PSLogistics",                  "name": "PS Logistics",                   "sector": "logistics"},
-  {"slug": "OECD",                         "name": "OECD",                           "sector": "intergovernmental"}
+  {"slug": "OECD",                         "name": "OECD",                           "sector": "intergovernmental"},
+  {"slug": "FinaktivaSAS",                 "name": "Finaktiva",                      "sector": "fintech"}
 ]
