@@ -35,7 +35,12 @@ async function fetchPlatform(platform) {
 }
 
 async function readPlatform(platform) {
-  const data = await readFile(join(REGISTRY_DIR, `${platform}.json`), 'utf-8');
+  // Resolved at call time like registryBaseUrl(): JD_INTEL_REGISTRY_DIR
+  // points the disk loader at a different directory (test fixtures), so
+  // tests can assert lookup semantics without depending on live registry
+  // content.
+  const dir = process.env.JD_INTEL_REGISTRY_DIR || REGISTRY_DIR;
+  const data = await readFile(join(dir, `${platform}.json`), 'utf-8');
   return JSON.parse(data);
 }
 

@@ -1,10 +1,14 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
 import { fetchJobs } from '../src/index.js';
 
 // Force the on-disk registry so the global fetch mocks below only intercept
-// adapter calls, never the (now network-first) registry load.
+// adapter calls, never the (now network-first) registry load. Route the disk
+// loader at the fixture registry so routing assertions are independent of
+// live registry content (companies migrate ATS; tests must not care).
 process.env.JD_INTEL_REGISTRY_URL = '';
+process.env.JD_INTEL_REGISTRY_DIR = fileURLToPath(new URL('./fixtures/registry', import.meta.url));
 
 /**
  * fetchJobs routing: explicit-ATS config passthrough (Workday reachable
@@ -50,10 +54,10 @@ describe('fetchJobs — Workday config passthrough', () => {
 
   test('explicit ats=workday with NO config falls back to registry config', async (t) => {
     const calls = workdayMock(t);
-    const jobs = await fetchJobs({ company: 'cisco', ats: 'workday' });
+    const jobs = await fetchJobs({ company: 'fixtureco', ats: 'workday' });
     assert.equal(jobs.length, 1);
     assert.ok(
-      calls.urls.includes('https://cisco.wd5.myworkdayjobs.com/wday/cxs/cisco/Cisco_Careers/jobs'),
+      calls.urls.includes('https://fixtureco.wd0.myworkdayjobs.com/wday/cxs/fixtureco/FixtureCareers/jobs'),
       `expected registry-fallback triple, got: ${calls.urls[0]}`
     );
   });
@@ -61,7 +65,7 @@ describe('fetchJobs — Workday config passthrough', () => {
   test('explicit config overrides the registry entry', async (t) => {
     const calls = workdayMock(t);
     await fetchJobs({
-      company: 'cisco',
+      company: 'fixtureco',
       ats: 'workday',
       config: { tenant: 'override', env: 'wd99', site: 'OverrideSite' },
     });
@@ -70,7 +74,7 @@ describe('fetchJobs — Workday config passthrough', () => {
       `expected explicit config to win, got: ${calls.urls[0]}`
     );
     assert.ok(
-      !calls.urls.some(u => u.includes('cisco.wd5')),
+      !calls.urls.some(u => u.includes('fixtureco.wd0')),
       'registry config must not be used when explicit config is given'
     );
   });
@@ -83,17 +87,17 @@ describe('fetchJobs — canonical-cased registry slug routing', () => {
       calls.urls.push(String(url));
       return { ok: true, status: 200, json: async () => ({ content: [], totalFound: 0 }) };
     });
-    const jobs = await fetchJobs({ company: 'visa' }); // no ats -> registry-routed
+    const jobs = await fetchJobs({ company: 'acmepay' }); // no ats -> registry-routed
     assert.deepEqual(jobs, []);
     // Routed via the registry to a single adapter using the canonical
-    // 'Visa' (not lowercased 'visa', not 7-adapter discovery probing).
+    // 'AcmePay' (not lowercased 'acmepay', not 7-adapter discovery probing).
     assert.ok(
       calls.urls.length > 0 && calls.urls.every(u => u.includes('api.smartrecruiters.com')),
       `expected only SmartRecruiters calls (registry-routed), got: ${calls.urls.join(', ')}`
     );
     assert.ok(
-      calls.urls.some(u => u.includes('/v1/companies/Visa/postings')),
-      `expected canonical 'Visa' in the URL, got: ${calls.urls[0]}`
+      calls.urls.some(u => u.includes('/v1/companies/AcmePay/postings')),
+      `expected canonical 'AcmePay' in the URL, got: ${calls.urls[0]}`
     );
   });
 });
