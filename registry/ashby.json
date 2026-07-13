@@ -54,5 +54,6 @@
   {"slug": "hackerone",      "name": "HackerOne",      "sector": "security"},
   {"slug": "Speakeasy",      "name": "Speakeasy",      "sector": "dev tools"},
   {"slug": "enter-ai",       "name": "Enter",          "sector": "fintech"},
-  {"slug": "merge",          "name": "Merge",          "sector": "integration platform"}
+  {"slug": "merge",          "name": "Merge",          "sector": "integration platform"},
+  {"slug": "plaid",          "name": "Plaid",          "sector": "fintech"}
 ]
