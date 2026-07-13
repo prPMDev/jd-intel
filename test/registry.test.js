@@ -77,7 +77,7 @@ describe('findAtsBySlug', () => {
   test('works across all three platforms', async () => {
     assert.equal(await findAtsBySlug('stripe'), 'greenhouse');
     assert.equal(await findAtsBySlug('notion'), 'ashby');
-    assert.equal(await findAtsBySlug('plaid'), 'lever');
+    assert.equal(await findAtsBySlug('plaid'), 'ashby');
   });
 
   test('matches case-insensitively (PascalCase SmartRecruiters slug)', async () => {
