@@ -33,5 +33,6 @@
   {"slug": "ardoq",                           "name": "Ardoq",                  "sector": "enterprise software"},
   {"slug": "sellpy",                          "name": "Sellpy",                 "sector": "ecommerce"},
   {"slug": "planhat",                         "name": "Planhat",                "sector": "saas"},
-  {"slug": "incentro",                        "name": "Incentro",               "sector": "it consultancy"}
+  {"slug": "incentro",                        "name": "Incentro",               "sector": "it consultancy"},
+  {"slug": "ictnordics",                      "name": "ICT Nordics",            "sector": "engineering / IT consulting"}
 ]

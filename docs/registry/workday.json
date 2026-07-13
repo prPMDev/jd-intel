@@ -26,5 +26,10 @@
   {"slug": "sonypictures",       "name": "Sony Pictures Entertainment", "sector": "media / entertainment", "config": {"tenant": "spe", "env": "wd1", "site": "SonyPicturesEntertainment"}},
   {"slug": "merative",           "name": "Merative",                    "sector": "health data", "config": {"tenant": "merative", "env": "wd12", "site": "External_Career_Site"}},
   {"slug": "duckcreek",          "name": "Duck Creek Technologies",     "sector": "insurance software", "config": {"tenant": "duckcreek", "env": "wd1", "site": "duckcreekcareers"}},
-  {"slug": "expedia",            "name": "Expedia Group",               "sector": "travel", "config": {"tenant": "expedia", "env": "wd108", "site": "search"}}
+  {"slug": "expedia",            "name": "Expedia Group",               "sector": "travel", "config": {"tenant": "expedia", "env": "wd108", "site": "search"}},
+  {"slug": "workday",            "name": "Workday",                     "sector": "hr tech", "config": {"tenant": "workday", "env": "wd5", "site": "Workday"}},
+  {"slug": "kyndryl",            "name": "Kyndryl",                     "sector": "it services", "config": {"tenant": "kyndryl", "env": "wd5", "site": "KyndrylProfessionalCareers"}},
+  {"slug": "huron",              "name": "Huron Consulting",            "sector": "consulting", "config": {"tenant": "huron", "env": "wd1", "site": "huroncareers"}},
+  {"slug": "nxp",                "name": "NXP Semiconductors",          "sector": "semiconductors", "config": {"tenant": "nxp", "env": "wd3", "site": "careers"}},
+  {"slug": "pwc",                "name": "PwC",                         "sector": "consulting", "config": {"tenant": "pwc", "env": "wd3", "site": "Global_Experienced_Careers"}}
 ]

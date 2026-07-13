@@ -49,5 +49,10 @@
   {"slug": "openevidence",   "name": "OpenEvidence",   "sector": "healthcare ai"},
   {"slug": "antimetal",      "name": "Antimetal",      "sector": "developer tools"},
   {"slug": "maintainx",      "name": "MaintainX",      "sector": "industrial saas"},
-  {"slug": "sparrow",        "name": "Sparrow",        "sector": "hr tech"}
+  {"slug": "sparrow",        "name": "Sparrow",        "sector": "hr tech"},
+  {"slug": "atlan",          "name": "Atlan",          "sector": "data"},
+  {"slug": "hackerone",      "name": "HackerOne",      "sector": "security"},
+  {"slug": "Speakeasy",      "name": "Speakeasy",      "sector": "dev tools"},
+  {"slug": "enter-ai",       "name": "Enter",          "sector": "fintech"},
+  {"slug": "merge",          "name": "Merge",          "sector": "integration platform"}
 ]

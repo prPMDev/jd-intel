@@ -20,5 +20,11 @@
   {"slug": "sovtech",                 "name": "Scrums.com",                      "sector": "software services"},
   {"slug": "technicaengineeringgmbh", "name": "Technica Engineering",            "sector": "automotive engineering"},
   {"slug": "make",                    "name": "Make",                            "sector": "construction / property"},
-  {"slug": "luzmo",                   "name": "Luzmo",                           "sector": "embedded analytics saas"}
+  {"slug": "luzmo",                   "name": "Luzmo",                           "sector": "embedded analytics saas"},
+  {"slug": "hostaway",                "name": "Hostaway",                        "sector": "hospitality tech"},
+  {"slug": "eneve",                   "name": "Eneve",                           "sector": "energy tech"},
+  {"slug": "helloprint",              "name": "Helloprint",                      "sector": "custom manufacturing"},
+  {"slug": "customssupport",          "name": "Customs Support",                 "sector": "logistics"},
+  {"slug": "ibexa",                   "name": "Ibexa",                           "sector": "cms"},
+  {"slug": "framestore",              "name": "Framestore",                      "sector": "media / entertainment"}
 ]

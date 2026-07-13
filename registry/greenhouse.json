@@ -30,7 +30,6 @@
   {"slug": "contentful",            "name": "Contentful",              "sector": "cms"},
   {"slug": "sendbird",              "name": "Sendbird",                "sector": "communications"},
   {"slug": "workato",               "name": "Workato",                 "sector": "integration platform"},
-  {"slug": "merge",                 "name": "Merge",                   "sector": "integration platform"},
   {"slug": "pandadoc",              "name": "PandaDoc",                "sector": "sales tech"},
   {"slug": "fivetran",              "name": "Fivetran",                "sector": "data integration"},
   {"slug": "securityscorecard",     "name": "SecurityScorecard",       "sector": "security"},
