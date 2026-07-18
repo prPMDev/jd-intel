@@ -134,5 +134,7 @@
   {"slug": "redwoodmaterials",      "name": "Redwood Materials",       "sector": "materials"},
   {"slug": "antora",                "name": "Antora Energy",           "sector": "energy"},
   {"slug": "palmetto",              "name": "Palmetto",                "sector": "energy"},
-  {"slug": "rondoenergy",           "name": "Rondo Energy",            "sector": "energy"}
+  {"slug": "rondoenergy",           "name": "Rondo Energy",            "sector": "energy"},
+  {"slug": "formationbio",          "name": "Formation Bio",           "sector": "biotech"},
+  {"slug": "isomorphiclabs",        "name": "Isomorphic Labs",         "sector": "biotech"}
 ]
