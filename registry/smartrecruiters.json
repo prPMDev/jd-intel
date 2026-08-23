@@ -34,5 +34,13 @@
   {"slug": "FLINTCorp1",                   "name": "FLINT Corp",                     "sector": "energy"},
   {"slug": "Equus",                        "name": "Equus",                          "sector": "it services"},
   {"slug": "ubisoft2",                     "name": "Ubisoft",                        "sector": "gaming"},
-  {"slug": "EpochGames",                   "name": "Epoch Games",                    "sector": "gaming"}
+  {"slug": "EpochGames",                   "name": "Epoch Games",                    "sector": "gaming"},
+  {"slug": "ServiceNow",                   "name": "ServiceNow",                     "sector": "enterprise software"},
+  {"slug": "O-I",                          "name": "O-I Glass",                      "sector": "materials"},
+  {"slug": "Nemera",                       "name": "Nemera",                         "sector": "medical devices"},
+  {"slug": "GEHealthcare2",                "name": "GE HealthCare",                  "sector": "healthcare imaging"},
+  {"slug": "LGCGroup",                     "name": "LGC Group",                      "sector": "life sciences"},
+  {"slug": "InVitaHealthcareTechnologies", "name": "InVita Healthcare Technologies", "sector": "healthcare interop"},
+  {"slug": "CustomizedEnergySolutions",    "name": "Customized Energy Solutions",    "sector": "energy"},
+  {"slug": "EnergyCapitalPower",           "name": "Energy Capital & Power",         "sector": "media / events"}
 ]

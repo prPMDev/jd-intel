@@ -1,14 +1,12 @@
 [
   {"slug": "olo",             "name": "Olo",              "sector": "restaurant tech"},
   {"slug": "outreach",        "name": "Outreach",         "sector": "sales tech"},
-  {"slug": "whoop",           "name": "WHOOP",            "sector": "wearables"},
   {"slug": "clari",           "name": "Clari",            "sector": "sales tech"},
   {"slug": "netflix",         "name": "Netflix",          "sector": "media"},
   {"slug": "lever",           "name": "Lever",            "sector": "recruiting tech"},
   {"slug": "agiloft",         "name": "Agiloft",          "sector": "contract management"},
   {"slug": "gohighlevel",     "name": "HighLevel",        "sector": "marketing saas"},
   {"slug": "veeva",           "name": "Veeva Systems",    "sector": "life sciences"},
-  {"slug": "caremessage",     "name": "CareMessage",      "sector": "healthcare communications"},
   {"slug": "rover",           "name": "Rover",            "sector": "pet care"},
   {"slug": "LuminDigital",    "name": "Lumin Digital",    "sector": "fintech (banking)"},
   {"slug": "redoxengine",     "name": "Redox",            "sector": "healthcare interop"},
@@ -34,5 +32,11 @@
   {"slug": "startengine",     "name": "StartEngine",      "sector": "fintech"},
   {"slug": "moonpay",         "name": "MoonPay",          "sector": "fintech / crypto"},
   {"slug": "angellist",       "name": "AngelList",        "sector": "fintech"},
-  {"slug": "paytm",           "name": "Paytm",            "sector": "fintech / payments"}
+  {"slug": "paytm",           "name": "Paytm",            "sector": "fintech / payments"},
+  {"slug": "avalerehealth",   "name": "Avalere Health",   "sector": "healthcare"},
+  {"slug": "includedhealth",  "name": "Included Health",  "sector": "healthcare"},
+  {"slug": "pointclickcare",  "name": "PointClickCare",   "sector": "healthcare"},
+  {"slug": "meds",            "name": "Meds",             "sector": "healthcare / pharmacy"},
+  {"slug": "kabam",           "name": "Kabam",            "sector": "gaming"},
+  {"slug": "kruzeconsulting", "name": "Kruze Consulting", "sector": "consulting"}
 ]
