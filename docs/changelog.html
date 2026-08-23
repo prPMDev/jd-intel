@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    var allowedHostnames = ['prpmdev.github.io'];
+    if (allowedHostnames.includes(location.hostname)) {
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-342XCVT9FL';
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-342XCVT9FL');
+    }
+  </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>jd-intel changelog: what your AI can search now</title>
+  <meta name="description" content="What changed in the jd-intel company registry, written in terms of what you can actually search. Coverage growth, platform migrations, and freshness dates.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="jd-intel changelog">
+  <meta property="og:description" content="What your AI can search now, release by release.">
+  <meta property="og:url" content="https://prpmdev.github.io/jd-intel/changelog.html">
+  <meta property="og:image" content="https://prpmdev.github.io/jd-intel/wordmark.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="jd-intel changelog">
+  <meta name="twitter:description" content="What your AI can search now, release by release.">
+  <meta name="twitter:image" content="https://prpmdev.github.io/jd-intel/wordmark.png">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('jdintel-theme')||'light';}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="styles.css?v=20260627c">
+  <script defer src="theme.js?v=20260627c"></script>
+</head>
+<body>
+<div style="background:var(--bg); color:var(--fg); font-family:'Schibsted Grotesk',sans-serif; min-height:100vh; -webkit-font-smoothing:antialiased;">
+
+  <nav style="position:sticky; top:0; z-index:20; border-bottom:1px solid var(--line); background:color-mix(in srgb, var(--bg) 84%, transparent); backdrop-filter:saturate(180%) blur(10px); -webkit-backdrop-filter:saturate(180%) blur(10px);">
+    <div style="max-width:1120px; margin:0 auto; padding:0 40px; height:64px; display:flex; align-items:center; justify-content:space-between;">
+      <a href="index.html" style="font:600 17px/1 'JetBrains Mono',monospace; letter-spacing:-.02em; color:var(--fg); text-decoration:none;">jd-intel</a>
+      <div style="display:flex; align-items:center; gap:30px;">
+        <a href="index.html#demo" style="font:500 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Demo</a>
+        <a href="index.html#why" style="font:500 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Why</a>
+        <a href="index.html#how" style="font:500 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">How it works</a>
+        <a href="index.html#coverage" style="font:500 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Coverage</a>
+        <a href="guide.html" style="font:500 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Guide</a>
+        <a href="changelog.html" style="font:600 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--fg); text-decoration:none;">Changelog</a>
+        <button onclick="jdToggleTheme()" data-theme-icon aria-label="Toggle theme" style="width:34px; height:34px; border:1px solid var(--line-2); border-radius:999px; background:transparent; color:var(--fg-2); font-size:14px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;">☾</button>
+        <a href="guide.html#setup" style="font:600 14.5px/1 'Schibsted Grotesk',sans-serif; color:var(--ink-fg); background:var(--ink); border-radius:9px; padding:10px 16px; text-decoration:none;">Install</a>
+      </div>
+    </div>
+  </nav>
+
+  <header style="max-width:1120px; margin:0 auto; padding:calc(72px * var(--pad-scale)) 40px calc(40px * var(--pad-scale));">
+    <div style="font:500 12.5px/1 'JetBrains Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--fg-3); margin-bottom:24px;">Changelog</div>
+    <h1 style="font-family:var(--display-font); font-weight:500; font-size:clamp(40px,5vw,60px); line-height:1.03; letter-spacing:-.025em; margin:0 0 22px; max-width:17ch;">What your AI can search now.</h1>
+    <p style="font:400 19px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); max-width:620px; margin:0;">Every entry here is written in terms of coverage, not code. If a release does not change what you can find, it does not appear on this page. For setup and usage, see the <a href="guide.html" style="color:var(--fg); text-decoration:none; border-bottom:1px solid var(--line-2);">guide</a>.</p>
+  </header>
+
+  <div style="max-width:1120px; margin:0 auto; padding:0 40px calc(80px * var(--pad-scale)); display:grid; grid-template-columns:200px 1fr; gap:64px; align-items:start;">
+
+    <aside style="position:sticky; top:96px; display:flex; flex-direction:column; gap:7px;">
+      <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin-bottom:8px;">Releases</div>
+      <a href="#r-2026-08-23" style="font:500 14px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none; padding:3px 0;">23 Aug 2026</a>
+      <a href="#coverage-today" style="font:400 13.5px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-3); text-decoration:none; padding:2px 0 2px 14px;">Coverage today</a>
+      <a href="#how-verified" style="font:500 14px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none; padding:3px 0; margin-top:8px;">How this is verified</a>
+    </aside>
+
+    <main style="min-width:0; max-width:var(--measure);">
+
+      <!-- ============ RELEASE ============ -->
+      <section id="r-2026-08-23" style="scroll-margin-top:90px;">
+
+        <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+          <span style="font:500 12.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3);">23 August 2026</span>
+          <span style="font:600 11px/1 'JetBrains Mono',monospace; color:var(--ink-fg); background:var(--ink); border-radius:999px; padding:5px 9px;">Latest</span>
+        </div>
+
+        <h2 style="font-family:var(--display-font); font-weight:500; font-size:34px; line-height:1.1; letter-spacing:-.02em; margin:0 0 14px;">47% more companies to search</h2>
+        <p style="font:400 16.5px/1.62 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0 0 32px;">The registry went from 355 to 522 companies. Five verification runs landed together, so this release is larger than a typical one. Healthcare, energy and gaming saw the biggest jumps, and European coverage roughly doubled.</p>
+
+        <!-- headline stat -->
+        <div style="border:1px solid var(--line-2); border-radius:15px; padding:30px 32px; background:var(--surface); box-shadow:var(--shadow); margin-bottom:32px; display:flex; gap:44px; flex-wrap:wrap;">
+          <div>
+            <div style="font-family:var(--display-font); font-weight:500; font-size:44px; line-height:1; letter-spacing:-.03em; margin-bottom:8px;">522</div>
+            <div style="font:400 14px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">companies you can search</div>
+          </div>
+          <div>
+            <div style="font-family:var(--display-font); font-weight:500; font-size:44px; line-height:1; letter-spacing:-.03em; margin-bottom:8px;">+47%</div>
+            <div style="font:400 14px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">since the last release</div>
+          </div>
+          <div>
+            <div style="font-family:var(--display-font); font-weight:500; font-size:44px; line-height:1; letter-spacing:-.03em; margin-bottom:8px;">7</div>
+            <div style="font:400 14px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">hiring platforms covered</div>
+          </div>
+        </div>
+
+        <!-- by field -->
+        <h3 style="font:600 19px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 8px; letter-spacing:-.01em;">Where the coverage grew</h3>
+        <p style="font:400 15.5px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0 0 20px;">Percentages are against the size of each field before this release.</p>
+
+        <div style="border:1px solid var(--line); border-radius:15px; background:var(--surface); overflow:hidden; margin-bottom:32px;">
+          <div style="display:grid; grid-template-columns:1fr auto; gap:16px; padding:16px 22px; border-bottom:1px solid var(--line); align-items:center;">
+            <span style="font:500 15.5px/1.4 'Schibsted Grotesk',sans-serif;">Energy, climate and industrial</span>
+            <span style="font:600 15px/1 'JetBrains Mono',monospace; color:var(--fg);">+200%</span>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr auto; gap:16px; padding:16px 22px; border-bottom:1px solid var(--line); align-items:center;">
+            <span style="font:500 15.5px/1.4 'Schibsted Grotesk',sans-serif;">Healthcare and life sciences</span>
+            <span style="font:600 15px/1 'JetBrains Mono',monospace; color:var(--fg);">+173%</span>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr auto; gap:16px; padding:16px 22px; border-bottom:1px solid var(--line); align-items:center;">
+            <span style="font:500 15.5px/1.4 'Schibsted Grotesk',sans-serif;">Gaming and entertainment</span>
+            <span style="font:600 15px/1 'JetBrains Mono',monospace; color:var(--fg);">+105%</span>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr auto; gap:16px; padding:16px 22px; border-bottom:1px solid var(--line); align-items:center;">
+            <span style="font:500 15.5px/1.4 'Schibsted Grotesk',sans-serif;">Retail, consumer and ecommerce</span>
+            <span style="font:600 15px/1 'JetBrains Mono',monospace; color:var(--fg);">+57%</span>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr auto; gap:16px; padding:16px 22px; border-bottom:1px solid var(--line); align-items:center;">
+            <span style="font:500 15.5px/1.4 'Schibsted Grotesk',sans-serif;">Finance and payments</span>
+            <span style="font:600 15px/1 'JetBrains Mono',monospace; color:var(--fg);">+22%</span>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr auto; gap:16px; padding:16px 22px; align-items:center;">
+            <span style="font:500 15.5px/1.4 'Schibsted Grotesk',sans-serif;">AI and developer tools</span>
+            <span style="font:600 15px/1 'JetBrains Mono',monospace; color:var(--fg);">+18%</span>
+          </div>
+        </div>
+
+        <!-- regions -->
+        <h3 style="font:600 19px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 8px; letter-spacing:-.01em;">More of Europe</h3>
+        <p style="font:400 15.5px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0 0 20px;">Sourcing this cycle targeted Dutch, German, Belgian and Nordic employers, which had been thin. The two platforms most used by European companies grew the fastest of any we cover.</p>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:16px; margin-bottom:32px;">
+          <div style="border:1px solid var(--line); border-radius:13px; padding:20px 22px; background:var(--surface);">
+            <div style="font:600 15px/1 'JetBrains Mono',monospace; margin-bottom:10px;">+129%</div>
+            <p style="font:400 14.5px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0;">Recruitee, used mostly by companies in the Netherlands, Germany and Belgium.</p>
+          </div>
+          <div style="border:1px solid var(--line); border-radius:13px; padding:20px 22px; background:var(--surface);">
+            <div style="font:600 15px/1 'JetBrains Mono',monospace; margin-bottom:10px;">+42%</div>
+            <p style="font:400 14.5px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0;">TeamTailor, used mostly by companies across the Nordics.</p>
+          </div>
+          <div style="border:1px solid var(--line); border-radius:13px; padding:20px 22px; background:var(--surface);">
+            <div style="font:600 15px/1 'JetBrains Mono',monospace; margin-bottom:10px;">+128%</div>
+            <p style="font:400 14.5px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0;">SmartRecruiters, which brought in more large multinational employers.</p>
+          </div>
+        </div>
+
+        <!-- accuracy -->
+        <h3 style="font:600 19px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 8px; letter-spacing:-.01em;">Five companies moved, and still work</h3>
+        <p style="font:400 15.5px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0 0 20px;">Companies change hiring platform quietly, and tools that hard-code the old one go silently empty. Five were caught switching this cycle and re-pointed, so searches for them keep returning roles instead of nothing.</p>
+
+        <div style="border:1px solid var(--line); border-radius:15px; padding:22px 26px; background:var(--surface-2); margin-bottom:32px;">
+          <p style="font:400 14.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0;">WHOOP, Nubank, CareMessage and Planhat now resolve through Ashby. Sendcloud now resolves through TeamTailor. Nothing changes on your side: the company name works the same way it did before.</p>
+        </div>
+
+        <!-- coverage today -->
+        <h3 id="coverage-today" style="font:600 19px/1.3 'Schibsted Grotesk',sans-serif; margin:0 0 8px; letter-spacing:-.01em; scroll-margin-top:90px;">Coverage today</h3>
+        <p style="font:400 15.5px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0 0 36px;">522 companies across Greenhouse, Lever, Ashby, SmartRecruiters, TeamTailor, Recruitee and Workday. Unknown companies still work: jd-intel falls back to probing every platform, so the registry is a speed-up rather than a limit on what you can search.</p>
+
+      </section>
+
+      <!-- ============ METHOD ============ -->
+      <section id="how-verified" style="scroll-margin-top:90px; border-top:1px solid var(--line); padding-top:40px;">
+        <h2 style="font-family:var(--display-font); font-weight:500; font-size:28px; line-height:1.1; letter-spacing:-.02em; margin:0 0 14px;">How this is verified</h2>
+        <p style="font:400 16px/1.62 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0 0 20px;">Every company on this page was checked against the live hiring platform and returned real, open roles at the time it was added. Nothing is added from a list or from memory. The whole registry is re-checked on each cycle, which is how platform moves get caught.</p>
+        <p style="font:400 16px/1.62 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0 0 20px;">Coverage is accurate as of the date on each release, not permanently. Companies pause hiring and boards go quiet, so a small share of entries return nothing on any given day. The check that produces these numbers is in the repository and you can run it yourself:</p>
+        <pre style="margin:0 0 20px; font:500 13.5px/1.5 'JetBrains Mono',monospace; color:var(--fg); background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow-x:auto;">npm run verify:registry</pre>
+        <p style="font:400 15px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-3); margin:0;">Each expansion is staged as a pull request with its own verification table, so the evidence behind every release is public in the <a href="https://github.com/prPMDev/jd-intel/pulls?q=is%3Apr+is%3Aclosed" style="color:var(--fg-2); text-decoration:none; border-bottom:1px solid var(--line-2);">pull request history</a>.</p>
+      </section>
+
+    </main>
+  </div>
+
+  <footer style="border-top:1px solid var(--line); padding:46px 0 56px; background:var(--surface-2);">
+    <div style="max-width:1120px; margin:0 auto; padding:0 40px; display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start; justify-content:space-between;">
+      <div style="max-width:460px;">
+        <div style="font:600 16px/1 'JetBrains Mono',monospace; letter-spacing:-.02em; color:var(--fg); margin-bottom:14px;">jd-intel</div>
+        <p style="font:400 14.5px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); margin:0;">Built by Prashant R, a PM who builds. Trying out and shipping what really matters below the AI hype.</p>
+      </div>
+      <div style="display:flex; gap:40px; flex-wrap:wrap;">
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <span style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--fg-3); margin-bottom:2px;">Project</span>
+          <a href="index.html" style="font:500 14px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Home</a>
+          <a href="guide.html" style="font:500 14px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Guide</a>
+          <a href="https://github.com/prPMDev/jd-intel" style="font:500 14px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">GitHub</a>
+          <a href="https://www.npmjs.com/package/jd-intel-mcp" style="font:500 14px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">npm</a>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <span style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.08em; text-transform:uppercase; color:var(--fg-3); margin-bottom:2px;">Maker</span>
+          <a href="https://prashantrana.xyz" style="font:500 14px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">Portfolio</a>
+          <a href="https://www.linkedin.com/in/prashant-rana/" style="font:500 14px/1 'Schibsted Grotesk',sans-serif; color:var(--fg-2); text-decoration:none;">LinkedIn</a>
+        </div>
+      </div>
+    </div>
+    <div style="max-width:1120px; margin:34px auto 0; padding:0 40px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+      <span style="font:400 13px/1 'JetBrains Mono',monospace; color:var(--fg-3);">© Prashant R</span>
+      <a href="https://github.com/prPMDev/jd-intel/blob/master/LICENSE" style="font:400 13px/1 'JetBrains Mono',monospace; color:var(--fg-3); text-decoration:none; border-bottom:1px solid var(--line-2);">MIT licensed</a>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>
