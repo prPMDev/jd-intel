@@ -60,5 +60,9 @@
   {"slug": "AECOM2",                          "name": "AECOM",                                "sector": "industrial / engineering"},
   {"slug": "LVMH2",                           "name": "LVMH",                                 "sector": "luxury / retail"},
   {"slug": "RolandBerger",                    "name": "Roland Berger",                        "sector": "consulting"},
-  {"slug": "eversana1",                       "name": "EVERSANA",                             "sector": "pharma services"}
+  {"slug": "eversana1",                       "name": "EVERSANA",                             "sector": "pharma services"},
+  {"slug": "TheCoca-ColaCompany",             "name": "The Coca-Cola Company",                "sector": "cpg / food & beverage"},
+  {"slug": "IkanoRetail",                     "name": "Ikano Retail",                         "sector": "retail"},
+  {"slug": "aboutyougmbh",                    "name": "ABOUT YOU",                            "sector": "ecommerce"},
+  {"slug": "authenticbrandsgroup",            "name": "Authentic Brands Group",               "sector": "consumer brands"}
 ]

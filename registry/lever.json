@@ -41,5 +41,6 @@
   {"slug": "kruzeconsulting", "name": "Kruze Consulting",     "sector": "consulting"},
   {"slug": "xcimer",          "name": "Xcimer Energy",        "sector": "energy"},
   {"slug": "octoenergy",      "name": "Octopus Energy Group", "sector": "energy"},
-  {"slug": "h1",              "name": "H1",                   "sector": "health data"}
+  {"slug": "h1",              "name": "H1",                   "sector": "health data"},
+  {"slug": "juneshine",       "name": "JuneShine Brands",     "sector": "cpg / food & beverage"}
 ]
