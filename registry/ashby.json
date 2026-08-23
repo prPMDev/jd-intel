@@ -57,5 +57,17 @@
   {"slug": "merge",          "name": "Merge",          "sector": "integration platform"},
   {"slug": "plaid",          "name": "Plaid",          "sector": "fintech"},
   {"slug": "modal",          "name": "Modal",          "sector": "ai data"},
-  {"slug": "planhat",        "name": "Planhat",        "sector": "saas"}
+  {"slug": "planhat",        "name": "Planhat",        "sector": "saas"},
+  {"slug": "semgrep",        "name": "Semgrep",        "sector": "security"},
+  {"slug": "1password",      "name": "1Password",      "sector": "security"},
+  {"slug": "rula",           "name": "Rula",           "sector": "mental health"},
+  {"slug": "zed",            "name": "Zed",            "sector": "dev tools"},
+  {"slug": "oso",            "name": "Oso",            "sector": "auth / sso dev tools"},
+  {"slug": "mux",            "name": "Mux",            "sector": "video saas"},
+  {"slug": "pinecone",       "name": "Pinecone",       "sector": "database"},
+  {"slug": "langchain",      "name": "LangChain",      "sector": "ai dev tools"},
+  {"slug": "inngest",        "name": "Inngest",        "sector": "dev tools"},
+  {"slug": "cryptio",        "name": "Cryptio",        "sector": "fintech / crypto"},
+  {"slug": "pleo",           "name": "Pleo",           "sector": "fintech / corporate cards"},
+  {"slug": "nubank",         "name": "Nubank",         "sector": "fintech"}
 ]
