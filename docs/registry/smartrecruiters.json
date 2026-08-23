@@ -32,5 +32,7 @@
   {"slug": "Sandisk",                      "name": "SanDisk",                        "sector": "semiconductors"},
   {"slug": "PilotCompany",                 "name": "Pilot Company",                  "sector": "retail"},
   {"slug": "FLINTCorp1",                   "name": "FLINT Corp",                     "sector": "energy"},
-  {"slug": "Equus",                        "name": "Equus",                          "sector": "it services"}
+  {"slug": "Equus",                        "name": "Equus",                          "sector": "it services"},
+  {"slug": "ubisoft2",                     "name": "Ubisoft",                        "sector": "gaming"},
+  {"slug": "EpochGames",                   "name": "Epoch Games",                    "sector": "gaming"}
 ]

@@ -33,5 +33,8 @@
   {"slug": "ardoq",                           "name": "Ardoq",                  "sector": "enterprise software"},
   {"slug": "sellpy",                          "name": "Sellpy",                 "sector": "ecommerce"},
   {"slug": "incentro",                        "name": "Incentro",               "sector": "it consultancy"},
-  {"slug": "ictnordics",                      "name": "ICT Nordics",            "sector": "engineering / IT consulting"}
+  {"slug": "ictnordics",                      "name": "ICT Nordics",            "sector": "engineering / IT consulting"},
+  {"slug": "lunar",                           "name": "Lunar",                  "sector": "fintech (banking)"},
+  {"slug": "templafy",                        "name": "Templafy",               "sector": "enterprise software"},
+  {"slug": "vipps",                           "name": "Vipps MobilePay",        "sector": "fintech / payments"}
 ]

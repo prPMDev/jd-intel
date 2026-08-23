@@ -31,5 +31,6 @@
   {"slug": "kyndryl",            "name": "Kyndryl",                     "sector": "it services", "config": {"tenant": "kyndryl", "env": "wd5", "site": "KyndrylProfessionalCareers"}},
   {"slug": "huron",              "name": "Huron Consulting",            "sector": "consulting", "config": {"tenant": "huron", "env": "wd1", "site": "huroncareers"}},
   {"slug": "nxp",                "name": "NXP Semiconductors",          "sector": "semiconductors", "config": {"tenant": "nxp", "env": "wd3", "site": "careers"}},
-  {"slug": "pwc",                "name": "PwC",                         "sector": "consulting", "config": {"tenant": "pwc", "env": "wd3", "site": "Global_Experienced_Careers"}}
+  {"slug": "pwc",                "name": "PwC",                         "sector": "consulting", "config": {"tenant": "pwc", "env": "wd3", "site": "Global_Experienced_Careers"}},
+  {"slug": "deutschebank",       "name": "Deutsche Bank",               "sector": "banking", "config": {"tenant": "db", "env": "wd3", "site": "DBWebsite"}}
 ]

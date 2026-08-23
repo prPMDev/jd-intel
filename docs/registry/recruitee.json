@@ -33,5 +33,6 @@
   {"slug": "tmnl",                     "name": "TMNL",                            "sector": "fintech"},
   {"slug": "tradinorganic",            "name": "Tradin Organic",                  "sector": "food tech"},
   {"slug": "itilitybv",                "name": "Itility",                         "sector": "it services"},
-  {"slug": "jobsdeerns",               "name": "Deerns",                          "sector": "consulting"}
+  {"slug": "jobsdeerns",               "name": "Deerns",                          "sector": "consulting"},
+  {"slug": "bunq",                     "name": "bunq",                            "sector": "fintech (banking)"}
 ]

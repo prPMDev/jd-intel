@@ -89,7 +89,6 @@
   {"slug": "postman",               "name": "Postman",                 "sector": "dev tools"},
   {"slug": "sofi",                  "name": "SoFi",                    "sector": "fintech"},
   {"slug": "smartsheet",            "name": "Smartsheet",              "sector": "productivity"},
-  {"slug": "nubank",                "name": "Nubank",                  "sector": "fintech"},
   {"slug": "flexport",              "name": "Flexport",                "sector": "logistics tech"},
   {"slug": "coinbase",              "name": "Coinbase",                "sector": "fintech / crypto"},
   {"slug": "grafanalabs",           "name": "Grafana Labs",            "sector": "observability"},
@@ -136,5 +135,8 @@
   {"slug": "palmetto",              "name": "Palmetto",                "sector": "energy"},
   {"slug": "rondoenergy",           "name": "Rondo Energy",            "sector": "energy"},
   {"slug": "formationbio",          "name": "Formation Bio",           "sector": "biotech"},
-  {"slug": "isomorphiclabs",        "name": "Isomorphic Labs",         "sector": "biotech"}
+  {"slug": "isomorphiclabs",        "name": "Isomorphic Labs",         "sector": "biotech"},
+  {"slug": "chainguard",            "name": "Chainguard",              "sector": "security"},
+  {"slug": "truecaller",            "name": "Truecaller",              "sector": "communications"},
+  {"slug": "cognite",               "name": "Cognite",                 "sector": "energy tech"}
 ]
