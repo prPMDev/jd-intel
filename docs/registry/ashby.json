@@ -82,5 +82,12 @@
   {"slug": "heidihealth.com.au", "name": "Heidi",           "sector": "healthcare ai"},
   {"slug": "hellopatient",       "name": "Hello Patient",   "sector": "healthcare ai"},
   {"slug": "kubera-health",      "name": "Kubera Health",   "sector": "healthcare"},
-  {"slug": "Healthtech-1",       "name": "Healthtech-1",    "sector": "healthcare"}
+  {"slug": "Healthtech-1",       "name": "Healthtech-1",    "sector": "healthcare"},
+  {"slug": "gamechanger",        "name": "GameChanger",     "sector": "sports tech"},
+  {"slug": "voodoo",             "name": "Voodoo",          "sector": "gaming"},
+  {"slug": "sensor-tower",       "name": "Sensor Tower",    "sector": "analytics"},
+  {"slug": "Thatgamecompany",    "name": "thatgamecompany", "sector": "gaming"},
+  {"slug": "hyperhug",           "name": "HyperHug",        "sector": "gaming"},
+  {"slug": "mystenlabs",         "name": "Mysten Labs",     "sector": "web3 / blockchain"},
+  {"slug": "kraken.com",         "name": "Kraken",          "sector": "fintech / crypto"}
 ]

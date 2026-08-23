@@ -151,5 +151,11 @@
   {"slug": "gridmaticinc",                       "name": "Gridmatic",                        "sector": "energy tech"},
   {"slug": "sandiegocommunitypower",             "name": "San Diego Community Power",        "sector": "energy"},
   {"slug": "environmentalscienceassociates",     "name": "Environmental Science Associates", "sector": "environmental consulting"},
-  {"slug": "aksengineeringforestryllc",          "name": "AKS Engineering & Forestry",       "sector": "industrial / engineering"}
+  {"slug": "aksengineeringforestryllc",          "name": "AKS Engineering & Forestry",       "sector": "industrial / engineering"},
+  {"slug": "taketwo",                            "name": "Take-Two Interactive",             "sector": "gaming"},
+  {"slug": "neteasegames",                       "name": "NetEase Games",                    "sector": "gaming"},
+  {"slug": "zyngacareers",                       "name": "Zynga",                            "sector": "gaming"},
+  {"slug": "rockstargames",                      "name": "Rockstar Games",                   "sector": "gaming"},
+  {"slug": "gsgcareers",                         "name": "Ghost Story Games",                "sector": "gaming"},
+  {"slug": "MobEntertainment",                   "name": "Mob Entertainment",                "sector": "gaming"}
 ]

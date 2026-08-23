@@ -39,5 +39,11 @@
   {"slug": "tcenergy",           "name": "TC Energy",                   "sector": "energy", "config": {"tenant": "tcenergy", "env": "wd3", "site": "CAREER_SITE_TC"}},
   {"slug": "uniphar",            "name": "Uniphar",                     "sector": "healthcare distribution", "config": {"tenant": "uniphar", "env": "wd3", "site": "uniphar_external_careers"}},
   {"slug": "franklintempleton",  "name": "Franklin Templeton",          "sector": "asset management", "config": {"tenant": "franklintempleton", "env": "wd5", "site": "Primary-External-1"}},
-  {"slug": "atmosenergy",        "name": "Atmos Energy",                "sector": "energy", "config": {"tenant": "atmosenergy", "env": "wd108", "site": "External_Career_Site"}}
+  {"slug": "atmosenergy",        "name": "Atmos Energy",                "sector": "energy", "config": {"tenant": "atmosenergy", "env": "wd108", "site": "External_Career_Site"}},
+  {"slug": "levistraussandco",   "name": "Levi Strauss & Co.",          "sector": "retail", "config": {"tenant": "levistraussandco", "env": "wd5", "site": "External"}},
+  {"slug": "knitwellgroup",      "name": "KnitWell Group",              "sector": "retail", "config": {"tenant": "knitwellgroup", "env": "wd1", "site": "US_Retail_Jobs"}},
+  {"slug": "cdw",                "name": "CDW",                         "sector": "it services", "config": {"tenant": "cdw", "env": "wd5", "site": "Careers"}},
+  {"slug": "caa",                "name": "Creative Artists Agency",     "sector": "media / entertainment", "config": {"tenant": "caa", "env": "wd1", "site": "Careers"}},
+  {"slug": "academy",            "name": "Academy Sports + Outdoors",   "sector": "retail", "config": {"tenant": "academy", "env": "wd1", "site": "Careers"}},
+  {"slug": "tsys",               "name": "TSYS",                        "sector": "fintech / payments", "config": {"tenant": "tsys", "env": "wd1", "site": "TSYS"}}
 ]

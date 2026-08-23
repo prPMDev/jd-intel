@@ -48,5 +48,19 @@
   {"slug": "fixico",                              "name": "Fixico",                                 "sector": "automotive"},
   {"slug": "rewire",                              "name": "Rewire",                                 "sector": "fintech"},
   {"slug": "boschmanadvancedpackagingtechnology", "name": "Boschman Advanced Packaging Technology", "sector": "semiconductors"},
-  {"slug": "greenflux",                           "name": "GreenFlux",                              "sector": "energy tech"}
+  {"slug": "greenflux",                           "name": "GreenFlux",                              "sector": "energy tech"},
+  {"slug": "epilot",                              "name": "epilot",                                 "sector": "energy tech"},
+  {"slug": "qualifyzegmbh",                       "name": "Qualifyze",                              "sector": "life sciences"},
+  {"slug": "lleverage",                           "name": "Lleverage",                              "sector": "ai automation"},
+  {"slug": "leydenjar",                           "name": "LeydenJar Technologies",                 "sector": "materials"},
+  {"slug": "freeday",                             "name": "Freeday",                                "sector": "conversational ai"},
+  {"slug": "intersnackitkg",                      "name": "Intersnack IT",                          "sector": "cpg / food & beverage"},
+  {"slug": "companiongroupltd",                   "name": "Companion Group",                        "sector": "software services"},
+  {"slug": "grid",                                "name": "GRID Esports",                           "sector": "sports data"},
+  {"slug": "seafarnv",                            "name": "Seafar",                                 "sector": "logistics"},
+  {"slug": "heidelbergmaterialsbenelux",          "name": "Heidelberg Materials Benelux",           "sector": "industrial / engineering"},
+  {"slug": "power2x",                             "name": "Power2X",                                "sector": "energy"},
+  {"slug": "enecoemobility",                      "name": "Eneco eMobility",                        "sector": "e-mobility"},
+  {"slug": "bluecrux",                            "name": "Bluecrux",                               "sector": "consulting"},
+  {"slug": "8advisory",                           "name": "Eight Advisory",                         "sector": "consulting"}
 ]
