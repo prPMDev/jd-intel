@@ -36,5 +36,7 @@
   {"slug": "ictnordics",                      "name": "ICT Nordics",            "sector": "engineering / IT consulting"},
   {"slug": "lunar",                           "name": "Lunar",                  "sector": "fintech (banking)"},
   {"slug": "templafy",                        "name": "Templafy",               "sector": "enterprise software"},
-  {"slug": "vipps",                           "name": "Vipps MobilePay",        "sector": "fintech / payments"}
+  {"slug": "vipps",                           "name": "Vipps MobilePay",        "sector": "fintech / payments"},
+  {"slug": "finnplay",                        "name": "Finnplay",               "sector": "gaming"},
+  {"slug": "netnordicdenmark",                "name": "NetNordic Denmark",      "sector": "it services"}
 ]

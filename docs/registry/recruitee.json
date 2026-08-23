@@ -34,5 +34,15 @@
   {"slug": "tradinorganic",            "name": "Tradin Organic",                  "sector": "food tech"},
   {"slug": "itilitybv",                "name": "Itility",                         "sector": "it services"},
   {"slug": "jobsdeerns",               "name": "Deerns",                          "sector": "consulting"},
-  {"slug": "bunq",                     "name": "bunq",                            "sector": "fintech (banking)"}
+  {"slug": "bunq",                     "name": "bunq",                            "sector": "fintech (banking)"},
+  {"slug": "skytree",                  "name": "Skytree",                         "sector": "climate tech"},
+  {"slug": "viryaenergy",              "name": "Virya Energy",                    "sector": "energy"},
+  {"slug": "oceansofenergy",           "name": "Oceans of Energy",                "sector": "energy"},
+  {"slug": "rift",                     "name": "RIFT",                            "sector": "energy"},
+  {"slug": "sustainablecomfort",       "name": "Sustainable Comfort",             "sector": "sustainability"},
+  {"slug": "12build",                  "name": "12Build",                         "sector": "construction / property"},
+  {"slug": "sensysgatsogroup",         "name": "Sensys Gatso Group",              "sector": "public safety"},
+  {"slug": "riverflex",                "name": "Riverflex",                       "sector": "consulting"},
+  {"slug": "anywhereworks",            "name": "AnywhereWorks",                   "sector": "saas"},
+  {"slug": "thirdway",                 "name": "Third Way",                       "sector": "nonprofit / policy"}
 ]
