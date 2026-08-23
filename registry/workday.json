@@ -32,5 +32,12 @@
   {"slug": "huron",              "name": "Huron Consulting",            "sector": "consulting", "config": {"tenant": "huron", "env": "wd1", "site": "huroncareers"}},
   {"slug": "nxp",                "name": "NXP Semiconductors",          "sector": "semiconductors", "config": {"tenant": "nxp", "env": "wd3", "site": "careers"}},
   {"slug": "pwc",                "name": "PwC",                         "sector": "consulting", "config": {"tenant": "pwc", "env": "wd3", "site": "Global_Experienced_Careers"}},
-  {"slug": "deutschebank",       "name": "Deutsche Bank",               "sector": "banking", "config": {"tenant": "db", "env": "wd3", "site": "DBWebsite"}}
+  {"slug": "deutschebank",       "name": "Deutsche Bank",               "sector": "banking", "config": {"tenant": "db", "env": "wd3", "site": "DBWebsite"}},
+  {"slug": "pciservices",        "name": "PCI Pharma Services",         "sector": "pharma services", "config": {"tenant": "pciservices", "env": "wd1", "site": "External"}},
+  {"slug": "xcelenergy",         "name": "Xcel Energy",                 "sector": "energy", "config": {"tenant": "xcelenergy", "env": "wd1", "site": "External"}},
+  {"slug": "dukeenergy",         "name": "Duke Energy",                 "sector": "energy", "config": {"tenant": "dukeenergy", "env": "wd1", "site": "Search"}},
+  {"slug": "tcenergy",           "name": "TC Energy",                   "sector": "energy", "config": {"tenant": "tcenergy", "env": "wd3", "site": "CAREER_SITE_TC"}},
+  {"slug": "uniphar",            "name": "Uniphar",                     "sector": "healthcare distribution", "config": {"tenant": "uniphar", "env": "wd3", "site": "uniphar_external_careers"}},
+  {"slug": "franklintempleton",  "name": "Franklin Templeton",          "sector": "asset management", "config": {"tenant": "franklintempleton", "env": "wd5", "site": "Primary-External-1"}},
+  {"slug": "atmosenergy",        "name": "Atmos Energy",                "sector": "energy", "config": {"tenant": "atmosenergy", "env": "wd108", "site": "External_Career_Site"}}
 ]

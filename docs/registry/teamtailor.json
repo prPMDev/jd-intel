@@ -38,5 +38,11 @@
   {"slug": "templafy",                        "name": "Templafy",               "sector": "enterprise software"},
   {"slug": "vipps",                           "name": "Vipps MobilePay",        "sector": "fintech / payments"},
   {"slug": "finnplay",                        "name": "Finnplay",               "sector": "gaming"},
-  {"slug": "netnordicdenmark",                "name": "NetNordic Denmark",      "sector": "it services"}
+  {"slug": "netnordicdenmark",                "name": "NetNordic Denmark",      "sector": "it services"},
+  {"slug": "treeenergysolutions",             "name": "Tree Energy Solutions",  "sector": "energy"},
+  {"slug": "saltx",                           "name": "SaltX Technology",       "sector": "climate tech"},
+  {"slug": "energiot",                        "name": "Energiot",               "sector": "energy tech"},
+  {"slug": "bayernordic",                     "name": "Bayer Nordic",           "sector": "pharmaceuticals"},
+  {"slug": "nordictalent",                    "name": "Nordic Talent",          "sector": "recruiting tech"},
+  {"slug": "sendcloud",                       "name": "Sendcloud",              "sector": "shipping saas"}
 ]
