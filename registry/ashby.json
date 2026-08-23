@@ -55,5 +55,7 @@
   {"slug": "Speakeasy",      "name": "Speakeasy",      "sector": "dev tools"},
   {"slug": "enter-ai",       "name": "Enter",          "sector": "fintech"},
   {"slug": "merge",          "name": "Merge",          "sector": "integration platform"},
-  {"slug": "plaid",          "name": "Plaid",          "sector": "fintech"}
+  {"slug": "plaid",          "name": "Plaid",          "sector": "fintech"},
+  {"slug": "modal",          "name": "Modal",          "sector": "ai data"},
+  {"slug": "planhat",        "name": "Planhat",        "sector": "saas"}
 ]

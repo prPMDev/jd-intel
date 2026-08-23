@@ -27,5 +27,10 @@
   {"slug": "DeltaElectronics",             "name": "Delta Electronics",              "sector": "electronics / power"},
   {"slug": "PSLogistics",                  "name": "PS Logistics",                   "sector": "logistics"},
   {"slug": "OECD",                         "name": "OECD",                           "sector": "intergovernmental"},
-  {"slug": "FinaktivaSAS",                 "name": "Finaktiva",                      "sector": "fintech"}
+  {"slug": "FinaktivaSAS",                 "name": "Finaktiva",                      "sector": "fintech"},
+  {"slug": "Freshworks",                   "name": "Freshworks",                     "sector": "saas"},
+  {"slug": "Sandisk",                      "name": "SanDisk",                        "sector": "semiconductors"},
+  {"slug": "PilotCompany",                 "name": "Pilot Company",                  "sector": "retail"},
+  {"slug": "FLINTCorp1",                   "name": "FLINT Corp",                     "sector": "energy"},
+  {"slug": "Equus",                        "name": "Equus",                          "sector": "it services"}
 ]
