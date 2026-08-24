@@ -54,15 +54,15 @@
   </nav>
 
   <header style="max-width:1120px; margin:0 auto; padding:calc(72px * var(--pad-scale)) 40px calc(34px * var(--pad-scale));">
-    <div style="max-width:var(--measure); margin:0 auto;">
+    <div style="margin:0 auto;">
       <h1 style="font-family:var(--display-font); font-weight:500; font-size:clamp(38px,5vw,54px); line-height:1.05; letter-spacing:-.025em; margin:0;">Changelog</h1>
     </div>
   </header>
 
   <main style="max-width:1120px; margin:0 auto; padding:0 40px calc(64px * var(--pad-scale));">
-    <div style="max-width:var(--measure); margin:0 auto;">
+    <div style="margin:0 auto;">
 
-      <!-- Newest release first. Copy this article block for each new one. -->
+      <!-- Newest release first. Copy an article block for each new release. -->
       <article style="border-top:1px solid var(--line); padding:26px 0 30px;">
         <h2 style="font:600 15px/1 'JetBrains Mono',monospace; letter-spacing:-.01em; color:var(--fg); margin:0 0 22px;">2026-08-23</h2>
 
@@ -103,17 +103,32 @@
       </article>
 
       <article style="border-top:1px solid var(--line); padding:26px 0 30px;">
+        <h2 style="font:600 15px/1 'JetBrains Mono',monospace; letter-spacing:-.01em; color:var(--fg); margin:0 0 22px;">2026-06-27</h2>
+
+        <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;">Added</div>
+        <ul style="margin:0 0 22px; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px;">
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">A setup and troubleshooting guide, covering every supported client.</li>
+        </ul>
+
+        <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;">Changed</div>
+        <ul style="margin:0; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px;">
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Redesigned the site, including a dark mode that follows your system setting.</li>
+        </ul>
+      </article>
+
+      <article style="border-top:1px solid var(--line); padding:26px 0 30px;">
         <h2 style="font:600 15px/1 'JetBrains Mono',monospace; letter-spacing:-.01em; color:var(--fg); margin:0 0 22px;">2026-06-26</h2>
 
         <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;">Added</div>
         <ul style="margin:0 0 22px; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px;">
-          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">One-click install. Download a bundle for Claude Desktop instead of editing a config file by hand.</li>
-          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Listed in the MCP Registry.</li>
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">One-click install for Claude Desktop. Download a bundle instead of editing a config file by hand.</li>
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Listed in the MCP Registry, so clients that read it can find jd-intel directly.</li>
         </ul>
 
         <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;">Changed</div>
         <ul style="margin:0; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px;">
           <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Errors are typed, so your AI can tell a wrong company name from a platform being down.</li>
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">The registry is fetched fresh at runtime, so new companies reach you without an upgrade.</li>
         </ul>
       </article>
 
@@ -131,7 +146,64 @@
 
         <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;">Added</div>
         <ul style="margin:0; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px;">
-          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Workday support, the seventh platform. Workday boards can be reached directly by tenant.</li>
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Workday boards can be reached by tenant, so you can query one that is not in the registry yet.</li>
+        </ul>
+      </article>
+
+      <article style="border-top:1px solid var(--line); padding:26px 0 30px;">
+        <h2 style="font:600 15px/1 'JetBrains Mono',monospace; letter-spacing:-.01em; color:var(--fg); margin:0 0 22px;">2026-05-15</h2>
+
+        <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;">Added</div>
+        <ul style="margin:0 0 22px; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px;">
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Four hiring platforms: SmartRecruiters, TeamTailor, Recruitee and Workday. Coverage goes from three platforms to seven.</li>
+        </ul>
+
+        <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;">Fixed</div>
+        <ul style="margin:0; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px;">
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">TeamTailor boards on regional subdomains now resolve.</li>
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Two jobs with the same title at different locations no longer collapse into one.</li>
+        </ul>
+      </article>
+
+      <article style="border-top:1px solid var(--line); padding:26px 0 30px;">
+        <h2 style="font:600 15px/1 'JetBrains Mono',monospace; letter-spacing:-.01em; color:var(--fg); margin:0 0 22px;">2026-05-01</h2>
+
+        <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;">Added</div>
+        <ul style="margin:0; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px;">
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">This site.</li>
+        </ul>
+      </article>
+
+      <article style="border-top:1px solid var(--line); padding:26px 0 30px;">
+        <h2 style="font:600 15px/1 'JetBrains Mono',monospace; letter-spacing:-.01em; color:var(--fg); margin:0 0 22px;">2026-04-24</h2>
+
+        <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;">Added</div>
+        <ul style="margin:0 0 22px; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px;">
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Works inside your AI assistant. Claude Desktop, Claude Code, Cursor, Windsurf and VS Code can all call jd-intel directly.</li>
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">One-command setup that writes the client config for you.</li>
+        </ul>
+
+        <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;">Changed</div>
+        <ul style="margin:0; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px;">
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Renamed from ats-index to jd-intel.</li>
+        </ul>
+      </article>
+
+      <article style="border-top:1px solid var(--line); padding:26px 0 30px;">
+        <h2 style="font:600 15px/1 'JetBrains Mono',monospace; letter-spacing:-.01em; color:var(--fg); margin:0 0 22px;">2026-04-17</h2>
+
+        <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;">Added</div>
+        <ul style="margin:0; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px;">
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Filter by role title, description, location or posting date, so you ask for what you want instead of reading everything.</li>
+        </ul>
+      </article>
+
+      <article style="border-top:1px solid var(--line); padding:26px 0 30px;">
+        <h2 style="font:600 15px/1 'JetBrains Mono',monospace; letter-spacing:-.01em; color:var(--fg); margin:0 0 22px;">2026-04-03</h2>
+
+        <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;">Added</div>
+        <ul style="margin:0; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px;">
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">First release. A library and command line tool covering Greenhouse, Ashby and Lever, returning every board in one shape.</li>
         </ul>
       </article>
 
