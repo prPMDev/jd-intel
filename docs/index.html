@@ -59,10 +59,26 @@
   <main style="max-width:1120px; margin:0 auto; padding:0 40px;">
 
     <!-- ============ HERO ============ -->
-    <section style="padding:calc(96px * var(--pad-scale)) 0 calc(44px * var(--pad-scale)); display:grid; grid-template-columns:1fr; gap:0; max-width:880px;">
+    <section style="padding:calc(96px * var(--pad-scale)) 0 calc(44px * var(--pad-scale)); display:grid; grid-template-columns:1fr; gap:0;">
       <div style="font:500 12.5px/1 'JetBrains Mono',monospace; letter-spacing:.14em; text-transform:uppercase; color:var(--fg-3); margin-bottom:30px;">Job search, handled by the AI you already use</div>
       <h1 style="font-family:var(--display-font); font-weight:500; font-size:clamp(44px,6.1vw,70px); line-height:1.02; letter-spacing:-.025em; margin:0 0 28px; max-width:16ch;">Stop pasting job descriptions into your AI.</h1>
-      <p style="font:400 21px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); max-width:600px; margin:0 0 38px;">jd-intel gives your assistant a direct line to real, current job openings. You ask in plain language. It finds the roles that fit you and ranks them against your background. No copy and paste, no new tool to learn.</p>
+      <div style="display:flex; gap:64px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; margin:0 0 38px;">
+        <p style="font:400 21px/1.6 'Schibsted Grotesk',sans-serif; color:var(--fg-2); flex:1 1 420px; max-width:600px; margin:0;">jd-intel gives your assistant a direct line to real, current job openings. You ask in plain language. It finds the roles that fit you and ranks them against your background. No copy and paste, no new tool to learn.</p>
+        <div style="flex:0 1 auto; display:flex; flex-direction:column; gap:18px; border-left:1px solid var(--line); padding-left:28px;">
+          <div>
+            <div style="font:600 22px/1 'JetBrains Mono',monospace; color:var(--fg); margin-bottom:6px;">522</div>
+            <div style="font:400 13.5px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-3);">verified companies</div>
+          </div>
+          <div>
+            <div style="font:600 22px/1 'JetBrains Mono',monospace; color:var(--fg); margin-bottom:6px;">7</div>
+            <div style="font:400 13.5px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-3);">hiring platforms</div>
+          </div>
+          <div>
+            <div style="font:600 22px/1 'JetBrains Mono',monospace; color:var(--fg); margin-bottom:6px;">MIT</div>
+            <div style="font:400 13.5px/1.4 'Schibsted Grotesk',sans-serif; color:var(--fg-3);">open source, runs locally</div>
+          </div>
+        </div>
+      </div>
       <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
         <a href="#demo" style="font:600 16px/1 'Schibsted Grotesk',sans-serif; color:var(--ink-fg); background:var(--ink); border-radius:11px; padding:15px 24px; text-decoration:none;">See the demo</a>
         <a href="#install" style="font:600 16px/1 'Schibsted Grotesk',sans-serif; color:var(--fg); border:1px solid var(--line-2); border-radius:11px; padding:15px 24px; text-decoration:none;">Install in 2 minutes</a>
@@ -99,7 +115,7 @@
       </div>
 
       <div style="margin-top:30px; border:1px solid var(--line-2); border-radius:15px; padding:38px 40px; background:var(--surface-2);">
-        <p style="font-family:var(--display-font); font-weight:400; font-size:clamp(24px,2.7vw,32px); line-height:1.32; letter-spacing:-.01em; margin:0; max-width:34ch; color:var(--fg);">jd-intel takes the tax off. It hands current, real postings to the assistant that already knows your background, so <em style="font-style:italic;">your</em> context does the ranking. Not a board's algorithm. Not another tab to manage.</p>
+        <p style="font-family:var(--display-font); font-weight:400; font-size:clamp(24px,2.7vw,32px); line-height:1.32; letter-spacing:-.01em; margin:0; max-width:48ch; color:var(--fg);">jd-intel takes the tax off. It hands current, real postings to the assistant that already knows your background, so <em style="font-style:italic;">your</em> context does the ranking. Not a board's algorithm. Not another tab to manage.</p>
       </div>
     </section>
 
