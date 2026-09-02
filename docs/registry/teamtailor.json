@@ -49,5 +49,7 @@
   {"slug": "studioworks",                     "name": "Studioworks",                "sector": "gaming"},
   {"slug": "multiversecomputing",             "name": "Multiverse Computing",       "sector": "deep tech"},
   {"slug": "tfbank",                          "name": "TF Bank",                    "sector": "fintech"},
-  {"slug": "huawei",                          "name": "Huawei Sweden",              "sector": "networking"}
+  {"slug": "huawei",                          "name": "Huawei Sweden",              "sector": "networking"},
+  {"slug": "payfit",                          "name": "PayFit",                     "sector": "hr / payroll software"},
+  {"slug": "doconomy",                        "name": "Doconomy",                   "sector": "climate tech / fintech"}
 ]
