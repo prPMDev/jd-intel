@@ -116,5 +116,6 @@
   {"slug": "clickhouse",         "name": "ClickHouse",        "sector": "database"},
   {"slug": "temporal",           "name": "Temporal",          "sector": "dev tools"},
   {"slug": "substrate-bio",      "name": "Substrate Bio",     "sector": "biotech"},
-  {"slug": "develop-health",     "name": "Develop Health",    "sector": "healthcare"}
+  {"slug": "develop-health",     "name": "Develop Health",    "sector": "healthcare"},
+  {"slug": "lumin-digital",      "name": "Lumin Digital",     "sector": "fintech (banking)"}
 ]

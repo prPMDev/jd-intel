@@ -195,5 +195,6 @@
   {"slug": "jbhunt",                      "name": "J.B. Hunt",                          "sector": "logistics / freight", "config": {"tenant": "jbhunt", "env": "wd501", "site": "Careers"}},
   {"slug": "kohls",                       "name": "Kohl's",                             "sector": "retail", "config": {"tenant": "kohls", "env": "wd504", "site": "kohlscareers"}},
   {"slug": "livenationentertainment",     "name": "Live Nation Entertainment",          "sector": "entertainment / events", "config": {"tenant": "livenation", "env": "wd503", "site": "LNExternalSite"}},
-  {"slug": "gevernova",                   "name": "GE Vernova",                         "sector": "energy / power grid", "config": {"tenant": "gevernova", "env": "wd5", "site": "Vernova_ExternalSite"}}
+  {"slug": "gevernova",                   "name": "GE Vernova",                         "sector": "energy / power grid", "config": {"tenant": "gevernova", "env": "wd5", "site": "Vernova_ExternalSite"}},
+  {"slug": "netflix",                     "name": "Netflix",                            "sector": "media", "config": {"tenant": "netflix", "env": "wd108", "site": "Netflix"}}
 ]
