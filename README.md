@@ -254,7 +254,7 @@ All filters AND together. Deep dive on patterns and gotchas: [docs/filters.md](d
 - Greenhouse, Ashby, Lever, SmartRecruiters, Teamtailor, Recruitee, Workday adapters
 - Title, topic, location, and date filters
 - Salary extraction from JD text
-- Verified company registry (500+ companies)
+- Verified company registry (600+ companies)
 
 **Next**
 - Personio adapter (German / EU mid-market)
@@ -270,11 +270,22 @@ All filters AND together. Deep dive on patterns and gotchas: [docs/filters.md](d
 
 ## Contributing
 
-**Add a company to the registry:** submit a PR to the appropriate file in `registry/`.
+Full details in [CONTRIBUTING.md](CONTRIBUTING.md). The short version:
+
+**Add companies to the registry:** don't hand-edit `registry/*.json`. Stage your candidates in `tmp/candidates.json`, then run the live gate, which calls every board for real and keeps only the ones returning live jobs:
+
+```bash
+node scripts/verify-registry.mjs --candidates tmp/candidates.json --limit 50
+node scripts/append-registry.mjs
+npm run sync:registry-pages
+node --test test/*.test.js
+```
+
+Entries that haven't passed the gate can't be merged. A board that looks right but returns nothing fails silently inside someone's search, which is worse than the company simply being absent. Workday needs a `config` of `{tenant, env, site}` read off the company's real careers URL, never constructed by pattern. [CONTRIBUTING.md](CONTRIBUTING.md#workday) covers how to find and confirm those.
 
 **Add an ATS adapter:** new file in `src/adapters/`. One adapter, one file. Follow the pattern of the existing adapters.
 
-**Request a company:** [open an issue](https://github.com/prPMDev/jd-intel/issues/new). Tell me who's missing.
+**Request a company:** [open an issue](https://github.com/prPMDev/jd-intel/issues/new). Tell me who's missing. That's a useful contribution on its own.
 
 ---
 
