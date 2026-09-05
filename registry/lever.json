@@ -42,5 +42,15 @@
   {"slug": "xcimer",          "name": "Xcimer Energy",        "sector": "energy"},
   {"slug": "octoenergy",      "name": "Octopus Energy Group", "sector": "energy"},
   {"slug": "h1",              "name": "H1",                   "sector": "health data"},
-  {"slug": "juneshine",       "name": "JuneShine Brands",     "sector": "cpg / food & beverage"}
+  {"slug": "juneshine",       "name": "JuneShine Brands",     "sector": "cpg / food & beverage"},
+  {"slug": "xsolla",          "name": "Xsolla",               "sector": "gaming payments"},
+  {"slug": "finix",           "name": "Finix",                "sector": "fintech / payments"},
+  {"slug": "steerbridge",     "name": "SteerBridge",          "sector": "government tech"},
+  {"slug": "farfetch",        "name": "Farfetch",             "sector": "ecommerce"},
+  {"slug": "BTSE",            "name": "BTSE",                 "sector": "fintech / crypto"},
+  {"slug": "fiscalnote",      "name": "FiscalNote",           "sector": "regtech / data"},
+  {"slug": "termgrid",        "name": "Termgrid",             "sector": "fintech"},
+  {"slug": "collate",         "name": "Collate",              "sector": "data"},
+  {"slug": "certik",          "name": "CertiK",               "sector": "security"},
+  {"slug": "anavationllc",    "name": "AnaVation",            "sector": "defense / it services"}
 ]

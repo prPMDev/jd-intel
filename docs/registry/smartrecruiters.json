@@ -1,5 +1,4 @@
 [
-  {"slug": "Visa",                            "name": "Visa",                                 "sector": "payments"},
   {"slug": "Wise",                            "name": "Wise",                                 "sector": "fintech"},
   {"slug": "Wabtec",                          "name": "Wabtec",                               "sector": "rail / industrial"},
   {"slug": "Sutherland",                      "name": "Sutherland",                           "sector": "bpo / cx"},
@@ -64,5 +63,10 @@
   {"slug": "TheCoca-ColaCompany",             "name": "The Coca-Cola Company",                "sector": "cpg / food & beverage"},
   {"slug": "IkanoRetail",                     "name": "Ikano Retail",                         "sector": "retail"},
   {"slug": "aboutyougmbh",                    "name": "ABOUT YOU",                            "sector": "ecommerce"},
-  {"slug": "authenticbrandsgroup",            "name": "Authentic Brands Group",               "sector": "consumer brands"}
+  {"slug": "authenticbrandsgroup",            "name": "Authentic Brands Group",               "sector": "consumer brands"},
+  {"slug": "PolarisPaymentsLLC",              "name": "Polaris Payments",                     "sector": "fintech / payments"},
+  {"slug": "Playtech",                        "name": "Playtech",                             "sector": "gaming software"},
+  {"slug": "PayMarkFast",                     "name": "PayMark Fast",                         "sector": "fintech / payments"},
+  {"slug": "AccessPay",                       "name": "AccessPay",                            "sector": "fintech / payments"},
+  {"slug": "endava",                          "name": "Endava",                               "sector": "it services"}
 ]

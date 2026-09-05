@@ -45,5 +45,18 @@
   {"slug": "cdw",                "name": "CDW",                         "sector": "it services", "config": {"tenant": "cdw", "env": "wd5", "site": "Careers"}},
   {"slug": "caa",                "name": "Creative Artists Agency",     "sector": "media / entertainment", "config": {"tenant": "caa", "env": "wd1", "site": "Careers"}},
   {"slug": "academy",            "name": "Academy Sports + Outdoors",   "sector": "retail", "config": {"tenant": "academy", "env": "wd1", "site": "Careers"}},
-  {"slug": "tsys",               "name": "TSYS",                        "sector": "fintech / payments", "config": {"tenant": "tsys", "env": "wd1", "site": "TSYS"}}
+  {"slug": "tsys",               "name": "TSYS",                        "sector": "fintech / payments", "config": {"tenant": "tsys", "env": "wd1", "site": "TSYS"}},
+  {"slug": "bitsight",           "name": "Bitsight",                    "sector": "security", "config": {"tenant": "bitsight", "env": "wd1", "site": "bitsight"}},
+  {"slug": "forrester",          "name": "Forrester",                   "sector": "research / advisory", "config": {"tenant": "forrester", "env": "wd501", "site": "careers"}},
+  {"slug": "unisys",             "name": "Unisys",                      "sector": "it services", "config": {"tenant": "unisys", "env": "wd5", "site": "external"}},
+  {"slug": "worldpay",           "name": "Worldpay",                    "sector": "fintech / payments", "config": {"tenant": "worldpay", "env": "wd5", "site": "Worldpay_External_Careers_Site"}},
+  {"slug": "blackbaud",          "name": "Blackbaud",                   "sector": "nonprofit software", "config": {"tenant": "blackbaud", "env": "wd1", "site": "ExternalCareers"}},
+  {"slug": "rakuten",            "name": "Rakuten",                     "sector": "ecommerce", "config": {"tenant": "rakuten", "env": "wd1", "site": "RakutenInc"}},
+  {"slug": "csiweb",             "name": "Computer Services Inc",       "sector": "banking software", "config": {"tenant": "csiweb", "env": "wd1", "site": "CSI_Careers"}},
+  {"slug": "autodesk",           "name": "Autodesk",                    "sector": "design software", "config": {"tenant": "autodesk", "env": "wd1", "site": "Ext"}},
+  {"slug": "zoom",               "name": "Zoom",                        "sector": "communications", "config": {"tenant": "zoom", "env": "wd5", "site": "Zoom"}},
+  {"slug": "carrier",            "name": "Carrier",                     "sector": "hvac / building systems", "config": {"tenant": "carrier", "env": "wd5", "site": "jobs"}},
+  {"slug": "ww",                 "name": "WW (WeightWatchers)",         "sector": "consumer health", "config": {"tenant": "ww", "env": "wd1", "site": "careers"}},
+  {"slug": "path",               "name": "PATH",                        "sector": "global health nonprofit", "config": {"tenant": "path", "env": "wd1", "site": "External"}},
+  {"slug": "visa",               "name": "Visa",                        "sector": "payments", "config": {"tenant": "visa", "env": "wd5", "site": "Visa"}}
 ]
