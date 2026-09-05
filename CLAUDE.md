@@ -46,7 +46,7 @@ A toolkit (three surfaces, one core) for fetching and normalizing job descriptio
 - **CLI** (`npx jd-intel fetch <slug>`) — same capabilities from the terminal.
 - **MCP server** (`jd-intel-mcp`) — exposes the toolkit to AI assistants via the Model Context Protocol.
 
-Seven ATS adapters shipped: Greenhouse, Lever, Ashby, SmartRecruiters, TeamTailor, Recruitee, Workday. 700+ company verified registry.
+Seven ATS adapters shipped: Greenhouse, Lever, Ashby, SmartRecruiters, TeamTailor, Recruitee, Workday. Verified company registry, count in `registry/*.json`.
 
 ---
 
@@ -67,7 +67,7 @@ cd C:\Projects\jd-intel
 npm install                       # root deps
 cd mcp && npm install             # MCP package deps
 
-node --test test/*.test.js        # 124 tests, all should pass
+node --test test/*.test.js        # all should pass
 node mcp/server.js                # boot MCP server locally
 ```
 
@@ -94,6 +94,9 @@ jd-intel/
 │   ├── errors.js                 # 6-code error taxonomy
 │   ├── install.js                # `npx jd-intel-mcp install` auto-configurator
 │   └── README.md
+├── .github/workflows/
+│   ├── test.yml                  # CI: suite on PR (Node 18/20/22) + registry JSON and Pages-sync gates
+│   └── publish.yml               # npm/MCPB release, fires on v* tags only
 ├── test/                         # Node built-in test runner
 ├── registry/                     # JSON catalogs of verified companies per ATS
 ├── docs/
@@ -103,8 +106,9 @@ jd-intel/
 │   ├── expansion-research.md     # Verified next-adapter catalog
 │   ├── landing-page-plan.md      # Landing page blueprint
 │   └── linkedin-content-guide.md # Content handoff guide
+├── CONTRIBUTING.md               # Contributor-facing: candidates format, live gate, per-ATS probes
 ├── README.md                     # Public, dual-audience product page
-└── CLAUDE.md                     # This file
+└── AGENTS.md / CLAUDE.md         # This file (two copies, keep in sync)
 ```
 
 ---
@@ -129,6 +133,11 @@ jd-intel/
 **Registry-first routing:**
 - `fetchJobs` consults the registry before probing all adapters
 - Known company → 1 adapter call. Unknown → discovery mode (probe all adapters). Workday is registry-only (opaque tenant key, no probe).
+
+**Local registry testing (bites every time):**
+- The library fetches the registry from the published Pages URL, so a locally-added company returns 0 jobs until it merges and Pages redeploys. Nothing is broken.
+- Force the bundled copy: `JD_INTEL_REGISTRY_URL="" node src/cli.js fetch <slug>`
+- The test suite is decoupled from live registry contents by design, but invalid JSON in `registry/*.json` still fails it. CI gates that separately.
 
 **Voice rules (apply to all user-facing prose):**
 - No em dashes (—) in README, docs, mcp/README, mcp/descriptions.js. Period, colon, comma, or rewrite. Code comments / JSDoc are exempt.
@@ -191,6 +200,7 @@ For shipped work and current priorities:
 - **Open priorities:** [GitHub issues](https://github.com/prPMDev/jd-intel/issues) — issues are the source of truth, not this file
 - **Parked plans:** `notes/landing-page-plan.md` (landing page), `notes/expansion-research.md` (next-adapter selection)
 - **Test baseline:** `node --test test/*.test.js` should be green
+- **Registry size:** count `registry/*.json`. Don't state a total in this file; the weekly expansion changes it. The user-facing claims in `README.md` and `docs/index.html` are separate and bump only on a hundreds boundary.
 
 ---
 
@@ -212,6 +222,8 @@ A scheduled cloud agent expands the registry weekly, staging everything as a PR 
 
 - Candidates file shape: `{ "<ats>": [ {slug, name, sector, config?}, ... ] }` — `config` is Workday-only (`{tenant, env, site}`)
 - Gate, then append: `node scripts/verify-registry.mjs --candidates tmp/candidates.json --limit 50`, then `node scripts/append-registry.mjs` (writes `survivorsByAts` from the report; never hand-edit the column-aligned registry JSON)
+- The gate retries 429/5xx/network with backoff (`--retries N`, default 3). A 429 is rate limiting, not a dead board: entries that fail the gate are silently dropped, so treating transient errors as failures quietly discards good companies
+- The contributor-facing version of this pipeline lives in `CONTRIBUTING.md`. Keep the two in step
 - Never add an entry that didn't pass the live gate in the same run
 - Additions by default. The only permitted change to an existing entry is a migration: it failed on its recorded ATS AND live-verified on another ATS in the same run. Deletions never.
 - One company, one ATS — skip candidates whose normalized slug or name (lowercase, alphanumerics only) already exists in any registry file
@@ -225,7 +237,7 @@ A scheduled cloud agent expands the registry weekly, staging everything as a PR 
 2. **Read relevant `notes/*` file** if you need historical context
 3. **Plan** with the appropriate skill or Plan agent if non-trivial
 4. **Implement** with thin handlers, library does work, tests cover behavior
-5. **Verify** — run tests, smoke-test the MCP via stdin if MCP work, voice-review user-facing text
+5. **Verify** — run tests, smoke-test the MCP via stdin if MCP work, voice-review user-facing text. CI repeats the suite on every PR across Node 18/20/22, plus a registry JSON gate and a `docs/registry` sync check
 6. **Commit** with a descriptive message, push, mention in issue if applicable
 
 For npm publish flow: token in `.npmrc`, `npm publish` from root for jd-intel, from `mcp/` for jd-intel-mcp. See the publishing log in `notes/building-mcp.md` for the full process documented.
@@ -267,3 +279,6 @@ After publishing: tag the commit (`git tag v0.X.Y && git push origin v0.X.Y`).
 - Pile-on of the same 1-2 example companies (Stripe, Mercury) in user-facing prose
 - Drafting LinkedIn / blog / course content in this repo. That's the polish-for-publication track, owned by a separate project. Product polish (code, docs, README, MCP descriptions, voice) IS in scope; learning-publication polish isn't.
 - Treating `notes/` as read-only. When learning happens, append.
+- Inferring an HTTP status by pattern-matching an error message. Workday messages embed the pod name, so a naive `/5\d\d/` reads `"(ufp/wd503/Careers): 404"` as a retryable 5xx. Use `err.status` / `err.code` from `src/errors.js`.
+- Merging parallel agent output without reconciling against every output file. Agents write results in passes; a merge taken mid-run silently drops verified entries.
+- Stating a volatile count in this file (test totals, registry size). Give the command that produces the truth instead.
