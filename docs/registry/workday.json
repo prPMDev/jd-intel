@@ -163,5 +163,8 @@
   {"slug": "usfoods",                   "name": "US Foods",                           "sector": "food distribution", "config": {"tenant": "usfoods", "env": "wd1", "site": "usfoodscareersExternal"}},
   {"slug": "vfcorporation",             "name": "VF Corporation",                     "sector": "apparel / footwear", "config": {"tenant": "vfc", "env": "wd5", "site": "vfc_careers"}},
   {"slug": "vistracorp",                "name": "Vistra Corp",                        "sector": "energy / power grid", "config": {"tenant": "vst", "env": "wd5", "site": "vistra_careers"}},
-  {"slug": "wellsfargo",                "name": "Wells Fargo",                        "sector": "banking", "config": {"tenant": "wf", "env": "wd1", "site": "WellsFargoJobs"}}
+  {"slug": "wellsfargo",                "name": "Wells Fargo",                        "sector": "banking", "config": {"tenant": "wf", "env": "wd1", "site": "WellsFargoJobs"}},
+  {"slug": "jbhunt",                    "name": "J.B. Hunt",                          "sector": "logistics / freight", "config": {"tenant": "jbhunt", "env": "wd501", "site": "Careers"}},
+  {"slug": "kohls",                     "name": "Kohl's",                             "sector": "retail", "config": {"tenant": "kohls", "env": "wd504", "site": "kohlscareers"}},
+  {"slug": "livenationentertainment",   "name": "Live Nation Entertainment",          "sector": "entertainment / events", "config": {"tenant": "livenation", "env": "wd503", "site": "LNExternalSite"}}
 ]
