@@ -114,5 +114,7 @@
   {"slug": "column",             "name": "Column",            "sector": "fintech (banking)"},
   {"slug": "unit",               "name": "Unit",              "sector": "fintech (banking)"},
   {"slug": "clickhouse",         "name": "ClickHouse",        "sector": "database"},
-  {"slug": "temporal",           "name": "Temporal",          "sector": "dev tools"}
+  {"slug": "temporal",           "name": "Temporal",          "sector": "dev tools"},
+  {"slug": "substrate-bio",      "name": "Substrate Bio",     "sector": "biotech"},
+  {"slug": "develop-health",     "name": "Develop Health",    "sector": "healthcare"}
 ]

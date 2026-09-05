@@ -62,5 +62,8 @@
   {"slug": "power2x",                             "name": "Power2X",                                "sector": "energy"},
   {"slug": "enecoemobility",                      "name": "Eneco eMobility",                        "sector": "e-mobility"},
   {"slug": "bluecrux",                            "name": "Bluecrux",                               "sector": "consulting"},
-  {"slug": "8advisory",                           "name": "Eight Advisory",                         "sector": "consulting"}
+  {"slug": "8advisory",                           "name": "Eight Advisory",                         "sector": "consulting"},
+  {"slug": "tylko",                               "name": "Tylko",                                  "sector": "ecommerce"},
+  {"slug": "igh",                                 "name": "IGH",                                    "sector": "consulting"},
+  {"slug": "nemenergy",                           "name": "NEM Energy",                             "sector": "energy"}
 ]

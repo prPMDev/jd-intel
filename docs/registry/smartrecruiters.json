@@ -68,5 +68,7 @@
   {"slug": "Playtech",                        "name": "Playtech",                             "sector": "gaming software"},
   {"slug": "PayMarkFast",                     "name": "PayMark Fast",                         "sector": "fintech / payments"},
   {"slug": "AccessPay",                       "name": "AccessPay",                            "sector": "fintech / payments"},
-  {"slug": "endava",                          "name": "Endava",                               "sector": "it services"}
+  {"slug": "endava",                          "name": "Endava",                               "sector": "it services"},
+  {"slug": "NMCHealthcare",                   "name": "NMC Healthcare",                       "sector": "healthcare"},
+  {"slug": "wellbeamconsumerhealth",          "name": "Wellbeam Consumer Health",             "sector": "healthcare"}
 ]

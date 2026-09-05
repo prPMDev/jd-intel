@@ -51,5 +51,7 @@
   {"slug": "tfbank",                          "name": "TF Bank",                    "sector": "fintech"},
   {"slug": "huawei",                          "name": "Huawei Sweden",              "sector": "networking"},
   {"slug": "payfit",                          "name": "PayFit",                     "sector": "hr / payroll software"},
-  {"slug": "doconomy",                        "name": "Doconomy",                   "sector": "climate tech / fintech"}
+  {"slug": "doconomy",                        "name": "Doconomy",                   "sector": "climate tech / fintech"},
+  {"slug": "cambio",                          "name": "Cambio",                     "sector": "healthcare"},
+  {"slug": "netnordicgroupas",                "name": "NetNordic Group",            "sector": "it services"}
 ]
