@@ -32,6 +32,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ADAPTERS } from '../src/adapters/index.js';
 import { loadRegistry } from '../src/registry.js';
+import { ERROR_CODES } from '../src/errors.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -53,7 +54,24 @@ async function loadEntries() {
   return loadRegistry(); // { ats: [entries] }
 }
 
-async function verifyOne(ats, entry) {
+// Transient-failure detector. ATS APIs rate-limit under load (Workday and
+// SmartRecruiters both do at modest volume), and a 429 says nothing about
+// whether a board is real. Treating one as a failure produced a 27% false
+// drop rate on a 118-entry run, so these retry with backoff instead.
+//
+// The decision is structural, never a message regex: Workday error messages
+// embed the pod name next to the status ("(ufp/wd503/Careers): 404"), so a
+// /5\d\d/ match on the text reads that terminal 404 as a retryable 5xx.
+const RETRIES = Number(getArg('--retries', '3'));
+const NETWORK_ERR = /fetch failed|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket hang up/i;
+
+function isTransient(err) {
+  if (err?.code === ERROR_CODES.RATE_LIMITED) return true;      // 429
+  if (typeof err?.status === 'number') return err.status >= 500; // 5xx retry, 4xx terminal
+  return NETWORK_ERR.test(err?.message || '');                   // DNS/socket, not an AtsError
+}
+
+async function verifyOne(ats, entry, attempt = 0) {
   // Call the adapter directly with the CANONICAL slug — exactly what
   // fetchJobs does AFTER a registry lookup (it passes hit.entry.slug).
   // We deliberately do NOT route through fetchJobs({company}) here: that
@@ -76,6 +94,12 @@ async function verifyOne(ats, entry) {
     const jobCount = Array.isArray(jobs) ? jobs.length : 0;
     return { ats, slug: entry.slug, name: entry.name, status: jobCount > 0 ? 'ok' : 'empty', jobCount };
   } catch (err) {
+    if (attempt < RETRIES && isTransient(err)) {
+      // Exponential backoff with jitter: 2s, 4s, 8s.
+      const wait = 2000 * 2 ** attempt + Math.floor(Math.random() * 500);
+      await new Promise((r) => setTimeout(r, wait));
+      return verifyOne(ats, entry, attempt + 1);
+    }
     return { ats, slug: entry.slug, name: entry.name, status: 'error', jobCount: 0, error: err.message };
   }
 }

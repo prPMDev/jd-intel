@@ -22,10 +22,15 @@ export const ERROR_CODES = {
  * all keep working for existing library consumers.
  */
 export class AtsError extends Error {
-  constructor(code, message) {
+  constructor(code, message, status) {
     super(message);
     this.name = 'AtsError';
     this.code = code;
+    // Upstream HTTP status when one is known. Lets callers distinguish a
+    // retryable 503 from a terminal 404 without parsing the message, which
+    // is unsafe: Workday messages embed the pod name (wd503) alongside the
+    // status, so a message-level /5\d\d/ match reads "wd503: 404" as a 5xx.
+    if (status !== undefined) this.status = status;
   }
 }
 
@@ -34,5 +39,5 @@ export class AtsError extends Error {
  * limited, anything else => unreachable) with the given message.
  */
 export function atsErrorFromStatus(status, message) {
-  return new AtsError(status === 429 ? ERROR_CODES.RATE_LIMITED : ERROR_CODES.ATS_UNREACHABLE, message);
+  return new AtsError(status === 429 ? ERROR_CODES.RATE_LIMITED : ERROR_CODES.ATS_UNREACHABLE, message, status);
 }
