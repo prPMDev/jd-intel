@@ -116,5 +116,16 @@
   {"slug": "clickhouse",         "name": "ClickHouse",        "sector": "database"},
   {"slug": "temporal",           "name": "Temporal",          "sector": "dev tools"},
   {"slug": "substrate-bio",      "name": "Substrate Bio",     "sector": "biotech"},
-  {"slug": "develop-health",     "name": "Develop Health",    "sector": "healthcare"}
+  {"slug": "develop-health",     "name": "Develop Health",    "sector": "healthcare"},
+  {"slug": "siftstack",          "name": "Sift",              "sector": "observability"},
+  {"slug": "nango",              "name": "Nango",             "sector": "integration platform"},
+  {"slug": "bild-ai",            "name": "Bild AI",           "sector": "construction / property"},
+  {"slug": "chiefai",            "name": "Chief AI",          "sector": "ai automation"},
+  {"slug": "abridge",            "name": "Abridge",           "sector": "healthcare ai"},
+  {"slug": "tern",               "name": "Tern",              "sector": "travel tech"},
+  {"slug": "handshake",          "name": "Handshake",         "sector": "recruiting tech"},
+  {"slug": "stack-ai",           "name": "StackAI",           "sector": "ai automation"},
+  {"slug": "cognition",          "name": "Cognition",         "sector": "ai coding platform"},
+  {"slug": "fireworks",          "name": "Fireworks AI",      "sector": "ai inference"},
+  {"slug": "marqeta-inc",        "name": "Marqeta",           "sector": "fintech"}
 ]
