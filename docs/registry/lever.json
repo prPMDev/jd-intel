@@ -66,5 +66,6 @@
   {"slug": "cascade-climate",   "name": "Cascade Climate",      "sector": "climate tech"},
   {"slug": "EnergyVault",       "name": "Energy Vault",         "sector": "energy"},
   {"slug": "explodingkittens",  "name": "Exploding Kittens",    "sector": "gaming"},
-  {"slug": "arcteryx.com",      "name": "Arc'teryx",            "sector": "consumer brands"}
+  {"slug": "arcteryx.com",      "name": "Arc'teryx",            "sector": "consumer brands"},
+  {"slug": "ro",                "name": "Ro",                   "sector": "healthcare"}
 ]
