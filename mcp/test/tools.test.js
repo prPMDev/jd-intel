@@ -164,3 +164,103 @@ describe('mcp fetch_jobs — workday passthrough', () => {
     assert.equal(env.metadata.workday_override, true);
   });
 });
+
+describe('mcp envelope — structuredContent and isError', () => {
+  test('success returns structuredContent matching the text payload, no isError', async () => {
+    const handler = getFetchJobsHandler({
+      fetchJobs: async () => [{ title: 'PM' }],
+      findAtsBySlug: async () => 'greenhouse',
+    });
+    const result = await handler({ company: 'stripe' });
+    assert.deepEqual(result.structuredContent, parse(result));
+    assert.equal(result.isError, undefined);
+  });
+
+  test('error sets isError and keeps the structured error code', async () => {
+    const handler = getFetchJobsHandler({
+      fetchJobs: async () => [],
+      findAtsBySlug: async () => null,
+    });
+    const result = await handler({ company: 'zzzznotacompany' });
+    assert.equal(result.isError, true);
+    assert.equal(result.structuredContent.error.code, 'company_not_found');
+  });
+});
+
+describe('mcp server — end to end over an in-memory transport', async () => {
+  const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
+  const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
+  const { InMemoryTransport } = await import('@modelcontextprotocol/sdk/inMemory.js');
+
+  async function connect(deps) {
+    const server = new McpServer({ name: 'jd-intel-test', version: '0.0.0' });
+    registerTools(server, deps);
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: 'test-client', version: '0.0.0' });
+    await Promise.all([server.connect(serverSide), client.connect(clientSide)]);
+    return client;
+  }
+
+  const job = {
+    id: 'x1', company: 'Stripe', companySlug: 'stripe', ats: 'greenhouse', title: 'PM',
+    department: '', location: 'Remote', locationType: 'remote', salary: null,
+    description: 'desc', url: 'https://example.com/j/1', postedAt: null,
+    firstSeen: 't', lastSeen: 't', status: 'open', metadata: {},
+  };
+
+  test('tools advertise annotations, outputSchema and strict inputs', async () => {
+    const client = await connect({});
+    const { tools } = await client.listTools();
+    const byName = Object.fromEntries(tools.map((t) => [t.name, t]));
+    for (const name of ['fetch_jobs', 'search_registry', 'detect_ats']) {
+      const t = byName[name];
+      assert.equal(t.annotations.readOnlyHint, true);
+      assert.equal(t.annotations.destructiveHint, false);
+      assert.equal(t.annotations.idempotentHint, true);
+      assert.equal(t.inputSchema.additionalProperties, false);
+      assert.equal(t.outputSchema.type, 'object');
+    }
+    assert.equal(byName.fetch_jobs.annotations.openWorldHint, true);
+    assert.equal(byName.detect_ats.annotations.openWorldHint, true);
+    assert.equal(byName.search_registry.annotations.openWorldHint, false);
+  });
+
+  test('fetch_jobs success passes SDK output validation', async () => {
+    const client = await connect({
+      fetchJobs: async () => [job],
+      findAtsBySlug: async () => 'greenhouse',
+    });
+    const result = await client.callTool({ name: 'fetch_jobs', arguments: { company: 'stripe' } });
+    assert.equal(result.isError, undefined);
+    assert.equal(result.structuredContent.status, 'success');
+    assert.equal(result.structuredContent.data[0].title, 'PM');
+  });
+
+  test('fetch_jobs error comes back with isError at the protocol level', async () => {
+    const client = await connect({ fetchJobs: async () => [], findAtsBySlug: async () => null });
+    const result = await client.callTool({ name: 'fetch_jobs', arguments: { company: 'zzzz' } });
+    assert.equal(result.isError, true);
+    assert.equal(result.structuredContent.error.code, 'company_not_found');
+  });
+
+  test('unknown argument is rejected instead of silently ignored', async () => {
+    const client = await connect({ fetchJobs: async () => [job], findAtsBySlug: async () => 'greenhouse' });
+    const result = await client.callTool({ name: 'fetch_jobs', arguments: { company: 'stripe', titel_filter: 'PM' } });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /titel_filter|Unrecognized/i);
+  });
+
+  test('search_registry success passes SDK output validation', async () => {
+    const prev = process.env.JD_INTEL_REGISTRY_URL;
+    process.env.JD_INTEL_REGISTRY_URL = ''; // bundled registry, no network
+    try {
+      const client = await connect({});
+      const result = await client.callTool({ name: 'search_registry', arguments: { sector: 'fintech' } });
+      assert.equal(result.isError, undefined);
+      assert.ok(result.structuredContent.data.length > 0);
+    } finally {
+      if (prev === undefined) delete process.env.JD_INTEL_REGISTRY_URL;
+      else process.env.JD_INTEL_REGISTRY_URL = prev;
+    }
+  });
+});

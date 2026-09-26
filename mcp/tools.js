@@ -16,7 +16,7 @@ const { search: searchRegistry, findAtsBySlug } = registry;
 // Tolerate an older jd-intel that predates getSource. The bundle always
 // vendors a matching version; this only guards a skewed local/global install.
 const getRegistrySource = registry.getSource || (() => 'unknown');
-import { success, partial, error } from './envelope.js';
+import { success, partial, error, envelopeSchema } from './envelope.js';
 import { ERROR_CODES } from './errors.js';
 import { VERSION } from './version.js';
 import {
@@ -24,6 +24,27 @@ import {
   SEARCH_REGISTRY,
   DETECT_ATS,
 } from './descriptions.js';
+
+// Tool behavior hints for clients. All three tools only read; fetch_jobs and
+// detect_ats reach out to live ATS APIs, search_registry reads the catalog.
+const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true };
+
+const JOB = z
+  .object({
+    id: z.string(),
+    company: z.string(),
+    ats: z.string(),
+    title: z.string(),
+    location: z.string(),
+    description: z.string(),
+    url: z.string(),
+    postedAt: z.string().nullable().optional(),
+  })
+  .passthrough();
+
+const REGISTRY_ENTRY = z
+  .object({ slug: z.string(), name: z.string(), sector: z.string().optional(), ats: z.string() })
+  .passthrough();
 
 export function registerTools(server, deps = {}) {
   const _fetchJobs = deps.fetchJobs || fetchJobs;
@@ -34,7 +55,9 @@ export function registerTools(server, deps = {}) {
     {
       title: 'Fetch jobs from a company ATS',
       description: FETCH_JOBS,
-      inputSchema: {
+      annotations: { ...READ_ONLY, openWorldHint: true },
+      outputSchema: envelopeSchema(z.array(JOB).nullable()),
+      inputSchema: z.object({
         company: z.string().describe('Company slug or name (e.g. "stripe")'),
         title_filter: z.string().optional().describe('Regex matched against title only — role identity'),
         filter: z.string().optional().describe('Regex matched across title, department, description — topic/scope'),
@@ -51,7 +74,7 @@ export function registerTools(server, deps = {}) {
           .strict()
           .optional()
           .describe('Override the registry for a Workday board not indexed. Derive all three from the careers URL https://{tenant}.{env}.myworkdayjobs.com/{site}. Never guess these.'),
-      },
+      }).strict(),
     },
     async (args) => {
       let ats;
@@ -127,10 +150,12 @@ export function registerTools(server, deps = {}) {
     {
       title: 'Search the company registry',
       description: SEARCH_REGISTRY,
-      inputSchema: {
+      annotations: { ...READ_ONLY, openWorldHint: false },
+      outputSchema: envelopeSchema(z.array(REGISTRY_ENTRY).nullable()),
+      inputSchema: z.object({
         query: z.string().optional().describe('Substring match against company name'),
         sector: z.string().optional().describe('Match against sector (e.g. "fintech", "developer tools")'),
-      },
+      }).strict(),
     },
     async (args) => {
       if (!args.query && !args.sector) {
@@ -162,9 +187,11 @@ export function registerTools(server, deps = {}) {
     {
       title: 'Detect which ATS a company uses',
       description: DETECT_ATS,
-      inputSchema: {
+      annotations: { ...READ_ONLY, openWorldHint: true },
+      outputSchema: envelopeSchema(z.string().nullable()),
+      inputSchema: z.object({
         company: z.string().describe('Company name or slug'),
-      },
+      }).strict(),
     },
     async (args) => {
       const results = await libDetectAts(args.company);

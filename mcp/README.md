@@ -127,6 +127,10 @@ All three tools return a uniform envelope:
 
 On errors, the envelope adds `"error": { "code", "message" }`. Error codes come from a fixed taxonomy (`company_not_found`, `ats_unreachable`, `invalid_args`, `partial_failure`, `rate_limited`, `no_results`).
 
+The envelope comes back twice in every response: as JSON text for clients that only show text, and as typed `structuredContent` that matches each tool's published `outputSchema`. Error responses also set the protocol's `isError` flag, so clients can show them as failures.
+
+Every tool is marked read-only and safe to repeat. Inputs are strict: an unknown or misspelled argument is rejected with a clear message instead of being silently ignored.
+
 ---
 
 ## License
