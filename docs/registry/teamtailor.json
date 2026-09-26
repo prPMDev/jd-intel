@@ -53,5 +53,9 @@
   {"slug": "payfit",                          "name": "PayFit",                     "sector": "hr / payroll software"},
   {"slug": "doconomy",                        "name": "Doconomy",                   "sector": "climate tech / fintech"},
   {"slug": "cambio",                          "name": "Cambio",                     "sector": "healthcare"},
-  {"slug": "netnordicgroupas",                "name": "NetNordic Group",            "sector": "it services"}
+  {"slug": "netnordicgroupas",                "name": "NetNordic Group",            "sector": "it services"},
+  {"slug": "veo",                             "name": "VEO",                        "sector": "sports tech"},
+  {"slug": "adven",                           "name": "Adven",                      "sector": "energy"},
+  {"slug": "pixiongames",                     "name": "Pixion Games",               "sector": "gaming"},
+  {"slug": "stillfrontgroup",                 "name": "Stillfront",                 "sector": "gaming"}
 ]

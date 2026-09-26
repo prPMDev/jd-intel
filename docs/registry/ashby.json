@@ -116,5 +116,18 @@
   {"slug": "clickhouse",         "name": "ClickHouse",        "sector": "database"},
   {"slug": "temporal",           "name": "Temporal",          "sector": "dev tools"},
   {"slug": "substrate-bio",      "name": "Substrate Bio",     "sector": "biotech"},
-  {"slug": "develop-health",     "name": "Develop Health",    "sector": "healthcare"}
+  {"slug": "develop-health",     "name": "Develop Health",    "sector": "healthcare"},
+  {"slug": "dave",               "name": "Dave",              "sector": "fintech (banking)"},
+  {"slug": "imprint",            "name": "Imprint",           "sector": "fintech / cards"},
+  {"slug": "alan",               "name": "Alan",              "sector": "insurtech"},
+  {"slug": "formenergy",         "name": "Form Energy",       "sector": "energy tech"},
+  {"slug": "helion",             "name": "Helion Energy",     "sector": "energy tech"},
+  {"slug": "aurorasolar",        "name": "Aurora Solar",      "sector": "energy tech"},
+  {"slug": "span",               "name": "Span",              "sector": "energy tech"},
+  {"slug": "crusoe",             "name": "Crusoe",            "sector": "infrastructure"},
+  {"slug": "enpal",              "name": "Enpal",             "sector": "energy tech"},
+  {"slug": "strava",             "name": "Strava",            "sector": "fitness"},
+  {"slug": "legora",             "name": "Legora",            "sector": "legal ai"},
+  {"slug": "lovable",            "name": "Lovable",           "sector": "ai dev tools"},
+  {"slug": "bitvavo",            "name": "Bitvavo",           "sector": "fintech / crypto"}
 ]

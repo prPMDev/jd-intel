@@ -65,5 +65,12 @@
   {"slug": "8advisory",                           "name": "Eight Advisory",                         "sector": "consulting"},
   {"slug": "tylko",                               "name": "Tylko",                                  "sector": "ecommerce"},
   {"slug": "igh",                                 "name": "IGH",                                    "sector": "consulting"},
-  {"slug": "nemenergy",                           "name": "NEM Energy",                             "sector": "energy"}
+  {"slug": "nemenergy",                           "name": "NEM Energy",                             "sector": "energy"},
+  {"slug": "afsgroup",                            "name": "AFS Group",                              "sector": "fintech"},
+  {"slug": "afsenergy",                           "name": "AFS Energy",                             "sector": "energy"},
+  {"slug": "eternalsungroupbv",                   "name": "Eternal Sun Group",                      "sector": "energy tech"},
+  {"slug": "playtestcloud",                       "name": "PlaytestCloud",                          "sector": "gaming"},
+  {"slug": "sympower",                            "name": "Sympower",                               "sector": "energy tech"},
+  {"slug": "tonyschocolonely",                    "name": "Tony's Chocolonely",                     "sector": "cpg / food & beverage"},
+  {"slug": "carbonequity",                        "name": "Carbon Equity",                          "sector": "climate tech / fintech"}
 ]

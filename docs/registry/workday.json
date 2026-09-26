@@ -195,5 +195,22 @@
   {"slug": "jbhunt",                      "name": "J.B. Hunt",                          "sector": "logistics / freight", "config": {"tenant": "jbhunt", "env": "wd501", "site": "Careers"}},
   {"slug": "kohls",                       "name": "Kohl's",                             "sector": "retail", "config": {"tenant": "kohls", "env": "wd504", "site": "kohlscareers"}},
   {"slug": "livenationentertainment",     "name": "Live Nation Entertainment",          "sector": "entertainment / events", "config": {"tenant": "livenation", "env": "wd503", "site": "LNExternalSite"}},
-  {"slug": "gevernova",                   "name": "GE Vernova",                         "sector": "energy / power grid", "config": {"tenant": "gevernova", "env": "wd5", "site": "Vernova_ExternalSite"}}
+  {"slug": "gevernova",                   "name": "GE Vernova",                         "sector": "energy / power grid", "config": {"tenant": "gevernova", "env": "wd5", "site": "Vernova_ExternalSite"}},
+  {"slug": "paypal",                      "name": "PayPal",                             "sector": "fintech / payments", "config": {"tenant": "paypal", "env": "wd1", "site": "jobs"}},
+  {"slug": "troweprice",                  "name": "T. Rowe Price",                      "sector": "asset management", "config": {"tenant": "troweprice", "env": "wd5", "site": "TRowePrice"}},
+  {"slug": "cmegroup",                    "name": "CME Group",                          "sector": "financial services", "config": {"tenant": "cmegroup", "env": "wd1", "site": "cme_careers"}},
+  {"slug": "nasdaq",                      "name": "Nasdaq",                             "sector": "financial services", "config": {"tenant": "nasdaq", "env": "wd1", "site": "US_External_Career_Site"}},
+  {"slug": "solvenergy",                  "name": "SOLV Energy",                        "sector": "energy", "config": {"tenant": "solvenergy", "env": "wd1", "site": "SOLV_External_Career"}},
+  {"slug": "canadiansolar",               "name": "Canadian Solar",                     "sector": "energy", "config": {"tenant": "canadiansolar", "env": "wd5", "site": "CanadianSolar"}},
+  {"slug": "sunrun",                      "name": "Sunrun",                             "sector": "energy", "config": {"tenant": "sunrun", "env": "wd5", "site": "Sunrun_Careers"}},
+  {"slug": "blattnerenergy",              "name": "Blattner Energy",                    "sector": "energy", "config": {"tenant": "blattner", "env": "wd5", "site": "BlattnerEnergy"}},
+  {"slug": "nextracker",                  "name": "Nextracker",                         "sector": "energy", "config": {"tenant": "nextracker", "env": "wd5", "site": "nextpower_careers"}},
+  {"slug": "aes",                         "name": "AES",                                "sector": "energy", "config": {"tenant": "aes", "env": "wd1", "site": "AES_US"}},
+  {"slug": "energynorthwest",             "name": "Energy Northwest",                   "sector": "energy", "config": {"tenant": "energynorthwest", "env": "wd1", "site": "External"}},
+  {"slug": "xbox",                        "name": "Xbox",                               "sector": "gaming", "config": {"tenant": "xboxgaming", "env": "wd1", "site": "External"}},
+  {"slug": "nike",                        "name": "Nike",                               "sector": "consumer brands", "config": {"tenant": "nike", "env": "wd1", "site": "nke"}},
+  {"slug": "kith",                        "name": "Kith",                               "sector": "retail", "config": {"tenant": "kith", "env": "wd1", "site": "Kith_External_Careers"}},
+  {"slug": "uniqlo",                      "name": "Uniqlo",                             "sector": "retail", "config": {"tenant": "fastretailing", "env": "wd3", "site": "careers_cd_Uniqlo"}},
+  {"slug": "allyfinancial",               "name": "Ally Financial",                     "sector": "banking", "config": {"tenant": "ally", "env": "wd1", "site": "Ally"}},
+  {"slug": "fis",                         "name": "FIS",                                "sector": "fintech", "config": {"tenant": "fis", "env": "wd5", "site": "SearchJobs"}}
 ]
