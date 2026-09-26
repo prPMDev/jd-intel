@@ -2,13 +2,11 @@
   {"slug": "olo",               "name": "Olo",                  "sector": "restaurant tech"},
   {"slug": "outreach",          "name": "Outreach",             "sector": "sales tech"},
   {"slug": "clari",             "name": "Clari",                "sector": "sales tech"},
-  {"slug": "netflix",           "name": "Netflix",              "sector": "media"},
   {"slug": "lever",             "name": "Lever",                "sector": "recruiting tech"},
   {"slug": "agiloft",           "name": "Agiloft",              "sector": "contract management"},
   {"slug": "gohighlevel",       "name": "HighLevel",            "sector": "marketing saas"},
   {"slug": "veeva",             "name": "Veeva Systems",        "sector": "life sciences"},
   {"slug": "rover",             "name": "Rover",                "sector": "pet care"},
-  {"slug": "LuminDigital",      "name": "Lumin Digital",        "sector": "fintech (banking)"},
   {"slug": "redoxengine",       "name": "Redox",                "sector": "healthcare interop"},
   {"slug": "lyrahealth",        "name": "Lyra Health",          "sector": "mental health benefits"},
   {"slug": "palantir",          "name": "Palantir",             "sector": "data analytics / defense"},
@@ -67,5 +65,8 @@
   {"slug": "EnergyVault",       "name": "Energy Vault",         "sector": "energy"},
   {"slug": "explodingkittens",  "name": "Exploding Kittens",    "sector": "gaming"},
   {"slug": "arcteryx.com",      "name": "Arc'teryx",            "sector": "consumer brands"},
+  {"slug": "virtualitics",      "name": "Virtualitics",         "sector": "data analytics / defense"},
+  {"slug": "hevodata",          "name": "Hevo Data",            "sector": "data integration"},
+  {"slug": "greenlight",        "name": "Greenlight",           "sector": "fintech"},
   {"slug": "ro",                "name": "Ro",                   "sector": "healthcare"}
 ]
