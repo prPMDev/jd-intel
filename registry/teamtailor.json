@@ -84,5 +84,9 @@
   {"slug": "yonder",                          "name": "Yonder",                     "sector": "fintech / cards"},
   {"slug": "spiko",                           "name": "Spiko",                      "sector": "fintech"},
   {"slug": "codento",                         "name": "Codento",                    "sector": "it consultancy"},
-  {"slug": "sofigategroupoy",                 "name": "Sofigate",                   "sector": "it consultancy"}
+  {"slug": "sofigategroupoy",                 "name": "Sofigate",                   "sector": "it consultancy"},
+  {"slug": "veo",                             "name": "VEO",                        "sector": "sports tech"},
+  {"slug": "adven",                           "name": "Adven",                      "sector": "energy"},
+  {"slug": "pixiongames",                     "name": "Pixion Games",               "sector": "gaming"},
+  {"slug": "stillfrontgroup",                 "name": "Stillfront",                 "sector": "gaming"}
 ]

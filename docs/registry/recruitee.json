@@ -88,5 +88,12 @@
   {"slug": "nts",                                 "name": "NTS",                                    "sector": "industrial / engineering"},
   {"slug": "enspired",                            "name": "enspired",                               "sector": "energy tech"},
   {"slug": "itsme",                               "name": "itsme",                                  "sector": "fintech / identity"},
-  {"slug": "transperfect",                        "name": "TransPerfect",                           "sector": "ai data"}
+  {"slug": "transperfect",                        "name": "TransPerfect",                           "sector": "ai data"},
+  {"slug": "afsgroup",                            "name": "AFS Group",                              "sector": "fintech"},
+  {"slug": "afsenergy",                           "name": "AFS Energy",                             "sector": "energy"},
+  {"slug": "eternalsungroupbv",                   "name": "Eternal Sun Group",                      "sector": "energy tech"},
+  {"slug": "playtestcloud",                       "name": "PlaytestCloud",                          "sector": "gaming"},
+  {"slug": "sympower",                            "name": "Sympower",                               "sector": "energy tech"},
+  {"slug": "tonyschocolonely",                    "name": "Tony's Chocolonely",                     "sector": "cpg / food & beverage"},
+  {"slug": "carbonequity",                        "name": "Carbon Equity",                          "sector": "climate tech / fintech"}
 ]
