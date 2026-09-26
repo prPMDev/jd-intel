@@ -117,6 +117,7 @@
   {"slug": "temporal",           "name": "Temporal",          "sector": "dev tools"},
   {"slug": "substrate-bio",      "name": "Substrate Bio",     "sector": "biotech"},
   {"slug": "develop-health",     "name": "Develop Health",    "sector": "healthcare"},
+  {"slug": "lumin-digital",      "name": "Lumin Digital",     "sector": "fintech (banking)"},
   {"slug": "siftstack",          "name": "Sift",              "sector": "observability"},
   {"slug": "nango",              "name": "Nango",             "sector": "integration platform"},
   {"slug": "bild-ai",            "name": "Bild AI",           "sector": "construction / property"},

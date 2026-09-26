@@ -196,6 +196,7 @@
   {"slug": "kohls",                       "name": "Kohl's",                                 "sector": "retail", "config": {"tenant": "kohls", "env": "wd504", "site": "kohlscareers"}},
   {"slug": "livenationentertainment",     "name": "Live Nation Entertainment",              "sector": "entertainment / events", "config": {"tenant": "livenation", "env": "wd503", "site": "LNExternalSite"}},
   {"slug": "gevernova",                   "name": "GE Vernova",                             "sector": "energy / power grid", "config": {"tenant": "gevernova", "env": "wd5", "site": "Vernova_ExternalSite"}},
+  {"slug": "netflix",                     "name": "Netflix",                                "sector": "media", "config": {"tenant": "netflix", "env": "wd108", "site": "Netflix"}},
   {"slug": "brownandbrown",               "name": "Brown & Brown",                          "sector": "insurance brokerage / consulting", "config": {"tenant": "bbinsurance", "env": "wd1", "site": "Careers"}},
   {"slug": "deckers",                     "name": "Deckers Brands",                         "sector": "apparel / footwear", "config": {"tenant": "deckers", "env": "wd5", "site": "Deckers"}},
   {"slug": "thestandard",                 "name": "The Standard",                           "sector": "insurance", "config": {"tenant": "standard", "env": "wd1", "site": "Search"}},
