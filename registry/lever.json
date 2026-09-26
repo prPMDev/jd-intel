@@ -64,5 +64,8 @@
   {"slug": "cascade-climate",   "name": "Cascade Climate",      "sector": "climate tech"},
   {"slug": "EnergyVault",       "name": "Energy Vault",         "sector": "energy"},
   {"slug": "explodingkittens",  "name": "Exploding Kittens",    "sector": "gaming"},
-  {"slug": "arcteryx.com",      "name": "Arc'teryx",            "sector": "consumer brands"}
+  {"slug": "arcteryx.com",      "name": "Arc'teryx",            "sector": "consumer brands"},
+  {"slug": "virtualitics",      "name": "Virtualitics",         "sector": "data analytics / defense"},
+  {"slug": "hevodata",          "name": "Hevo Data",            "sector": "data integration"},
+  {"slug": "greenlight",        "name": "Greenlight",           "sector": "fintech"}
 ]
