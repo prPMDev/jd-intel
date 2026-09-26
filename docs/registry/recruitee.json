@@ -73,5 +73,20 @@
   {"slug": "greenerpowersolutions",               "name": "Greener Power Solutions",                "sector": "energy tech"},
   {"slug": "yource",                              "name": "Yource",                                 "sector": "legal tech"},
   {"slug": "almavivadebelgique",                  "name": "Almaviva de Belgique",                   "sector": "it services"},
-  {"slug": "berenschot",                          "name": "Berenschot",                             "sector": "consulting"}
+  {"slug": "berenschot",                          "name": "Berenschot",                             "sector": "consulting"},
+  {"slug": "goldrepublic",                        "name": "GoldRepublic",                           "sector": "fintech"},
+  {"slug": "dnata",                               "name": "dnata",                                  "sector": "logistics"},
+  {"slug": "aquablu",                             "name": "Aquablu",                                "sector": "consumer brands"},
+  {"slug": "peripass",                            "name": "Peripass",                               "sector": "logistics tech"},
+  {"slug": "hygraph",                             "name": "Hygraph",                                "sector": "cms"},
+  {"slug": "famly",                               "name": "Famly",                                  "sector": "edtech"},
+  {"slug": "vertigis",                            "name": "VertiGIS",                               "sector": "enterprise software"},
+  {"slug": "machinelearningreply",                "name": "Machine Learning Reply",                 "sector": "it consultancy"},
+  {"slug": "wunderbricks",                        "name": "Wunderbricks",                           "sector": "real estate tech"},
+  {"slug": "centric",                             "name": "Centric",                                "sector": "it services"},
+  {"slug": "tkelevator",                          "name": "TK Elevator Netherlands",                "sector": "industrial / elevators"},
+  {"slug": "nts",                                 "name": "NTS",                                    "sector": "industrial / engineering"},
+  {"slug": "enspired",                            "name": "enspired",                               "sector": "energy tech"},
+  {"slug": "itsme",                               "name": "itsme",                                  "sector": "fintech / identity"},
+  {"slug": "transperfect",                        "name": "TransPerfect",                           "sector": "ai data"}
 ]

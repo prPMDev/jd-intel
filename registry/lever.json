@@ -67,5 +67,6 @@
   {"slug": "arcteryx.com",      "name": "Arc'teryx",            "sector": "consumer brands"},
   {"slug": "virtualitics",      "name": "Virtualitics",         "sector": "data analytics / defense"},
   {"slug": "hevodata",          "name": "Hevo Data",            "sector": "data integration"},
-  {"slug": "greenlight",        "name": "Greenlight",           "sector": "fintech"}
+  {"slug": "greenlight",        "name": "Greenlight",           "sector": "fintech"},
+  {"slug": "ro",                "name": "Ro",                   "sector": "healthcare"}
 ]
