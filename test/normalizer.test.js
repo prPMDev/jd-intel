@@ -130,6 +130,22 @@ describe('extractSalaryFromText', () => {
     assert.deepEqual(extractSalaryFromText('$150-200K'), usd(150000, 200000));
   });
 
+  test('dot-grouped thousands (60.000 is sixty thousand, not sixty)', () => {
+    const eur = (min, max, period) => ({ min, max, currency: 'EUR', period, source: 'text' });
+    assert.deepEqual(extractSalaryFromText('€ 60.000 - € 80.000 per year'), eur(60000, 80000, 'year'));
+    assert.deepEqual(extractSalaryFromText('€4.500 - €5.500 per maand'), eur(4500, 5500, null));
+    assert.deepEqual(extractSalaryFromText('€60.000,50 - €80.000,00'), eur(60000.5, 80000, 'year'));
+  });
+
+  test('never matches inside a longer number', () => {
+    assert.deepEqual(extractSalaryFromText('€1.234.567 - €2.345.678'), { min: 1234567, max: 2345678, currency: 'EUR', period: 'year', source: 'text' });
+    assert.deepEqual(extractSalaryFromText('$1,234.56 - $2,345.67'), usd(1234.56, 2345.67, null));
+  });
+
+  test('one- and two-digit decimals stay decimals', () => {
+    assert.deepEqual(extractSalaryFromText('$40.50 - $55.75 per hour'), usd(40.5, 55.75, 'hour'));
+  });
+
   test('"per hour" and "/hr" set period hour', () => {
     assert.deepEqual(extractSalaryFromText('$40 - $55 per hour'), usd(40, 55, 'hour'));
     assert.deepEqual(extractSalaryFromText('$40-$55/hr'), usd(40, 55, 'hour'));

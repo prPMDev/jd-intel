@@ -79,6 +79,16 @@ describe('fetchAshby', () => {
     assert.deepEqual(job.salary, { min: 150000, max: 200000, currency: 'USD', period: 'year', source: 'ats' });
   });
 
+  test('reads a dot-grouped EUR compensation string as thousands', async (t) => {
+    const body = {
+      organizationName: 'Test Company',
+      jobs: [{ ...FIXTURE.jobs[0], compensation: '€60.000 - €80.000' }],
+    };
+    mockFetch(t, { body });
+    const [job] = await fetchAshby('testco');
+    assert.deepEqual(job.salary, { min: 60000, max: 80000, currency: 'EUR', period: 'year', source: 'ats' });
+  });
+
   test('parses structured compensation object', async (t) => {
     const body = {
       organizationName: 'Test Company',

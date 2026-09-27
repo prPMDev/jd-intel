@@ -45,12 +45,22 @@ export function normalize(raw, ats) {
 const CURRENCY_CODES = 'USD|EUR|GBP|CAD|AUD|NZD|CHF|SEK|NOK|DKK|PLN|CZK|HUF|INR|SGD|HKD|JPY|CNY|BRL|MXN|ZAR|AED|ILS';
 const SYMBOL_CURRENCY = { $: 'USD', '€': 'EUR', '£': 'GBP' };
 
-// One side of a range: optional code before, optional symbol, the number
-// (1,234 / 1234 / 211.4), optional K, optional code after.
+// A number as job posts write it: 1,234,567 / 1.234.567 / 1234, with an
+// optional one- or two-digit decimal part (211.4, 40.50, 60.000,50).
+// Exactly three digits after a dot are a thousands group, the way Dutch
+// and German boards write it: "€60.000" is sixty thousand, not sixty.
+const NUMBER =
+  '\\d{1,3}(?:,\\d{3})+(?:\\.\\d{1,2})?' +
+  '|\\d{1,3}(?:\\.\\d{3})+(?:,\\d{1,2})?' +
+  '|\\d+(?:[.,]\\d{1,2})?';
+
+// One side of a range: optional code before, optional symbol, the number,
+// optional K, optional code after. The lookarounds keep the number from
+// starting or ending inside a longer one ("234.567" out of "1.234.567").
 const amountPattern = (p) =>
   `(?:\\b(?<${p}CodeBefore>${CURRENCY_CODES})\\s?)?` +
   `(?<${p}Sym>[$€£])?\\s?` +
-  `(?<${p}Num>\\d{1,3}(?:,\\d{3})+|\\d+(?:\\.\\d+)?)\\s?` +
+  `(?<![\\d.,])(?<${p}Num>${NUMBER})(?!\\d|[.,]\\d)\\s?` +
   `(?<${p}K>[kK]\\b)?` +
   `(?:\\s?(?<${p}CodeAfter>${CURRENCY_CODES})\\b)?`;
 
@@ -68,9 +78,10 @@ const YEAR_RE = /\b(?:per|a|each)\s+(?:year|annum)\b|\/\s*(?:yr|year)\b|\b(?:ann
  *
  * Accepts hyphen, en dash, em dash or "to" between the two amounts, an
  * optional ISO currency code before, between or after them, `$` / EUR /
- * GBP symbols, and decimal K shorthand ($211.4K). A code wins over a
- * symbol, so "$120,000 - $150,000 CAD" is CAD. Ranges with no currency
- * marker at all (years, headcounts) are ignored.
+ * GBP symbols, decimal K shorthand ($211.4K), and thousands grouped with
+ * either a comma or a dot (60,000 and 60.000 are both sixty thousand).
+ * A code wins over a symbol, so "$120,000 - $150,000 CAD" is CAD. Ranges
+ * with no currency marker at all (years, headcounts) are ignored.
  *
  * @returns {{min:number,max:number,currency:string,period:('year'|'month'|'hour'|null),source:'text'}|null}
  */
@@ -87,8 +98,8 @@ export function extractSalaryFromText(text) {
     const sym = g.loSym || g.hiSym;
     if (!code && !sym) continue;
 
-    let min = Number(g.loNum.replace(/,/g, ''));
-    let max = Number(g.hiNum.replace(/,/g, ''));
+    let min = parseAmount(g.loNum);
+    let max = parseAmount(g.hiNum);
     if (g.loK || g.hiK) {
       // "$150-200K" carries the K once for both sides.
       if (min < 1000) min = Math.round(min * 1000);
@@ -106,6 +117,12 @@ export function extractSalaryFromText(text) {
     };
   }
   return null;
+}
+
+// Dots grouping thousands mean a comma is the decimal mark, and vice versa.
+function parseAmount(s) {
+  if (/^\d{1,3}(?:\.\d{3})+/.test(s)) return Number(s.replace(/\./g, '').replace(',', '.'));
+  return Number(s.replace(/,(?=\d{3})/g, '').replace(',', '.'));
 }
 
 function detectPeriod(before, after, min) {
