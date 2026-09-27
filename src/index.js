@@ -8,10 +8,22 @@
 
 import { ADAPTERS, ATS_NAMES } from './adapters/index.js';
 import { loadRegistry, searchRegistry, detectAts, findAtsBySlug, findEntryBySlug, getRegistrySource } from './registry.js';
-import { applyFilters } from './filters.js';
+import { applyFiltersDetailed } from './filters.js';
 
 /**
  * Fetch jobs from a company's ATS board.
+ *
+ * Same options as fetchJobsDetailed; returns the page as an array.
+ *
+ * @returns {Promise<Array>} Normalized, filtered job objects
+ */
+export async function fetchJobs(options = {}) {
+  const { jobs } = await fetchJobsDetailed(options);
+  return jobs;
+}
+
+/**
+ * Fetch jobs from a company's ATS board, with the match count.
  *
  * @param {Object} options
  * @param {string} options.company - Company slug or name
@@ -22,10 +34,12 @@ import { applyFilters } from './filters.js';
  * @param {number} [options.postedWithinDays] - Only return jobs posted within N days.
  * @param {string[]} [options.locationIncludes] - Keep jobs whose location contains any of these (case-insensitive).
  * @param {string[]} [options.locationExcludes] - Drop jobs whose location contains any of these (case-insensitive).
- * @param {number} [options.limit=100] - Maximum jobs to return after filtering.
- * @returns {Promise<Array>} Normalized, filtered job objects
+ * @param {'newest'|'board'} [options.order='newest'] - 'newest': by postedAt descending, undated last, ties by id. 'board': the adapter's own order.
+ * @param {number} [options.offset=0] - Matches to skip after sorting (paging).
+ * @param {number} [options.limit=100] - Maximum jobs to return after offset.
+ * @returns {Promise<{ jobs: Array, total_matched: number }>} The page, plus the match count before offset and limit
  */
-export async function fetchJobs({
+export async function fetchJobsDetailed({
   company,
   ats,
   config,
@@ -34,6 +48,8 @@ export async function fetchJobs({
   postedWithinDays,
   locationIncludes,
   locationExcludes,
+  order = 'newest',
+  offset = 0,
   limit = 100,
 } = {}) {
   if (!company) throw new Error('Company slug required');
@@ -45,7 +61,7 @@ export async function fetchJobs({
   // adapters declare fetch{Name}(slug) and ignore extra positional args
   // (JS no-op), so this is backward-compatible. Filter-aware adapters
   // (e.g. Workday) use it to avoid mass detail-fetching on huge tenants.
-  const filterContext = { titleFilter, filter, postedWithinDays, locationIncludes, locationExcludes, limit };
+  const filterContext = { titleFilter, filter, postedWithinDays, locationIncludes, locationExcludes, offset, limit };
 
   let jobs;
   if (ats) {
@@ -93,7 +109,7 @@ export async function fetchJobs({
     }
   }
 
-  return applyFilters(jobs, { titleFilter, filter, postedWithinDays, locationIncludes, locationExcludes, limit });
+  return applyFiltersDetailed(jobs, { titleFilter, filter, postedWithinDays, locationIncludes, locationExcludes, order, offset, limit });
 }
 
 /**
@@ -134,7 +150,7 @@ export { fetchLever } from './adapters/lever.js';
 export { fetchAshby } from './adapters/ashby.js';
 
 // Re-export filter logic for reuse (e.g., by the MCP server)
-export { applyFilters } from './filters.js';
+export { applyFilters, applyFiltersDetailed } from './filters.js';
 
 // Re-export the list of supported ATS names (e.g. so the MCP layer can report
 // the full set detectAts probes, instead of hardcoding a stale subset).

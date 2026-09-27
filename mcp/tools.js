@@ -10,7 +10,7 @@
  */
 
 import { z } from 'zod';
-import { fetchJobs, detectAts as libDetectAts, registry, ATS_NAMES, AtsError } from 'jd-intel';
+import { fetchJobsDetailed, detectAts as libDetectAts, registry, ATS_NAMES, AtsError } from 'jd-intel';
 
 const { search: searchRegistry, findAtsBySlug } = registry;
 // Tolerate an older jd-intel that predates getSource. The bundle always
@@ -28,6 +28,49 @@ import {
 // Tool behavior hints for clients. All three tools only read; fetch_jobs and
 // detect_ats reach out to live ATS APIs, search_registry reads the catalog.
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: true };
+
+const DEFAULT_LIMIT = 100;
+const DEFAULT_MAX_TOKENS = 12000;
+const MIN_MAX_TOKENS = 2000;
+const MAX_MAX_TOKENS = 40000;
+
+// est_tokens is chars/4 of the text block, so it is only known once the
+// envelope holding it has been serialized. A few passes settle it: the digit
+// count can change between the placeholder and the real value.
+function estTokens(result) {
+  return Math.ceil(result.content[0].text.length / 4);
+}
+
+function successWithEstTokens(jobs, metadata) {
+  let result = success(jobs, { ...metadata, est_tokens: 0 });
+  for (let pass = 0; pass < 3; pass++) {
+    const est = estTokens(result);
+    if (est === result.structuredContent.metadata.est_tokens) break;
+    result = success(jobs, { ...metadata, est_tokens: est });
+  }
+  return result;
+}
+
+// Adds whole jobs in order until the next one would pass the budget. The
+// candidate envelope is measured with the largest metadata this response
+// could carry (a "limit" cut, every count at its maximum), so the final
+// envelope, whose metadata is the same size or smaller, stays within budget.
+function fitToBudget(page, maxTokens, meta, total) {
+  const upper = {
+    ...meta,
+    truncated: { reason: 'limit', not_returned: total },
+    est_tokens: 999999,
+    next_offset: total,
+  };
+  let selected = [];
+  for (const job of page) {
+    const candidate = [...selected, job];
+    const probe = success(candidate, { ...upper, count: candidate.length });
+    if (selected.length > 0 && estTokens(probe) > maxTokens) break;
+    selected = candidate;
+  }
+  return selected;
+}
 
 const JOB = z
   .object({
@@ -60,7 +103,7 @@ function withEnvelope(handler) {
 }
 
 export function registerTools(server, deps = {}) {
-  const _fetchJobs = deps.fetchJobs || fetchJobs;
+  const _fetchJobsDetailed = deps.fetchJobsDetailed || fetchJobsDetailed;
   const _findAtsBySlug = deps.findAtsBySlug || findAtsBySlug;
   const _searchRegistry = deps.searchRegistry || searchRegistry;
   const _detectAts = deps.detectAts || libDetectAts;
@@ -79,7 +122,10 @@ export function registerTools(server, deps = {}) {
         posted_within_days: z.number().int().positive().optional().describe('Only jobs posted within N days'),
         location_includes: z.array(z.string()).optional().describe('Keep jobs whose location contains any keyword'),
         location_excludes: z.array(z.string()).optional().describe('Drop jobs whose location contains any keyword'),
-        limit: z.number().int().positive().optional().describe('Cap results (default 100)'),
+        limit: z.number().int().positive().optional().describe('Max jobs per page (default 100). max_tokens usually stops output first.'),
+        offset: z.number().int().min(0).optional().describe('Matches to skip after sorting (default 0). Pass next_offset from the previous response to get the next page.'),
+        order: z.enum(['newest', 'board']).optional().describe('"newest" (default): by postedAt, undated last. "board": the ATS\'s own order.'),
+        max_tokens: z.number().int().min(MIN_MAX_TOKENS).max(MAX_MAX_TOKENS).optional().describe(`Response budget in tokens, chars/4 of the text block (default ${DEFAULT_MAX_TOKENS}, ${MIN_MAX_TOKENS} to ${MAX_MAX_TOKENS}). Whole jobs only; at least one is always returned.`),
         workday: z
           .object({
             tenant: z.string().trim().min(1).describe('Workday tenant, the first URL label, e.g. "expedia"'),
@@ -106,8 +152,13 @@ export function registerTools(server, deps = {}) {
         config = { tenant, env, site };
       }
 
+      const limit = args.limit ?? DEFAULT_LIMIT;
+      const offset = args.offset ?? 0;
+      const order = args.order ?? 'newest';
+      const maxTokens = args.max_tokens ?? DEFAULT_MAX_TOKENS;
+
       try {
-        const jobs = await _fetchJobs({
+        const { jobs: page, total_matched } = await _fetchJobsDetailed({
           company: args.company,
           ats,
           config,
@@ -116,7 +167,9 @@ export function registerTools(server, deps = {}) {
           postedWithinDays: args.posted_within_days,
           locationIncludes: args.location_includes,
           locationExcludes: args.location_excludes,
-          limit: args.limit,
+          order,
+          offset,
+          limit,
         });
 
         const normalizedSlug = args.company.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -125,20 +178,38 @@ export function registerTools(server, deps = {}) {
         // Discovery miss: not in the registry and no board returned anything.
         // Guard on !config so a valid Workday override that returns 0 jobs is not
         // mislabeled; a registry hit with 0 open roles stays a success([]).
-        if (!config && registryAts === null && jobs.length === 0) {
+        if (!config && registryAts === null && total_matched === 0) {
           return error(
             ERROR_CODES.COMPANY_NOT_FOUND,
             `No board found for "${args.company}" on any supported ATS. Check the slug, or pass an explicit workday {tenant,env,site} for a Workday board.`
           );
         }
 
-        return success(jobs, {
-          count: jobs.length,
+        const meta = {
+          count: 0,
           registry_hit: registryAts !== null,
           ats: config ? 'workday' : registryAts,
           workday_override: Boolean(config),
           version: VERSION,
           registry_source: getRegistrySource(),
+          total_matched,
+          truncated: null,
+          offset,
+          next_offset: null,
+          order,
+        };
+
+        const jobs = fitToBudget(page, maxTokens, meta, total_matched);
+        const notReturned = Math.max(0, total_matched - offset - jobs.length);
+        let truncated = null;
+        if (jobs.length < page.length) truncated = { reason: 'size', not_returned: notReturned };
+        else if (notReturned > 0) truncated = { reason: 'limit', not_returned: notReturned };
+
+        return successWithEstTokens(jobs, {
+          ...meta,
+          count: jobs.length,
+          truncated,
+          next_offset: notReturned > 0 ? offset + jobs.length : null,
         });
       } catch (err) {
         const msg = err.message || 'Unknown error';

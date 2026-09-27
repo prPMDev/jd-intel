@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyFilters } from '../src/filters.js';
+import { applyFilters, applyFiltersDetailed } from '../src/filters.js';
 
 const now = Date.now();
 const daysAgo = (n) => new Date(now - n * 86400000).toISOString();
@@ -337,5 +337,79 @@ describe('applyFilters — composed', () => {
     });
     const ids = result.map(j => j.id).sort();
     assert.deepEqual(ids, ['1', '4']);
+  });
+});
+
+describe('applyFilters — order', () => {
+  // JOBS by age: 4 (1d), 1 (3d), 3 (5d), 2 (20d), 5 (undated).
+  test('default is newest first by postedAt, undated last', () => {
+    const ids = applyFilters(JOBS, {}).map(j => j.id);
+    assert.deepEqual(ids, ['4', '1', '3', '2', '5']);
+  });
+
+  test('ties on postedAt break by id, so pages are deterministic', () => {
+    const same = daysAgo(2);
+    const tied = [
+      { id: 'b', title: 'PM', postedAt: same },
+      { id: 'c', title: 'PM', postedAt: same },
+      { id: 'a', title: 'PM', postedAt: same },
+    ];
+    assert.deepEqual(applyFilters(tied, {}).map(j => j.id), ['a', 'b', 'c']);
+  });
+
+  test('an unparseable postedAt sorts with the undated', () => {
+    const jobs = [
+      { id: 'x', title: 'PM', postedAt: 'soon' },
+      { id: 'y', title: 'PM', postedAt: daysAgo(30) },
+    ];
+    assert.deepEqual(applyFilters(jobs, {}).map(j => j.id), ['y', 'x']);
+  });
+
+  test("order: 'board' keeps the adapter's order", () => {
+    const ids = applyFilters(JOBS, { order: 'board' }).map(j => j.id);
+    assert.deepEqual(ids, ['1', '2', '3', '4', '5']);
+  });
+
+  test('sort runs before limit, so a cut drops the oldest matches', () => {
+    assert.deepEqual(applyFilters(JOBS, { limit: 2 }).map(j => j.id), ['4', '1']);
+  });
+
+  test('does not reorder the caller\'s array', () => {
+    const input = [...JOBS];
+    applyFilters(input, {});
+    assert.deepEqual(input.map(j => j.id), ['1', '2', '3', '4', '5']);
+  });
+});
+
+describe('applyFiltersDetailed — total_matched and offset', () => {
+  test('total_matched counts matches before limit', () => {
+    const { jobs, total_matched } = applyFiltersDetailed(JOBS, { filter: 'Engineer', limit: 1 });
+    assert.equal(jobs.length, 1);
+    assert.equal(total_matched, 2);
+  });
+
+  test('two pages cover the matched set with no overlap, no gap and the same total', () => {
+    const first = applyFiltersDetailed(JOBS, { limit: 3 });
+    const second = applyFiltersDetailed(JOBS, { limit: 3, offset: first.jobs.length });
+    const ids = [...first.jobs, ...second.jobs].map(j => j.id);
+    assert.deepEqual(ids, ['4', '1', '3', '2', '5']);
+    assert.equal(first.total_matched, 5);
+    assert.equal(second.total_matched, 5);
+  });
+
+  test('offset applies after the sort and before limit', () => {
+    const { jobs } = applyFiltersDetailed(JOBS, { offset: 1, limit: 2 });
+    assert.deepEqual(jobs.map(j => j.id), ['1', '3']);
+  });
+
+  test('offset past the end returns an empty page with the total intact', () => {
+    const { jobs, total_matched } = applyFiltersDetailed(JOBS, { offset: 10 });
+    assert.deepEqual(jobs, []);
+    assert.equal(total_matched, 5);
+  });
+
+  test('applyFilters returns the same page as an array', () => {
+    const opts = { titleFilter: 'Engineer|PM|Manager', offset: 1, limit: 2 };
+    assert.deepEqual(applyFilters(JOBS, opts), applyFiltersDetailed(JOBS, opts).jobs);
   });
 });
