@@ -31,13 +31,16 @@ export async function fetchGreenhouse(slug) {
     location: job.location?.name || '',
     description: stripHtml(job.content || ''),
     url: job.absolute_url || '',
-    postedAt: job.updated_at || null,
+    // updated_at is an edit time that many boards bulk-refresh, so it is not
+    // a posting date. first_published is. Fallback covers boards without it (#69).
+    postedAt: job.first_published || job.updated_at || null,
     salary: null, // Greenhouse doesn't expose salary in public API
     metadata: {
       greenhouseId: job.id,
       internal_job_id: job.internal_job_id,
       departments: job.departments?.map(d => d.name) || [],
       offices: job.offices?.map(o => o.name) || [],
+      updatedAt: job.updated_at,
     },
   }, 'greenhouse'));
 }
