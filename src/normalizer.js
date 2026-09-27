@@ -159,7 +159,9 @@ export function stripHtml(html) {
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/(?:p|h[1-6])\s*>/gi, '\n\n')
     .replace(/<\/(?:li|div|td|tr|ul|ol|table|section)\s*>/gi, '\n')
-    .replace(/<li\b[^>]*>/gi, '- ')
+    // Word-pasted markup (Lever lists, issue #64) opens a <p> inside each
+    // <li>; swallowing it keeps the item text on the bullet's line.
+    .replace(/<li\b[^>]*>\s*(?:<p\b[^>]*>\s*)?/gi, '- ')
     .replace(/<h[1-6]\b[^>]*>/gi, '## ')
     .replace(/<[^>]+>/g, '');
   return decodeEntities(text)
