@@ -3,7 +3,10 @@ import { atsErrorFromStatus } from '../errors.js';
 
 const MAX_DETAIL_FETCHES = 100;
 const LIST_PAGE_SIZE = 20;
-const LIST_PAGE_HARD_CAP = 100; // <= 2000 list items scanned per request
+// Upper bound on list pages per call: 100 pages of 20 = at most 2000
+// postings scanned. Paging usually stops sooner, on a short page or when
+// offset reaches the first page's total (see the loop below).
+const LIST_PAGE_HARD_CAP = 100;
 
 /**
  * Fetch jobs from a Workday tenant via the public "CXS" JSON API.
@@ -40,6 +43,7 @@ export async function fetchWorkday(slug, ctx = {}) {
   const postings = [];
   let offset = 0;
   let pages = 0;
+  let firstTotal = 0;
   while (pages < LIST_PAGE_HARD_CAP) {
     const resp = await fetch(`${base}/jobs`, {
       method: 'POST',
@@ -48,19 +52,24 @@ export async function fetchWorkday(slug, ctx = {}) {
     });
 
     if (!resp.ok) {
-      if (resp.status === 404) return []; // wrong site / no such board
       if (offset === 0) {
+        if (resp.status === 404) return []; // wrong site / no such board
         throw atsErrorFromStatus(resp.status, `Workday API error for ${slug} (${tenant}/${env}/${site}): ${resp.status}`);
       }
-      break; // mid-paging failure: keep what we have
+      break; // mid-paging failure (any status): keep what we have
     }
 
     const data = await resp.json();
     const page = data.jobPostings || [];
+    // Some tenants report the real `total` only at offset 0 and send
+    // `total: 0` on every later page, so only the first page's figure
+    // is trusted. A short page is the other stop signal.
+    if (pages === 0) firstTotal = data.total || 0;
     postings.push(...page);
     pages += 1;
     offset += LIST_PAGE_SIZE;
-    if (page.length === 0 || offset >= (data.total || 0)) break;
+    if (page.length < LIST_PAGE_SIZE) break;
+    if (firstTotal > 0 && offset >= firstTotal) break;
   }
 
   // 2. Filter-aware candidate selection BEFORE the N+1 detail cost.
@@ -91,12 +100,14 @@ export async function fetchWorkday(slug, ctx = {}) {
   }
 
   // 3. Bound the detail-fetch set.
-  //    NOTE: huge-tenant coverage is intentionally capped for v1
-  //    (Salesforce ~1398 postings). A description `filter` is applied
-  //    by the library AFTER this returns, so for that case we keep the
-  //    full backstop instead of truncating tightly to `limit` (which
-  //    could hydrate jobs that all fail the regex while better matches
-  //    go unscanned). Proper fix (smart pagination / rate-limited
+  //    NOTE: huge-tenant coverage is intentionally capped for v1. Two
+  //    caps apply: the list scan above stops at LIST_PAGE_HARD_CAP pages
+  //    (2000 postings, enough for Salesforce's ~1398), and the detail set
+  //    is cut to MAX_DETAIL_FETCHES here. A description `filter` is
+  //    applied by the library AFTER this returns, so for that case we
+  //    keep the full backstop instead of truncating tightly to `limit`
+  //    (which could hydrate jobs that all fail the regex while better
+  //    matches go unscanned). Proper fix (smart pagination / rate-limited
   //    concurrency / surfaced truncation) is tracked in #26, to be
   //    designed alongside retry/rate-limit work (#7).
   const limit = typeof fc.limit === 'number' && fc.limit > 0 ? fc.limit : 100;

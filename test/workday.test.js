@@ -44,23 +44,39 @@ function listMock(t, { status = 200, list = LIST_FIXTURE, detail = DETAIL_FIXTUR
 }
 
 // Build a paginated list mock: total N, 20 per page, offset read from POST body.
-function paginatedMock(t, total) {
+// Live tenants come in two shapes: `total` repeated on every page (default), or
+// the real `total` at offset 0 and `total: 0` on every later page
+// (totalOnFirstPageOnly). `reportedTotal` forces one `total` on every page.
+// `titles` overrides the title at a given row index. `failAt: { offset, status }`
+// makes the list request at that offset fail.
+function paginatedMock(t, total, { totalOnFirstPageOnly = false, reportedTotal, titles = {}, failAt = null } = {}) {
   const calls = { list: 0, detail: 0 };
   t.mock.method(global, 'fetch', async (url, opts) => {
     if (url.endsWith('/jobs')) {
       calls.list += 1;
       const { offset } = JSON.parse(opts.body);
+      if (failAt && failAt.offset === offset) {
+        return { ok: false, status: failAt.status, json: async () => ({}) };
+      }
       const page = [];
       for (let i = offset; i < Math.min(offset + 20, total); i++) {
-        page.push({ title: `Job ${i}`, externalPath: `/job/x/R${i}`, locationsText: 'Remote', postedOn: 'Posted Today' });
+        page.push({ title: titles[i] || `Job ${i}`, externalPath: `/job/x/R${i}`, locationsText: 'Remote', postedOn: 'Posted Today' });
       }
-      return { ok: true, status: 200, json: async () => ({ total, jobPostings: page }) };
+      let reported = total;
+      if (reportedTotal !== undefined) reported = reportedTotal;
+      else if (totalOnFirstPageOnly && offset > 0) reported = 0;
+      return { ok: true, status: 200, json: async () => ({ total: reported, jobPostings: page }) };
     }
     calls.detail += 1;
     return { ok: true, status: 200, json: async () => DETAIL_FIXTURE };
   });
   return calls;
 }
+
+const LIST_SHAPES = [
+  ['total on every page', { totalOnFirstPageOnly: false }],
+  ['total on page 1 only', { totalOnFirstPageOnly: true }],
+];
 
 describe('fetchWorkday', () => {
   test('registry-only: returns [] with no config and does not fetch', async (t) => {
@@ -127,11 +143,72 @@ describe('fetchWorkday', () => {
     assert.deepEqual(pm.salary, { min: 150000, max: 200000, currency: 'USD' });
   });
 
-  test('paginates the list (25 jobs -> 2 POSTs)', async (t) => {
-    const calls = paginatedMock(t, 25);
+  for (const [shape, shapeOpts] of LIST_SHAPES) {
+    describe(`list paging, ${shape}`, () => {
+      test('paginates the list (25 jobs -> 2 POSTs)', async (t) => {
+        const calls = paginatedMock(t, 25, shapeOpts);
+        const jobs = await fetchWorkday('cisco', { ...CTX });
+        assert.equal(calls.list, 2);
+        assert.equal(jobs.length, 25);
+      });
+
+      test('scans past row 40 (127 jobs -> 7 POSTs, title match at row 100)', async (t) => {
+        const calls = paginatedMock(t, 127, { ...shapeOpts, titles: { 100: 'Senior Product Manager' } });
+        const jobs = await fetchWorkday('cisco', {
+          ...CTX,
+          filterContext: { titleFilter: 'product manager', limit: 100 },
+        });
+        assert.equal(calls.list, 7);
+        assert.equal(calls.detail, 1);
+        assert.equal(jobs.length, 1);
+        assert.equal(jobs[0].title, 'Senior Product Manager');
+      });
+
+      test('hard cap = 100 list pages (5000 jobs -> 100 POSTs)', async (t) => {
+        const calls = paginatedMock(t, 5000, shapeOpts);
+        const jobs = await fetchWorkday('cisco', {
+          ...CTX,
+          filterContext: { titleFilter: 'no such role', limit: 100 },
+        });
+        assert.equal(calls.list, 100);
+        assert.deepEqual(jobs, []);
+      });
+
+      test('hard cap = 100 detail fetches under a description filter', async (t) => {
+        const calls = paginatedMock(t, 300, shapeOpts);
+        await fetchWorkday('cisco', { ...CTX, filterContext: { filter: 'engineer', limit: 100 } });
+        assert.equal(calls.list, 15);
+        assert.equal(calls.detail, 100);
+      });
+
+      test('limit truncates detail fetches when no description filter', async (t) => {
+        const calls = paginatedMock(t, 50, shapeOpts);
+        await fetchWorkday('cisco', { ...CTX, filterContext: { limit: 10 } });
+        assert.equal(calls.detail, 10);
+      });
+    });
+  }
+
+  test('total: 0 on every page with a full first page keeps paging to a short page', async (t) => {
+    const calls = paginatedMock(t, 25, { reportedTotal: 0 });
     const jobs = await fetchWorkday('cisco', { ...CTX });
     assert.equal(calls.list, 2);
     assert.equal(jobs.length, 25);
+  });
+
+  test('500 at offset 40 keeps the 40 postings already read', async (t) => {
+    const calls = paginatedMock(t, 127, { totalOnFirstPageOnly: true, failAt: { offset: 40, status: 500 } });
+    const jobs = await fetchWorkday('cisco', { ...CTX });
+    assert.equal(calls.list, 3);
+    assert.equal(jobs.length, 40);
+    assert.equal(jobs[39].title, 'Job 39');
+  });
+
+  test('404 at offset 40 keeps the 40 postings already read', async (t) => {
+    const calls = paginatedMock(t, 127, { failAt: { offset: 40, status: 404 } });
+    const jobs = await fetchWorkday('cisco', { ...CTX });
+    assert.equal(calls.list, 3);
+    assert.equal(jobs.length, 40);
   });
 
   test('filter-aware: titleFilter avoids N+1 (1 detail fetch, not 2)', async (t) => {
@@ -166,19 +243,7 @@ describe('fetchWorkday', () => {
     assert.equal(jobs[0].title, 'Staff Product Manager');
   });
 
-  test('hard cap = 100 detail fetches under a description filter', async (t) => {
-    const calls = paginatedMock(t, 300);
-    await fetchWorkday('cisco', { ...CTX, filterContext: { filter: 'engineer', limit: 100 } });
-    assert.equal(calls.detail, 100);
-  });
-
-  test('limit truncates detail fetches when no description filter', async (t) => {
-    const calls = paginatedMock(t, 50);
-    await fetchWorkday('cisco', { ...CTX, filterContext: { limit: 10 } });
-    assert.equal(calls.detail, 10);
-  });
-
-  test('returns [] on list 404', async (t) => {
+  test('returns [] on list 404 at offset 0', async (t) => {
     listMock(t, { status: 404, list: {} });
     const jobs = await fetchWorkday('cisco', { ...CTX });
     assert.deepEqual(jobs, []);
