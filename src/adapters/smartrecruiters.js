@@ -10,7 +10,8 @@ const PAGE_SIZE = 100;
  * Docs: https://developers.smartrecruiters.com/reference/postingsget-1
  *
  * Two-step flow (unavoidable N+1):
- *   - The postings LIST endpoint omits the job description entirely.
+ *   - The postings LIST endpoint omits the job description entirely,
+ *     and the structured `compensation` block with it.
  *   - jd-intel's contract is "full JD text", so we must fetch each
  *     posting's DETAIL endpoint to get jobAd.sections.
  * Large enterprise tenants with hundreds of openings will therefore be
@@ -46,6 +47,7 @@ export async function fetchSmartrecruiters(slug) {
   const jobs = await Promise.all(postings.map(async (p) => {
     let sections = {};
     let postingUrl = '';
+    let salary = null;
 
     try {
       const detailResp = await fetch(`${BASE_URL}/${slug}/postings/${p.id}`);
@@ -53,6 +55,7 @@ export async function fetchSmartrecruiters(slug) {
         const detail = await detailResp.json();
         sections = detail.jobAd?.sections || {};
         postingUrl = detail.postingUrl || detail.applyUrl || '';
+        salary = parseCompensation(detail.compensation);
       }
     } catch {
       // Detail fetch failed: fall back to list-only fields (no description).
@@ -80,7 +83,7 @@ export async function fetchSmartrecruiters(slug) {
       description,
       url: postingUrl,
       postedAt: p.releasedDate || null,
-      salary: null, // SmartRecruiters has no structured salary; normalizer parses text
+      salary, // null when the detail has no compensation; normalize() then parses text
       metadata: {
         smartRecruitersId: p.id,
         refNumber: p.refNumber || '',
@@ -92,6 +95,31 @@ export async function fetchSmartrecruiters(slug) {
   }));
 
   return jobs;
+}
+
+const PERIODS = { YEARLY: 'year', MONTHLY: 'month', HOURLY: 'hour' };
+
+/**
+ * Map the detail response's `compensation` to the shared salary shape.
+ *
+ * SmartRecruiters publishes `{min?, max?, currency, period}`, and both
+ * one-sided cases occur (a "max only" cap, a "from" floor), so each bound
+ * is passed through as null when absent rather than dropping the whole
+ * range. The period is kept as published: a MONTHLY figure is not
+ * annualized because tenants occasionally mislabel it (issue #70).
+ */
+function parseCompensation(comp) {
+  if (!comp || !comp.currency) return null;
+  const min = Number.isFinite(comp.min) ? comp.min : null;
+  const max = Number.isFinite(comp.max) ? comp.max : null;
+  if (min === null && max === null) return null;
+  return {
+    min,
+    max,
+    currency: comp.currency,
+    period: PERIODS[comp.period] ?? null,
+    source: 'ats',
+  };
 }
 
 /**

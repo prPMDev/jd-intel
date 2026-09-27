@@ -9,6 +9,8 @@
  *   jd-intel registry search <query>
  */
 
+import { realpathSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { fetchJobs } from './index.js';
 import { detectAts, searchRegistry } from './registry.js';
 
@@ -184,14 +186,32 @@ Examples:
   }
 }
 
-function formatSalary({ min, max, currency, period }) {
-  const range = `${min?.toLocaleString()}-${max?.toLocaleString()} ${currency}`;
-  if (period === 'hour') return `${range}/hr`;
-  if (period === 'month') return `${range}/mo`;
-  return range;
+export function formatSalary({ min, max, currency, period }) {
+  const hasMin = min != null;
+  const hasMax = max != null;
+  let range;
+  if (hasMin && hasMax) range = `${min.toLocaleString()}-${max.toLocaleString()}`;
+  else if (hasMin) range = `from ${min.toLocaleString()}`;
+  else range = `up to ${max.toLocaleString()}`;
+  const unit = period === 'hour' ? '/hr' : period === 'month' ? '/mo' : '';
+  return `${range} ${currency}${unit}`;
 }
 
-main().catch(err => {
-  console.error('Error:', err.message);
-  process.exit(1);
-});
+// Boot only when this file is the script Node was started with, so a test
+// can import formatSalary without running a command. argv[1] is resolved
+// through realpath because npm installs the bin as a symlink into .bin/,
+// while import.meta.url already points at the real file.
+function isEntrypoint() {
+  try {
+    return realpathSync(process.argv[1]) === fileURLToPath(import.meta.url);
+  } catch {
+    return false;
+  }
+}
+
+if (isEntrypoint()) {
+  main().catch(err => {
+    console.error('Error:', err.message);
+    process.exit(1);
+  });
+}

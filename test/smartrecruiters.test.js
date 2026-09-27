@@ -48,6 +48,60 @@ const DETAIL_FIXTURE = {
   },
 };
 
+// Trimmed from real detail responses (a fintech and a sports data tenant).
+// `compensation` sits at the top level next to jobAd and only appears on
+// the detail call; list entries never carry it. Both one-sided shapes occur.
+const DETAIL_WITH_RANGE = {
+  id: '744000111',
+  name: 'Staff Product Manager',
+  postingUrl: 'https://jobs.smartrecruiters.com/TestCompany/744000111-staff-product-manager',
+  applyUrl: 'https://jobs.smartrecruiters.com/TestCompany/744000111-staff-product-manager?oga=true',
+  jobAd: {
+    sections: {
+      companyDescription: { title: 'Company Description', text: '<p>We move money across borders.</p>' },
+      jobDescription: { title: 'Job Description', text: '<p>Own the roadmap for a payments product.</p>' },
+      qualifications: { title: 'Qualifications', text: '<p>Shipped B2B products.</p>' },
+      additionalInformation: { title: 'Additional Information', text: '<p>Salary: &#xa3;87,500 - &#xa3;111,000 per year.</p>' },
+    },
+  },
+  compensation: { min: 87500, max: 111000, currency: 'GBP', period: 'YEARLY' },
+  active: true,
+  typeOfEmployment: { id: 'permanent', label: 'Full-time' },
+};
+
+const DETAIL_MAX_ONLY = {
+  id: '744000152029379',
+  name: 'Sports Data Operator (m/f/d)',
+  postingUrl: 'https://jobs.smartrecruiters.com/Sportradar/744000152029379-sports-data-operator-m-f-d-',
+  applyUrl: 'https://jobs.smartrecruiters.com/Sportradar/744000152029379-sports-data-operator-m-f-d-?oga=true',
+  jobAd: {
+    sections: {
+      companyDescription: { title: 'Company Description', text: '<p><strong>Sportradar </strong>is a sports data partner to the top leagues.&#xa0;</p>' },
+      jobDescription: { title: 'Job Description', text: '<p>Collect live match data from the stadium.</p>' },
+      qualifications: { title: 'Qualifications', text: '<p>Sports knowledge, fast reactions.</p>' },
+      additionalInformation: { title: 'Additional Information', text: '<p>Part-time, shift based.</p>' },
+    },
+  },
+  compensation: { max: 2450, currency: 'EUR', period: 'MONTHLY' },
+  active: true,
+  typeOfEmployment: { id: 'permanent', label: 'Full-time' },
+};
+
+const DETAIL_MIN_ONLY = {
+  id: '744000122',
+  name: 'Senior Backend Engineer',
+  postingUrl: 'https://jobs.smartrecruiters.com/TestCompany/744000122-senior-backend-engineer',
+  applyUrl: 'https://jobs.smartrecruiters.com/TestCompany/744000122-senior-backend-engineer?oga=true',
+  jobAd: {
+    sections: {
+      jobDescription: { title: 'Job Description', text: '<p>Build the ledger service.</p>' },
+      qualifications: { title: 'Qualifications', text: '<p>Distributed systems experience.</p>' },
+    },
+  },
+  compensation: { min: 520000, currency: 'INR', period: 'YEARLY' },
+  active: true,
+};
+
 function mockFetch(t, { listStatus = 200, list = LIST_FIXTURE, detail = DETAIL_FIXTURE } = {}) {
   t.mock.method(global, 'fetch', async (url) => {
     if (url.includes('/postings/')) {
@@ -106,10 +160,54 @@ describe('fetchSmartrecruiters', () => {
     assert.equal(job.postedAt, '2026-04-01T10:00:00Z');
   });
 
-  test('extracts salary from concatenated description text', async (t) => {
+  test('falls back to text extraction when the detail has no compensation', async (t) => {
     mockFetch(t);
     const [job] = await fetchSmartrecruiters('testco');
     assert.deepEqual(job.salary, { min: 150000, max: 200000, currency: 'USD', period: 'year', source: 'text' });
+  });
+
+  test('maps detail compensation to salary with the period mapped and source ats', async (t) => {
+    mockFetch(t, { detail: DETAIL_WITH_RANGE });
+    const [job] = await fetchSmartrecruiters('testco');
+    assert.deepEqual(job.salary, { min: 87500, max: 111000, currency: 'GBP', period: 'year', source: 'ats' });
+  });
+
+  test('keeps a max-only compensation with min null', async (t) => {
+    mockFetch(t, { detail: DETAIL_MAX_ONLY });
+    const [job] = await fetchSmartrecruiters('testco');
+    assert.deepEqual(job.salary, { min: null, max: 2450, currency: 'EUR', period: 'month', source: 'ats' });
+  });
+
+  test('keeps a min-only compensation with max null', async (t) => {
+    mockFetch(t, { detail: DETAIL_MIN_ONLY });
+    const [job] = await fetchSmartrecruiters('testco');
+    assert.deepEqual(job.salary, { min: 520000, max: null, currency: 'INR', period: 'year', source: 'ats' });
+  });
+
+  test('structured compensation wins over a dollar range in the text', async (t) => {
+    const detail = {
+      ...DETAIL_WITH_RANGE,
+      jobAd: { sections: { jobDescription: { text: '<p>Salary: $150,000 - $200,000.</p>' } } },
+    };
+    mockFetch(t, { detail });
+    const [job] = await fetchSmartrecruiters('testco');
+    assert.equal(job.salary.currency, 'GBP');
+    assert.equal(job.salary.source, 'ats');
+  });
+
+  test('leaves period null when compensation carries no period', async (t) => {
+    const detail = { ...DETAIL_WITH_RANGE, compensation: { min: 87500, max: 111000, currency: 'GBP' } };
+    mockFetch(t, { detail });
+    const [job] = await fetchSmartrecruiters('testco');
+    assert.equal(job.salary.period, null);
+    assert.equal(job.salary.source, 'ats');
+  });
+
+  test('ignores a compensation with neither bound so the text fallback runs', async (t) => {
+    const detail = { ...DETAIL_FIXTURE, compensation: { currency: 'GBP', period: 'YEARLY' } };
+    mockFetch(t, { detail });
+    const [job] = await fetchSmartrecruiters('testco');
+    assert.equal(job.salary.source, 'text');
   });
 
   test('decodes hex entities (&#xa0;) and named entities in the description', async (t) => {
