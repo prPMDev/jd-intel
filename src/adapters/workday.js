@@ -107,11 +107,14 @@ export async function fetchWorkday(slug, ctx = {}) {
   //    applied by the library AFTER this returns, so for that case we
   //    keep the full backstop instead of truncating tightly to `limit`
   //    (which could hydrate jobs that all fail the regex while better
-  //    matches go unscanned). Proper fix (smart pagination / rate-limited
-  //    concurrency / surfaced truncation) is tracked in #26, to be
-  //    designed alongside retry/rate-limit work (#7).
+  //    matches go unscanned). The library pages with `offset` after this
+  //    returns, so the budget covers the page plus what precedes it.
+  //    Proper fix (smart pagination / rate-limited concurrency / surfaced
+  //    truncation) is tracked in #26, to be designed alongside
+  //    retry/rate-limit work (#7).
   const limit = typeof fc.limit === 'number' && fc.limit > 0 ? fc.limit : 100;
-  const cap = fc.filter ? MAX_DETAIL_FETCHES : Math.min(limit, MAX_DETAIL_FETCHES);
+  const skip = typeof fc.offset === 'number' && fc.offset > 0 ? fc.offset : 0;
+  const cap = fc.filter ? MAX_DETAIL_FETCHES : Math.min(skip + limit, MAX_DETAIL_FETCHES);
   candidates = candidates.slice(0, cap);
 
   // 4. Hydrate descriptions via the per-posting detail endpoint.

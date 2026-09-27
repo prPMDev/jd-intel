@@ -203,6 +203,18 @@ describe('fetchWorkday', () => {
         await fetchWorkday('cisco', { ...CTX, filterContext: { limit: 10 } });
         assert.equal(calls.detail, 10);
       });
+
+      test('offset extends the detail budget to offset + limit', async (t) => {
+        const calls = paginatedMock(t, 50, shapeOpts);
+        await fetchWorkday('cisco', { ...CTX, filterContext: { limit: 10, offset: 10 } });
+        assert.equal(calls.detail, 20);
+      });
+
+      test('offset + limit is still capped at 100 detail fetches', async (t) => {
+        const calls = paginatedMock(t, 300, shapeOpts);
+        await fetchWorkday('cisco', { ...CTX, filterContext: { limit: 50, offset: 80 } });
+        assert.equal(calls.detail, 100);
+      });
     });
   }
 

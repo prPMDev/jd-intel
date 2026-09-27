@@ -8,8 +8,8 @@ import { AtsError } from 'jd-intel';
 /**
  * First automated MCP test. Uses the registerTools(server, deps) seam to
  * inject a mock library, so this is offline and asserts the AI-facing
- * contract: how the `workday` arg maps to the library `fetchJobs` call,
- * the envelope metadata, and the error-code taxonomy.
+ * contract: how the `workday` arg maps to the library `fetchJobsDetailed`
+ * call, the envelope metadata, and the error-code taxonomy.
  */
 
 function getFetchJobsHandler(deps) {
@@ -25,7 +25,7 @@ describe('mcp fetch_jobs — workday passthrough', () => {
   test('workday triple maps to ats:workday + config and sets metadata', async () => {
     let received;
     const handler = getFetchJobsHandler({
-      fetchJobs: async (opts) => { received = opts; return [{ title: 'PM' }]; },
+      fetchJobsDetailed: async (opts) => { received = opts; return { jobs: [{ title: 'PM' }], total_matched: 1 }; },
       findAtsBySlug: async () => null,
     });
     const result = await handler({
@@ -45,7 +45,7 @@ describe('mcp fetch_jobs — workday passthrough', () => {
   test('no workday arg leaves ats and config undefined', async () => {
     let received;
     const handler = getFetchJobsHandler({
-      fetchJobs: async (opts) => { received = opts; return []; },
+      fetchJobsDetailed: async (opts) => { received = opts; return { jobs: [], total_matched: 0 }; },
       findAtsBySlug: async () => 'greenhouse',
     });
     const result = await handler({ company: 'stripe' });
@@ -57,10 +57,26 @@ describe('mcp fetch_jobs — workday passthrough', () => {
     assert.equal(env.metadata.ats, 'greenhouse');
   });
 
+  test('order, offset and limit reach the library, defaults filled in', async () => {
+    let received;
+    const handler = getFetchJobsHandler({
+      fetchJobsDetailed: async (opts) => { received = opts; return { jobs: [], total_matched: 0 }; },
+      findAtsBySlug: async () => 'greenhouse',
+    });
+    await handler({ company: 'stripe' });
+    assert.equal(received.order, 'newest');
+    assert.equal(received.offset, 0);
+    assert.equal(received.limit, 100);
+    await handler({ company: 'stripe', order: 'board', offset: 20, limit: 10 });
+    assert.equal(received.order, 'board');
+    assert.equal(received.offset, 20);
+    assert.equal(received.limit, 10);
+  });
+
   test('incomplete (whitespace) workday triple -> invalid_args, fetchJobs not called', async () => {
     let called = false;
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => { called = true; return []; },
+      fetchJobsDetailed: async () => { called = true; return { jobs: [], total_matched: 0 }; },
       findAtsBySlug: async () => null,
     });
     const result = await handler({ company: 'x', workday: { tenant: '  ', env: 'wd1', site: 'x' } });
@@ -72,7 +88,7 @@ describe('mcp fetch_jobs — workday passthrough', () => {
 
   test('library Workday API error with a triple -> ats_unreachable', async () => {
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => { throw new AtsError('ats_unreachable', 'Workday API error for x (a/b/c): 422'); },
+      fetchJobsDetailed: async () => { throw new AtsError('ats_unreachable', 'Workday API error for x (a/b/c): 422'); },
       findAtsBySlug: async () => null,
     });
     const result = await handler({ company: 'x', workday: { tenant: 'a', env: 'b', site: 'c' } });
@@ -83,7 +99,7 @@ describe('mcp fetch_jobs — workday passthrough', () => {
 
   test('generic library error without workday still maps to invalid_args', async () => {
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => { throw new Error('Company slug required'); },
+      fetchJobsDetailed: async () => { throw new Error('Company slug required'); },
       findAtsBySlug: async () => null,
     });
     const result = await handler({ company: '' });
@@ -94,7 +110,7 @@ describe('mcp fetch_jobs — workday passthrough', () => {
 
   test('success metadata carries the server version and registry source', async () => {
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => [{ title: 'PM' }],
+      fetchJobsDetailed: async () => ({ jobs: [{ title: 'PM' }], total_matched: 1 }),
       findAtsBySlug: async () => 'greenhouse',
     });
     const env = parse(await handler({ company: 'stripe' }));
@@ -105,7 +121,7 @@ describe('mcp fetch_jobs — workday passthrough', () => {
 
   test('rate-limited adapter error -> rate_limited', async () => {
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => { throw new AtsError('rate_limited', 'Greenhouse API error for stripe: 429'); },
+      fetchJobsDetailed: async () => { throw new AtsError('rate_limited', 'Greenhouse API error for stripe: 429'); },
       findAtsBySlug: async () => 'greenhouse',
     });
     const env = parse(await handler({ company: 'stripe' }));
@@ -115,7 +131,7 @@ describe('mcp fetch_jobs — workday passthrough', () => {
 
   test('non-429 adapter API error -> ats_unreachable', async () => {
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => { throw new AtsError('ats_unreachable', 'Lever API error for foo: 500'); },
+      fetchJobsDetailed: async () => { throw new AtsError('ats_unreachable', 'Lever API error for foo: 500'); },
       findAtsBySlug: async () => 'lever',
     });
     const env = parse(await handler({ company: 'foo' }));
@@ -125,7 +141,7 @@ describe('mcp fetch_jobs — workday passthrough', () => {
 
   test('a non-AtsError (plain Error) maps to invalid_args', async () => {
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => { throw new Error('some unexpected failure'); },
+      fetchJobsDetailed: async () => { throw new Error('some unexpected failure'); },
       findAtsBySlug: async () => 'greenhouse',
     });
     const env = parse(await handler({ company: 'stripe' }));
@@ -134,7 +150,7 @@ describe('mcp fetch_jobs — workday passthrough', () => {
 
   test('discovery miss (no registry hit, no jobs) -> company_not_found', async () => {
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => [],
+      fetchJobsDetailed: async () => ({ jobs: [], total_matched: 0 }),
       findAtsBySlug: async () => null,
     });
     const env = parse(await handler({ company: 'zzzznotacompany' }));
@@ -144,7 +160,7 @@ describe('mcp fetch_jobs — workday passthrough', () => {
 
   test('registry hit with zero open roles stays success([])', async () => {
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => [],
+      fetchJobsDetailed: async () => ({ jobs: [], total_matched: 0 }),
       findAtsBySlug: async () => 'greenhouse',
     });
     const env = parse(await handler({ company: 'stripe' }));
@@ -155,7 +171,7 @@ describe('mcp fetch_jobs — workday passthrough', () => {
 
   test('workday override returning zero jobs stays success (not company_not_found)', async () => {
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => [],
+      fetchJobsDetailed: async () => ({ jobs: [], total_matched: 0 }),
       findAtsBySlug: async () => null,
     });
     const env = parse(await handler({
@@ -170,7 +186,7 @@ describe('mcp fetch_jobs — workday passthrough', () => {
 describe('mcp envelope — structuredContent and isError', () => {
   test('success returns structuredContent matching the text payload, no isError', async () => {
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => [{ title: 'PM' }],
+      fetchJobsDetailed: async () => ({ jobs: [{ title: 'PM' }], total_matched: 1 }),
       findAtsBySlug: async () => 'greenhouse',
     });
     const result = await handler({ company: 'stripe' });
@@ -180,7 +196,7 @@ describe('mcp envelope — structuredContent and isError', () => {
 
   test('error sets isError and keeps the structured error code', async () => {
     const handler = getFetchJobsHandler({
-      fetchJobs: async () => [],
+      fetchJobsDetailed: async () => ({ jobs: [], total_matched: 0 }),
       findAtsBySlug: async () => null,
     });
     const result = await handler({ company: 'zzzznotacompany' });
@@ -279,7 +295,7 @@ describe('mcp server — end to end over an in-memory transport', async () => {
 
   test('fetch_jobs success with undeclared job fields passes both validators', async () => {
     const client = await connect({
-      fetchJobs: async () => [job],
+      fetchJobsDetailed: async () => ({ jobs: [job], total_matched: 1 }),
       findAtsBySlug: async () => 'greenhouse',
     });
     const result = await client.callTool({ name: 'fetch_jobs', arguments: { company: 'stripe' } });
@@ -290,7 +306,7 @@ describe('mcp server — end to end over an in-memory transport', async () => {
   });
 
   test('fetch_jobs error envelope passes client-side validation and sets isError', async () => {
-    const client = await connect({ fetchJobs: async () => [], findAtsBySlug: async () => null });
+    const client = await connect({ fetchJobsDetailed: async () => ({ jobs: [], total_matched: 0 }), findAtsBySlug: async () => null });
     const result = await client.callTool({ name: 'fetch_jobs', arguments: { company: 'zzzz' } });
     assert.equal(result.isError, true);
     assert.equal(result.structuredContent.status, 'error');
@@ -299,7 +315,7 @@ describe('mcp server — end to end over an in-memory transport', async () => {
   });
 
   test('fetch_jobs unknown argument is rejected with text naming it', async () => {
-    const client = await connect({ fetchJobs: async () => [job], findAtsBySlug: async () => 'greenhouse' });
+    const client = await connect({ fetchJobsDetailed: async () => ({ jobs: [job], total_matched: 1 }), findAtsBySlug: async () => 'greenhouse' });
     const result = await client.callTool({ name: 'fetch_jobs', arguments: { company: 'stripe', titel_filter: 'PM' } });
     assert.equal(result.isError, true);
     assert.match(result.content[0].text, /titel_filter|Unrecognized/i);
@@ -406,7 +422,7 @@ describe('mcp server — end to end over an in-memory transport', async () => {
     // client would throw "data/error/message must be string" on every tool.
     const thrower = async () => { throw { message: 42 }; };
     const calls = [
-      ['fetch_jobs', { fetchJobs: thrower, findAtsBySlug: async () => null }, { company: 'acme' }],
+      ['fetch_jobs', { fetchJobsDetailed: thrower, findAtsBySlug: async () => null }, { company: 'acme' }],
       ['search_registry', { searchRegistry: thrower }, { query: 'acme' }],
       ['detect_ats', { detectAts: thrower }, { company: 'acme' }],
     ];
@@ -416,6 +432,199 @@ describe('mcp server — end to end over an in-memory transport', async () => {
       assert.equal(result.isError, true, name);
       assert.equal(result.structuredContent.status, 'error', name);
       assert.equal(result.structuredContent.error.message, '42', name);
+    }
+  });
+});
+
+describe('mcp fetch_jobs — size reporting, budget and paging (#54)', async () => {
+  const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
+  const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
+  const { InMemoryTransport } = await import('@modelcontextprotocol/sdk/inMemory.js');
+
+  async function connect(deps) {
+    const server = new McpServer({ name: 'jd-intel-test', version: '0.0.0' });
+    registerTools(server, deps);
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: 'test-client', version: '0.0.0' });
+    await Promise.all([server.connect(serverSide), client.connect(clientSide)]);
+    await client.listTools();
+    return client;
+  }
+
+  const boardJob = (i, description = 'desc') => ({
+    id: `j${i}`, company: 'Acme', companySlug: 'acme', ats: 'greenhouse', title: `Role ${i}`,
+    department: '', location: 'Remote', locationType: 'remote', salary: null,
+    description, url: `https://example.com/j/${i}`, postedAt: null,
+    firstSeen: 't', lastSeen: 't', status: 'open', metadata: {},
+  });
+
+  // Pages a static, already-sorted set the way applyFiltersDetailed does, so
+  // the handler's cut and paging math is tested against a stable board.
+  function pagedLibrary(all) {
+    return async ({ offset = 0, limit = 100 }) => ({
+      jobs: all.slice(offset, offset + limit),
+      total_matched: all.length,
+    });
+  }
+
+  const SIZE_KEYS = ['total_matched', 'truncated', 'est_tokens', 'offset', 'next_offset', 'order'];
+  const BOARD = [1, 2, 3, 4, 5].map((i) => boardJob(i));
+
+  async function fetchJobs(client, args) {
+    const result = await client.callTool({ name: 'fetch_jobs', arguments: args });
+    assert.equal(result.isError, undefined, result.content?.[0]?.text);
+    assert.equal(result.structuredContent.status, 'success');
+    return result;
+  }
+
+  test('every success carries the size and paging metadata next to the existing keys', async () => {
+    const client = await connect({ fetchJobsDetailed: pagedLibrary(BOARD), findAtsBySlug: async () => 'greenhouse' });
+    const { structuredContent: env } = await fetchJobs(client, { company: 'acme' });
+    for (const key of ['count', 'registry_hit', 'ats', 'workday_override', 'version', 'registry_source', ...SIZE_KEYS]) {
+      assert.ok(key in env.metadata, `metadata.${key} missing`);
+    }
+    assert.equal(env.metadata.count, 5);
+    assert.equal(env.metadata.total_matched, 5);
+    assert.equal(env.metadata.truncated, null);
+    assert.equal(env.metadata.offset, 0);
+    assert.equal(env.metadata.next_offset, null);
+    assert.equal(env.metadata.order, 'newest');
+  });
+
+  test('more matches than limit: total_matched > count, truncated by limit, next_offset set', async () => {
+    const client = await connect({ fetchJobsDetailed: pagedLibrary(BOARD), findAtsBySlug: async () => 'greenhouse' });
+    const result = await fetchJobs(client, { company: 'acme', limit: 2 });
+    const { metadata } = result.structuredContent;
+    assert.equal(metadata.count, 2);
+    assert.equal(metadata.total_matched, 5);
+    assert.ok(metadata.total_matched > metadata.count);
+    assert.deepEqual(metadata.truncated, { reason: 'limit', not_returned: 3 });
+    assert.equal(metadata.next_offset, 2);
+    assert.equal(result.structuredContent.data.length, 2);
+  });
+
+  test('est_tokens is chars/4 of the text block actually emitted', async () => {
+    const client = await connect({ fetchJobsDetailed: pagedLibrary(BOARD), findAtsBySlug: async () => 'greenhouse' });
+    const result = await fetchJobs(client, { company: 'acme', limit: 2 });
+    assert.equal(result.structuredContent.metadata.est_tokens, Math.ceil(result.content[0].text.length / 4));
+    assert.deepEqual(result.structuredContent, JSON.parse(result.content[0].text));
+  });
+
+  test('max_tokens adds whole jobs only, cuts by size, never shortens a description', async () => {
+    // Three postings of 10,000 characters each: two fit a 6,000-token budget
+    // (about 24,000 characters), the third would pass it.
+    const long = [1, 2, 3].map((i) => boardJob(i, `${i}`.repeat(10_000)));
+    const client = await connect({ fetchJobsDetailed: pagedLibrary(long), findAtsBySlug: async () => 'greenhouse' });
+    const result = await fetchJobs(client, { company: 'acme', max_tokens: 6000 });
+    const { data, metadata } = result.structuredContent;
+    assert.equal(metadata.count, 2);
+    assert.equal(data.length, 2);
+    assert.deepEqual(metadata.truncated, { reason: 'size', not_returned: 1 });
+    assert.equal(metadata.next_offset, 2);
+    assert.ok(metadata.est_tokens <= 6000, `est_tokens ${metadata.est_tokens} over budget`);
+    for (const [i, job] of data.entries()) {
+      assert.equal(job.description.length, long[i].description.length);
+      assert.equal(job.description, long[i].description);
+    }
+  });
+
+  test('a single job past the budget is still returned in full', async () => {
+    const huge = [1, 2].map((i) => boardJob(i, 'x'.repeat(20_000)));
+    const client = await connect({ fetchJobsDetailed: pagedLibrary(huge), findAtsBySlug: async () => 'greenhouse' });
+    const result = await fetchJobs(client, { company: 'acme', max_tokens: 2000 });
+    const { data, metadata } = result.structuredContent;
+    assert.equal(metadata.count, 1);
+    assert.equal(data[0].description.length, 20_000);
+    assert.ok(metadata.est_tokens > 2000);
+    assert.deepEqual(metadata.truncated, { reason: 'size', not_returned: 1 });
+    assert.equal(metadata.next_offset, 1);
+  });
+
+  test('limit wins over size when it stops output first', async () => {
+    const long = [1, 2, 3].map((i) => boardJob(i, 'y'.repeat(10_000)));
+    const client = await connect({ fetchJobsDetailed: pagedLibrary(long), findAtsBySlug: async () => 'greenhouse' });
+    const { structuredContent: env } = await fetchJobs(client, { company: 'acme', limit: 1, max_tokens: 6000 });
+    assert.equal(env.metadata.count, 1);
+    assert.deepEqual(env.metadata.truncated, { reason: 'limit', not_returned: 2 });
+  });
+
+  test('paging with offset = next_offset covers the set with no overlap and no gap', async () => {
+    const client = await connect({ fetchJobsDetailed: pagedLibrary(BOARD), findAtsBySlug: async () => 'greenhouse' });
+    const seen = [];
+    const totals = new Set();
+    let offset = 0;
+    let pages = 0;
+    while (offset !== null) {
+      const { structuredContent: env } = await fetchJobs(client, { company: 'acme', limit: 2, offset });
+      assert.equal(env.metadata.offset, offset);
+      seen.push(...env.data.map((j) => j.id));
+      totals.add(env.metadata.total_matched);
+      offset = env.metadata.next_offset;
+      pages += 1;
+    }
+    assert.equal(pages, 3);
+    assert.deepEqual(seen, ['j1', 'j2', 'j3', 'j4', 'j5']);
+    assert.equal(new Set(seen).size, seen.length);
+    assert.deepEqual([...totals], [5]);
+  });
+
+  test('offset past the end is an empty success, not company_not_found', async () => {
+    const client = await connect({ fetchJobsDetailed: pagedLibrary(BOARD), findAtsBySlug: async () => null });
+    const { structuredContent: env } = await fetchJobs(client, { company: 'acme', offset: 10 });
+    assert.deepEqual(env.data, []);
+    assert.equal(env.metadata.count, 0);
+    assert.equal(env.metadata.total_matched, 5);
+    assert.equal(env.metadata.truncated, null);
+    assert.equal(env.metadata.next_offset, null);
+  });
+
+  test('order metadata matches data order through the real library (mocked Greenhouse)', async (t) => {
+    // Discovery mode on a slug no registry holds: only the Greenhouse mock
+    // answers, every other adapter sees a 404. Board order is old, new,
+    // undated; newest-first is new, old, undated.
+    const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
+    const board = {
+      jobs: [
+        { id: 1, title: 'Old Role', absolute_url: 'https://gh.example/1', content: 'a', first_published: daysAgo(10), location: { name: 'Remote' } },
+        { id: 2, title: 'New Role', absolute_url: 'https://gh.example/2', content: 'b', first_published: daysAgo(2), location: { name: 'Remote' } },
+        { id: 3, title: 'Undated Role', absolute_url: 'https://gh.example/3', content: 'c', location: { name: 'Remote' } },
+      ],
+    };
+    t.mock.method(global, 'fetch', async (url) => {
+      if (String(url) === 'https://boards-api.greenhouse.io/v1/boards/zzzorderco/jobs?content=true') {
+        return { ok: true, status: 200, json: async () => board };
+      }
+      return { ok: false, status: 404, json: async () => ({}), text: async () => '' };
+    });
+    const prev = process.env.JD_INTEL_REGISTRY_URL;
+    process.env.JD_INTEL_REGISTRY_URL = ''; // bundled registry, no network
+    try {
+      const client = await connect({});
+      const newest = await fetchJobs(client, { company: 'zzzorderco' });
+      assert.equal(newest.structuredContent.metadata.order, 'newest');
+      assert.deepEqual(newest.structuredContent.data.map((j) => j.title), ['New Role', 'Old Role', 'Undated Role']);
+      const asBoard = await fetchJobs(client, { company: 'zzzorderco', order: 'board' });
+      assert.equal(asBoard.structuredContent.metadata.order, 'board');
+      assert.deepEqual(asBoard.structuredContent.data.map((j) => j.title), ['Old Role', 'New Role', 'Undated Role']);
+      assert.equal(asBoard.structuredContent.metadata.registry_hit, false);
+    } finally {
+      if (prev === undefined) delete process.env.JD_INTEL_REGISTRY_URL;
+      else process.env.JD_INTEL_REGISTRY_URL = prev;
+    }
+  });
+
+  test('offset, order and max_tokens outside their ranges are rejected with text naming the field', async () => {
+    const client = await connect({ fetchJobsDetailed: pagedLibrary(BOARD), findAtsBySlug: async () => 'greenhouse' });
+    const bad = [
+      [{ company: 'acme', offset: -1 }, /offset/],
+      [{ company: 'acme', order: 'oldest' }, /order/],
+      [{ company: 'acme', max_tokens: 100 }, /max_tokens/],
+      [{ company: 'acme', max_tokens: 50_000 }, /max_tokens/],
+    ];
+    for (const [args, pattern] of bad) {
+      const result = await client.callTool({ name: 'fetch_jobs', arguments: args });
+      assert.equal(result.isError, true, JSON.stringify(args));
+      assert.match(result.content[0].text, pattern);
     }
   });
 });

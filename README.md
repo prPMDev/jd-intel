@@ -131,6 +131,19 @@ const jobs = await fetchJobs({
 });
 ```
 
+Results come back newest first by `postedAt`, undated last (`order: 'board'` keeps the ATS's own order). `fetchJobs` returns the page as an array. `fetchJobsDetailed` returns the same page plus `total_matched`, the number of matches before `offset` and `limit`, so you can tell a small board from a cut and page through the rest:
+
+```js
+import { fetchJobsDetailed } from 'jd-intel';
+
+const { jobs, total_matched } = await fetchJobsDetailed({
+  company: '<your-target-company>',
+  titleFilter: 'engineer',
+  limit: 20,
+  offset: 20, // second page
+});
+```
+
 CLI usage: `npx jd-intel fetch <company-slug> --title-filter "engineer" --posted-within-days 14`. Full filter reference [below](#filters-quick-reference).
 
 Node.js 18+. No API keys. No configuration.

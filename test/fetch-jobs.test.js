@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
-import { fetchJobs } from '../src/index.js';
+import { fetchJobs, fetchJobsDetailed } from '../src/index.js';
 
 // Force the on-disk registry so the global fetch mocks below only intercept
 // adapter calls, never the (now network-first) registry load. Route the disk
@@ -77,6 +77,62 @@ describe('fetchJobs — Workday config passthrough', () => {
       !calls.urls.some(u => u.includes('fixtureco.wd0')),
       'registry config must not be used when explicit config is given'
     );
+  });
+});
+
+describe('fetchJobsDetailed — order, offset and total_matched', () => {
+  const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
+  // Board order is old, new, undated, older; newest-first is new, old, older, undated.
+  const GH_BOARD = {
+    jobs: [
+      { id: 1, title: 'Old Role', absolute_url: 'https://gh.example/1', content: 'a', first_published: daysAgo(10), location: { name: 'Remote' } },
+      { id: 2, title: 'New Role', absolute_url: 'https://gh.example/2', content: 'b', first_published: daysAgo(2), location: { name: 'Remote' } },
+      { id: 3, title: 'Undated Role', absolute_url: 'https://gh.example/3', content: 'c', location: { name: 'Remote' } },
+      { id: 4, title: 'Older Role', absolute_url: 'https://gh.example/4', content: 'd', first_published: daysAgo(40), location: { name: 'Remote' } },
+    ],
+  };
+
+  function greenhouseMock(t) {
+    t.mock.method(global, 'fetch', async () => ({ ok: true, status: 200, json: async () => GH_BOARD }));
+  }
+
+  test('returns { jobs, total_matched } with the page sorted newest first', async (t) => {
+    greenhouseMock(t);
+    const { jobs, total_matched } = await fetchJobsDetailed({ company: 'fixture-gh', limit: 2 });
+    assert.equal(total_matched, 4);
+    assert.deepEqual(jobs.map(j => j.title), ['New Role', 'Old Role']);
+  });
+
+  test('offset pages the sorted set; fetchJobs returns the same page as an array', async (t) => {
+    greenhouseMock(t);
+    const second = await fetchJobsDetailed({ company: 'fixture-gh', limit: 2, offset: 2 });
+    assert.equal(second.total_matched, 4);
+    assert.deepEqual(second.jobs.map(j => j.title), ['Older Role', 'Undated Role']);
+    const asArray = await fetchJobs({ company: 'fixture-gh', limit: 2, offset: 2 });
+    assert.deepEqual(asArray.map(j => j.title), ['Older Role', 'Undated Role']);
+  });
+
+  test("order: 'board' keeps the adapter's order", async (t) => {
+    greenhouseMock(t);
+    const { jobs } = await fetchJobsDetailed({ company: 'fixture-gh', order: 'board' });
+    assert.deepEqual(jobs.map(j => j.title), ['Old Role', 'New Role', 'Undated Role', 'Older Role']);
+  });
+
+  test('offset reaches the Workday adapter as part of its hydrate budget', async (t) => {
+    const list = {
+      total: 3,
+      jobPostings: [1, 2, 3].map(i => ({ title: `Role ${i}`, externalPath: `/job/Remote/R${i}`, locationsText: 'Remote', postedOn: 'Posted Today' })),
+    };
+    let detailCalls = 0;
+    t.mock.method(global, 'fetch', async (url) => {
+      if (String(url).endsWith('/jobs')) return { ok: true, status: 200, json: async () => list };
+      detailCalls += 1;
+      return { ok: true, status: 200, json: async () => WD_DETAIL };
+    });
+    const { jobs } = await fetchJobsDetailed({ company: 'fixtureco', ats: 'workday', offset: 1, limit: 1 });
+    // offset 1 + limit 1 hydrates two postings, not one; the page is the second.
+    assert.equal(detailCalls, 2);
+    assert.equal(jobs.length, 1);
   });
 });
 

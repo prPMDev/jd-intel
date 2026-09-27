@@ -15,9 +15,13 @@ This doc covers each filter, why the design is shaped this way, and the practica
 | `postedWithinDays` | `postedAt` within N days | Recency cuts |
 | `locationIncludes` | Location contains ANY keyword (OR) | Region targeting |
 | `locationExcludes` | Location contains NO keyword | Drop geographic noise |
-| `limit` | First N results after filtering | Cap output size |
+| `limit` | First N results after filtering and sorting | Cap output size |
 
 All filters AND together.
+
+### Order and paging
+
+Matches are sorted before `limit` applies: newest first by `postedAt`, undated jobs last, ties broken by `id`. So a cut drops the oldest matches, which are the ones most likely dead. `order: 'board'` keeps the ATS's own order instead. `offset` skips the first N sorted matches, which is how you page. `fetchJobsDetailed` returns `total_matched` next to the page, so a caller can tell "this company has 12 matching roles" from "12 of 340 came back". On Workday, the adapter picks the postings it hydrates in board order before the sort, at most 100 per call, so `offset` pages there can repeat or skip a posting and `total_matched` can be a lower bound until [#26](https://github.com/prPMDev/jd-intel/issues/26) ships its scan report.
 
 ---
 

@@ -4,14 +4,33 @@
  * Facts go here (deterministic field matches). Interpretations stay with the
  * caller — this module does substring matching on structured fields, nothing
  * semantic.
+ *
+ * Returns the page as an array. applyFiltersDetailed returns the same page
+ * plus total_matched, the match count before offset and limit.
  */
 export function applyFilters(jobs, options = {}) {
+  return applyFiltersDetailed(jobs, options).jobs;
+}
+
+/**
+ * Filter, sort, then page.
+ *
+ * Order is applied after the filters and before offset and limit, so a cut
+ * drops the oldest matches first. 'newest' sorts by postedAt descending with
+ * undated jobs last and ties broken by id, which keeps pages deterministic.
+ * 'board' keeps the order the adapter returned.
+ *
+ * @returns {{ jobs: Array, total_matched: number }}
+ */
+export function applyFiltersDetailed(jobs, options = {}) {
   const {
     titleFilter,
     filter,
     postedWithinDays,
     locationIncludes,
     locationExcludes,
+    order = 'newest',
+    offset = 0,
     limit = 100,
   } = options;
 
@@ -56,11 +75,38 @@ export function applyFilters(jobs, options = {}) {
     });
   }
 
-  if (typeof limit === 'number' && result.length > limit) {
-    result = result.slice(0, limit);
+  const total_matched = result.length;
+
+  if (order !== 'board') {
+    result = [...result].sort(byNewest);
   }
 
-  return result;
+  const start = typeof offset === 'number' && offset > 0 ? offset : 0;
+  const end = typeof limit === 'number' ? start + limit : undefined;
+  if (start > 0 || (end !== undefined && result.length > end)) {
+    result = result.slice(start, end);
+  }
+
+  return { jobs: result, total_matched };
+}
+
+function postedTime(job) {
+  if (!job.postedAt) return null;
+  const t = new Date(job.postedAt).getTime();
+  return Number.isFinite(t) ? t : null;
+}
+
+function byNewest(a, b) {
+  const ta = postedTime(a);
+  const tb = postedTime(b);
+  if (ta !== tb) {
+    if (ta === null) return 1;
+    if (tb === null) return -1;
+    return tb - ta;
+  }
+  const ia = a.id || '';
+  const ib = b.id || '';
+  return ia < ib ? -1 : ia > ib ? 1 : 0;
 }
 
 /**

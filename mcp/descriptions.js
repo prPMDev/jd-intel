@@ -30,11 +30,19 @@ location_includes: array of keywords. Case-insensitive substring match; short co
 
 location_excludes: array. Drop jobs whose location contains any keyword. Use as refinement on top of includes.
 
-limit: default 100. Reduce for high-volume companies.
+limit: max jobs per page, default 100. The response is bounded by max_tokens first, so on a large board a default call returns a few complete postings. total_matched and truncated say what was left out.
+
+max_tokens: response budget, default 12000, range 2000 to 40000, counted as characters/4 of the text block. Whole postings only: output stops before the job that would pass the budget, never mid-description, and at least one job is always returned even when it alone exceeds the budget. The payload is sent twice (text and structuredContent), so the wire carries about double.
+
+offset: matches to skip, default 0. For the next page pass offset = next_offset from the previous response. Every page fetches the whole board again, so narrow the filters before paging.
+
+order: "newest" (default) sorts by postedAt, undated last, ties by id. "board" keeps the ATS's own order. Sorting happens before limit, offset and the budget, so a cut drops the oldest matches first.
 
 workday: optional { tenant, env, site }. Use ONLY for a Workday company not in the registry when the user gives a careers URL. Derive from https://{tenant}.{env}.myworkdayjobs.com/{site}: tenant is the first label, env is the part like wd108, site is the path segment. Overrides the registry for that fetch. Never guess or fabricate these values; use only what the user supplied or what is literally in the careers URL. Omit this argument entirely if you do not have a real URL.
 
-RESPONSE: { status, data: [jobs], metadata: { attempted, succeeded, failed, notes } }. Check status first. "partial" means some adapters failed. Tell the user results may be incomplete.
+RESPONSE: { status, data: [jobs], metadata: { count, registry_hit, ats, workday_override, version, registry_source, total_matched, truncated, est_tokens, offset, next_offset, order } }. Check status first. count is the number of jobs returned. total_matched is how many matched the filters before offset, limit and the budget. truncated is null, or { reason: "limit" | "size", not_returned } naming the cut that stopped output. When truncated is set, narrow with title_filter, location or posted_within_days, or fetch the next page with offset = next_offset (null when nothing is left). On Workday, total_matched, truncated and next_offset describe only the postings the adapter read, at most 100 per call, so total_matched can be a lower bound and offset pages can repeat or skip a posting until #26 ships its scan report. est_tokens is characters/4 of the text block. order is the order in effect.
+
+AGE: results are newest first unless order says otherwise. A posting older than about 90 days is usually dead or evergreen. fetch_jobs still returns them; posted_within_days: 90 leaves them out. When a returned posting is that old, say its age.
 
 ERROR CODES:
 - company_not_found: slug not in registry, not detected
