@@ -248,6 +248,61 @@ describe('normalize', () => {
     assert.equal(job.locationType, 'remote');
   });
 
+  test('a native workplace value wins over a location string with no keyword', () => {
+    const job = normalize({ title: 'x', location: 'London', workplace: 'remote' }, 'lever');
+    assert.equal(job.locationType, 'remote');
+    assert.deepEqual(job.workplace, { type: 'remote', source: 'ats' });
+  });
+
+  test('a native value wins over a conflicting keyword in the string', () => {
+    const job = normalize({ title: 'x', location: 'Remote-Friendly - Austin, TX', workplace: 'onsite' }, 'greenhouse');
+    assert.equal(job.locationType, 'onsite');
+    assert.deepEqual(job.workplace, { type: 'onsite', source: 'ats' });
+  });
+
+  test('without a native value a keyword in the location is used and marked as text', () => {
+    const type = (location, workplace) => normalize({ title: 'x', location, workplace }, 'greenhouse').workplace;
+    assert.deepEqual(type('Remote - US'), { type: 'remote', source: 'text' });
+    assert.deepEqual(type('Hybrid - Berlin', null), { type: 'hybrid', source: 'text' });
+    assert.deepEqual(type('On-site, Paris'), { type: 'onsite', source: 'text' });
+    assert.deepEqual(type('Onsite (Madrid)'), { type: 'onsite', source: 'text' });
+  });
+
+  test('a city alone is unknown, not onsite: a guessed onsite is a false fact', () => {
+    const job = normalize({ title: 'x', location: 'Austin, TX' }, 'greenhouse');
+    assert.equal(job.locationType, 'unknown');
+    assert.deepEqual(job.workplace, { type: 'unknown', source: null });
+    assert.deepEqual(normalize({ title: 'x' }, 'greenhouse').workplace, { type: 'unknown', source: null });
+  });
+
+  test('a value the adapter did not map falls through to the text guess', () => {
+    assert.deepEqual(normalize({ title: 'x', location: 'Austin, TX', workplace: 'flexible' }, 'lever').workplace, { type: 'unknown', source: null });
+    assert.deepEqual(normalize({ title: 'x', location: 'Remote', workplace: 'unspecified' }, 'lever').workplace, { type: 'remote', source: 'text' });
+    assert.deepEqual(normalize({ title: 'x', location: 'Remote', workplace: undefined }, 'lever').workplace, { type: 'remote', source: 'text' });
+  });
+
+  test('locations lists the primary first, then the extras, deduplicated and trimmed', () => {
+    const job = normalize({
+      title: 'x',
+      location: 'Berlin, Germany',
+      locations: ['Berlin, Germany', ' Stockholm, Sweden ', '', null, 'stockholm, sweden', 'Oslo, Norway'],
+    }, 'teamtailor');
+    assert.deepEqual(job.locations, ['Berlin, Germany', 'Stockholm, Sweden', 'Oslo, Norway']);
+  });
+
+  test('locations is [location] when the adapter passes none, and [] with no location at all', () => {
+    assert.deepEqual(normalize({ title: 'x', location: 'Remote - US' }, 'greenhouse').locations, ['Remote - US']);
+    assert.deepEqual(normalize({ title: 'x', location: 'Remote - US', locations: [] }, 'greenhouse').locations, ['Remote - US']);
+    assert.deepEqual(normalize({ title: 'x' }, 'greenhouse').locations, []);
+  });
+
+  test('locations and workplace do not change the id or the location', () => {
+    const base = normalize({ company: 'acme', title: 'PM', location: 'London' }, 'lever');
+    const rich = normalize({ company: 'acme', title: 'PM', location: 'London', locations: ['London', 'Dublin'], workplace: 'remote' }, 'lever');
+    assert.equal(rich.id, base.id);
+    assert.equal(rich.location, 'London');
+  });
+
   test('extracts salary from description text when no structured field', () => {
     const raw = {
       title: 'x',

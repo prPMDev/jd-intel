@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { fetchLever } from '../src/adapters/lever.js';
+import { applyFilters } from '../src/filters.js';
 
 /**
  * Lever's API returns a bare array of job objects (no wrapper). Each job has
@@ -251,6 +252,48 @@ describe('fetchLever', () => {
     assert.equal(job.metadata.workplaceType, 'remote');
     assert.equal(job.metadata.salaryDescription, FIXTURE[0].salaryDescriptionPlain);
     assert.equal(second.metadata.salaryDescription, '');
+  });
+
+  test('job ids are unchanged (location still feeds the id, locations does not)', async (t) => {
+    mockFetch(t);
+    const jobs = await fetchLever('outreach');
+    assert.deepEqual(jobs.map(j => j.id), ['baa31bd3717c', 'c321d873f0f1']);
+  });
+
+  test('workplaceType wins over a location string with no keyword', async (t) => {
+    // "United States" and "London" carry no keyword; the native value is the only signal.
+    mockFetch(t);
+    const [remote, hybrid] = await fetchLever('outreach');
+    assert.equal(remote.locationType, 'remote');
+    assert.deepEqual(remote.workplace, { type: 'remote', source: 'ats' });
+    assert.equal(hybrid.locationType, 'hybrid');
+    assert.deepEqual(hybrid.workplace, { type: 'hybrid', source: 'ats' });
+  });
+
+  test('workplaceType onsite maps to onsite; unspecified leaves the text fallback in charge', async (t) => {
+    mockFetch(t, { body: [{ ...FIXTURE[1], workplaceType: 'onsite' }, { ...FIXTURE[1], workplaceType: 'unspecified' }] });
+    const [onsite, unspecified] = await fetchLever('outreach');
+    assert.deepEqual(onsite.workplace, { type: 'onsite', source: 'ats' });
+    assert.deepEqual(unspecified.workplace, { type: 'unknown', source: null });
+    assert.equal(unspecified.locationType, 'unknown');
+  });
+
+  test('locations carries every allLocations entry, primary first, without touching the id', async (t) => {
+    const multi = { ...FIXTURE[1], categories: { ...FIXTURE[1].categories, allLocations: ['London', 'Dublin', 'Amsterdam'] } };
+    mockFetch(t, { body: [multi] });
+    const [job] = await fetchLever('outreach');
+    assert.equal(job.location, 'London');
+    assert.deepEqual(job.locations, ['London', 'Dublin', 'Amsterdam']);
+    assert.equal(job.id, 'c321d873f0f1');
+  });
+
+  test('location_includes matches a secondary location', async (t) => {
+    const multi = { ...FIXTURE[1], categories: { ...FIXTURE[1].categories, allLocations: ['London', 'Dublin'] } };
+    mockFetch(t, { body: [FIXTURE[0], multi] });
+    const jobs = await fetchLever('outreach');
+    assert.deepEqual(applyFilters(jobs, { locationIncludes: ['Dublin'] }).map(j => j.title), [FIXTURE[1].text]);
+    assert.deepEqual(applyFilters(jobs, { locationExcludes: ['London'] }).map(j => j.title).sort(), [FIXTURE[0].text, FIXTURE[1].text].sort(), 'still open in Dublin');
+    assert.deepEqual(applyFilters(jobs, { locationExcludes: ['London', 'Dublin'] }).map(j => j.title), [FIXTURE[0].text]);
   });
 
   test('handles empty array response', async (t) => {

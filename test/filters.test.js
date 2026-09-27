@@ -309,6 +309,47 @@ describe('applyFilters — locationExcludes', () => {
   });
 });
 
+describe('applyFilters — jobs open in several locations (issue #68)', () => {
+  const multi = [
+    { id: 'bn', title: 'PM', location: 'Berlin, Germany', locations: ['Berlin, Germany', 'New York, US'], postedAt: daysAgo(1) },
+    { id: 'us', title: 'PM', location: 'Austin, TX, US', locations: ['Austin, TX, US', 'Remote - US'], postedAt: daysAgo(1) },
+    { id: 'de', title: 'PM', location: 'Munich, Germany', locations: ['Munich, Germany'], postedAt: daysAgo(1) },
+    { id: 'legacy', title: 'PM', location: 'London, UK', postedAt: daysAgo(1) },
+  ];
+  const ids = (opts) => applyFilters(multi, opts).map(j => j.id).sort();
+
+  test('locationIncludes keeps a job when ANY listed location matches', () => {
+    assert.deepEqual(ids({ locationIncludes: ['New York'] }), ['bn']);
+    assert.deepEqual(ids({ locationIncludes: ['US'] }), ['bn', 'us']);
+    assert.deepEqual(ids({ locationIncludes: ['Germany'] }), ['bn', 'de']);
+  });
+
+  test('locationExcludes drops a job only when EVERY listed location matches', () => {
+    // Open in Berlin and New York is still open in Berlin for someone excluding the US.
+    assert.deepEqual(ids({ locationExcludes: ['US'] }), ['bn', 'de', 'legacy']);
+    assert.deepEqual(ids({ locationExcludes: ['Germany'] }), ['bn', 'legacy', 'us']);
+    assert.deepEqual(ids({ locationExcludes: ['Germany', 'US'] }), ['legacy']);
+  });
+
+  test('a job without a locations array is matched on its location string', () => {
+    assert.deepEqual(ids({ locationIncludes: ['UK'] }), ['legacy']);
+    assert.deepEqual(ids({ locationExcludes: ['UK'] }), ['bn', 'de', 'us']);
+  });
+
+  test('includes and excludes compose across the list', () => {
+    assert.deepEqual(ids({ locationIncludes: ['Germany'], locationExcludes: ['US'] }), ['bn', 'de']);
+    assert.deepEqual(ids({ locationIncludes: ['Germany'], locationExcludes: ['Germany', 'US'] }), []);
+  });
+
+  test('word boundaries apply to every entry', () => {
+    const jobs = [
+      { id: 'au', title: 'PM', location: 'Sydney, Australia', locations: ['Sydney, Australia', 'Brussels, Belgium'], postedAt: daysAgo(1) },
+    ];
+    assert.deepEqual(applyFilters(jobs, { locationIncludes: ['US'] }), []);
+    assert.equal(applyFilters(jobs, { locationExcludes: ['US'] }).length, 1);
+  });
+});
+
 describe('applyFilters — limit', () => {
   test('caps results at limit', () => {
     const result = applyFilters(JOBS, { limit: 2 });

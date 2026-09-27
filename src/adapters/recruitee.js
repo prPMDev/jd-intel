@@ -45,6 +45,8 @@ export async function fetchRecruitee(slug) {
       title: offer.title || '',
       department: offer.department || '',
       location,
+      locations: (offer.locations || []).map(l => [l.city, l.country].filter(Boolean).join(', ')),
+      workplace: parseRecruiteeWorkplace(offer),
       description: [offer.description, offer.requirements].filter(Boolean).join('\n'),
       url: offer.careers_url || offer.careers_apply_url || '',
       // created_at can predate publication by years on long-lived offers,
@@ -68,6 +70,17 @@ function toIso(ts) {
   if (!ts) return null;
   const d = new Date(ts.replace(' UTC', 'Z').replace(' ', 'T'));
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/**
+ * Recruitee sends three booleans, not one enum. Hybrid wins when remote is
+ * also set, and on_site alone is onsite. All false is no signal.
+ */
+function parseRecruiteeWorkplace(offer) {
+  if (offer.hybrid) return 'hybrid';
+  if (offer.remote) return 'remote';
+  if (offer.on_site) return 'onsite';
+  return null;
 }
 
 const PERIODS = new Set(['year', 'month', 'hour']);

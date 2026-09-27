@@ -305,6 +305,61 @@ describe('mcp server — end to end over an in-memory transport', async () => {
     assert.equal(result.structuredContent.data[0].companySlug, 'stripe');
   });
 
+  test('fetch_jobs items carry workplace and locations through the real library and pass both validators (mocked Lever)', async (t) => {
+    // Discovery mode on a slug no registry holds: only the Lever mock answers.
+    // Row shape is Lever's: workplaceType at the top level, allLocations in
+    // categories. Neither location string carries a keyword, so the native
+    // value is the only signal.
+    const board = [
+      {
+        id: 'l1', text: 'Platform Engineer', hostedUrl: 'https://jobs.lever.co/zzzworkplaceco/l1', createdAt: 1771264785944,
+        workplaceType: 'remote',
+        categories: { commitment: 'Full-Time', department: 'Engineering', location: 'United States', team: 'Platform', allLocations: ['United States', 'Canada'] },
+        description: '<p>Build the platform.</p>', lists: [], additional: '',
+      },
+      {
+        id: 'l2', text: 'Product Designer', hostedUrl: 'https://jobs.lever.co/zzzworkplaceco/l2', createdAt: 1771264785944,
+        workplaceType: 'hybrid',
+        categories: { commitment: 'Full-Time', department: 'Design', location: 'London', team: 'Design', allLocations: ['London'] },
+        description: '<p>Design the product.</p>', lists: [], additional: '',
+      },
+    ];
+    t.mock.method(global, 'fetch', async (url) => {
+      if (String(url) === 'https://api.lever.co/v0/postings/zzzworkplaceco?mode=json') {
+        return { ok: true, status: 200, json: async () => board };
+      }
+      return { ok: false, status: 404, json: async () => ({}), text: async () => '' };
+    });
+    const prev = process.env.JD_INTEL_REGISTRY_URL;
+    process.env.JD_INTEL_REGISTRY_URL = ''; // bundled registry, no network
+    try {
+      const client = await connect({});
+      const call = async (args) => {
+        const result = await client.callTool({ name: 'fetch_jobs', arguments: { company: 'zzzworkplaceco', ...args } });
+        assert.equal(result.isError, undefined, result.content?.[0]?.text);
+        assert.equal(result.structuredContent.status, 'success');
+        return result.structuredContent.data;
+      };
+
+      const all = await call({});
+      const byTitle = Object.fromEntries(all.map((j) => [j.title, j]));
+      assert.deepEqual(byTitle['Platform Engineer'].workplace, { type: 'remote', source: 'ats' });
+      assert.equal(byTitle['Platform Engineer'].locationType, 'remote');
+      assert.deepEqual(byTitle['Platform Engineer'].locations, ['United States', 'Canada']);
+      assert.equal(byTitle['Platform Engineer'].location, 'United States');
+      assert.deepEqual(byTitle['Product Designer'].workplace, { type: 'hybrid', source: 'ats' });
+      assert.deepEqual(byTitle['Product Designer'].locations, ['London']);
+
+      // includes match a secondary location; excludes drop only when every location matches
+      assert.deepEqual((await call({ location_includes: ['Canada'] })).map((j) => j.title), ['Platform Engineer']);
+      assert.deepEqual((await call({ location_excludes: ['United States'] })).map((j) => j.title).sort(), ['Platform Engineer', 'Product Designer']);
+      assert.deepEqual((await call({ location_excludes: ['United States', 'Canada'] })).map((j) => j.title), ['Product Designer']);
+    } finally {
+      if (prev === undefined) delete process.env.JD_INTEL_REGISTRY_URL;
+      else process.env.JD_INTEL_REGISTRY_URL = prev;
+    }
+  });
+
   test('fetch_jobs error envelope passes client-side validation and sets isError', async () => {
     const client = await connect({ fetchJobsDetailed: async () => ({ jobs: [], total_matched: 0 }), findAtsBySlug: async () => null });
     const result = await client.callTool({ name: 'fetch_jobs', arguments: { company: 'zzzz' } });

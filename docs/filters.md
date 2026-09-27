@@ -13,8 +13,8 @@ This doc covers each filter, why the design is shaped this way, and the practica
 | `titleFilter` | Title only | Role identity: "what KIND of role" |
 | `filter` | Title + department + description | Topic or scope: "what it's ABOUT" |
 | `postedWithinDays` | `postedAt` within N days | Recency cuts |
-| `locationIncludes` | Location contains ANY keyword (OR) | Region targeting |
-| `locationExcludes` | Location contains NO keyword | Drop geographic noise |
+| `locationIncludes` | ANY of the job's locations contains ANY keyword (OR) | Region targeting |
+| `locationExcludes` | Drops a job only when EVERY one of its locations contains a keyword | Drop geographic noise |
 | `limit` | First N results after filtering and sorting | Cap output size |
 
 All filters AND together.
@@ -115,6 +115,15 @@ This prevents silent false positives on short country codes:
 | `EMEA` | `Remote - EMEA` | Yes | 4-char boundary, still matches cleanly |
 
 So `US` and `UK` are safe to pass as-is. The implementation prevents the substring collisions that would otherwise silently return Australian or New Zealand jobs to a US query.
+
+### Jobs open in several locations
+
+Lever, Ashby, Recruitee, Teamtailor and Workday can list one posting in several places. `locations` carries all of them, primary first, and both location filters check every entry:
+
+- `locationIncludes` keeps the job when any listed location matches any keyword. A role open in Berlin and New York matches `["New York"]`.
+- `locationExcludes` drops the job only when every listed location matches. The same role survives `["US"]`, because it is still open in Berlin for someone who wants to stay out of the US. It drops under `["Germany", "US"]`.
+
+The two still compose the same way: include first, exclude as the refinement. A job with a single location behaves exactly as before.
 
 ---
 

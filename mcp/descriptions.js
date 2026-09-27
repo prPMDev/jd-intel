@@ -26,9 +26,9 @@ filter: JavaScript-compatible regex matched across title + department + descript
 
 posted_within_days: number. "recent" or "new" → 30. "this week" → 7. "today" → 1.
 
-location_includes: array of keywords. Case-insensitive substring match; short codes (US, UK) use word-boundary matching automatically. For US queries prefer ["United States", "US", "Remote - US"]. Avoid bare "Remote". It matches Remote-EMEA, Remote-LatAm.
+location_includes: array of keywords. Case-insensitive substring match; short codes (US, UK) use word-boundary matching automatically. Checked against every entry of a job's locations array: a job open in Berlin and New York matches ["New York"]. For US queries prefer ["United States", "US", "Remote - US"]. Avoid bare "Remote". It matches Remote-EMEA, Remote-LatAm.
 
-location_excludes: array. Drop jobs whose location contains any keyword. Use as refinement on top of includes.
+location_excludes: array. Drops a job only when every one of its locations matches a keyword: the Berlin and New York job survives ["US"] because it is still open in Berlin, and drops under ["Germany", "US"]. Use as refinement on top of includes.
 
 limit: max jobs per page, default 100. The response is bounded by max_tokens first, so on a large board a default call returns a few complete postings. total_matched and truncated say what was left out.
 
@@ -41,6 +41,8 @@ order: "newest" (default) sorts by postedAt, undated last, ties by id. "board" k
 workday: optional { tenant, env, site }. Use ONLY for a Workday company not in the registry when the user gives a careers URL. Derive from https://{tenant}.{env}.myworkdayjobs.com/{site}: tenant is the first label, env is the part like wd108, site is the path segment. Overrides the registry for that fetch. Never guess or fabricate these values; use only what the user supplied or what is literally in the careers URL. Omit this argument entirely if you do not have a real URL.
 
 RESPONSE: { status, data: [jobs], metadata: { count, registry_hit, ats, workday_override, version, registry_source, total_matched, truncated, est_tokens, offset, next_offset, order } }. Check status first. count is the number of jobs returned. total_matched is how many matched the filters before offset, limit and the budget. truncated is null, or { reason: "limit" | "size", not_returned } naming the cut that stopped output. When truncated is set, narrow with title_filter, location or posted_within_days, or fetch the next page with offset = next_offset (null when nothing is left). On Workday, total_matched, truncated and next_offset describe only the postings the adapter read, at most 100 per call, so total_matched can be a lower bound and offset pages can repeat or skip a posting until #26 ships its scan report. est_tokens is characters/4 of the text block. order is the order in effect.
+
+Each job carries location (the primary), locations (every place it is open in, primary first) and workplace { type, source }. type is remote, hybrid, onsite or unknown; source is ats when the platform stated it, text when read from the location string, null when unknown. locationType repeats workplace.type.
 
 AGE: results are newest first unless order says otherwise. A posting older than about 90 days is usually dead or evergreen. fetch_jobs still returns them; posted_within_days: 90 leaves them out. When a returned posting is that old, say its age.
 

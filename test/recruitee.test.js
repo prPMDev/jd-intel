@@ -11,7 +11,9 @@ import { applyFilters } from '../src/filters.js';
  * offer has both HTML fields populated, a structured monthly salary with
  * string amounts, and a `published_at` four months after `created_at`.
  * The salary sentence in `description` is kept so the text fallback has
- * something to find when the structured salary is a placeholder.
+ * something to find when the structured salary is a placeholder. The
+ * arrangement is three booleans (`remote`, `hybrid`, `on_site`) and the
+ * offices are `locations[]`; the live offer is hybrid in one office.
  */
 
 const FIXTURE = {
@@ -25,6 +27,11 @@ const FIXTURE = {
       city: 'Utrecht',
       country: 'Netherlands',
       remote: false,
+      hybrid: true,
+      on_site: false,
+      locations: [
+        { id: 64463, name: 'Utrecht', state: 'Utrecht', country: 'Netherlands', city: 'Utrecht', country_code: 'NL', state_code: 'UT', postal_code: '3512 HL', street: 'Kromme Nieuwegracht 66', note: null },
+      ],
       created_at: '2026-03-31 06:40:22 UTC',
       published_at: '2026-07-28 07:21:13 UTC',
       updated_at: '2026-09-22 09:47:29 UTC',
@@ -50,6 +57,9 @@ const FIXTURE = {
     },
   ],
 };
+
+// A second office as the same API returns it on a remote offer at the same board.
+const NYC_LOCATION = { id: 64457, name: 'New York City', state: 'New York', country: 'United States', city: 'New York City', country_code: 'US', state_code: 'NY', postal_code: '10168', street: '122 East 42nd Street, Suite 1708', note: null };
 
 // Recruitee timestamps look like "2026-05-13 07:38:11 UTC".
 const daysAgo = (n) =>
@@ -222,10 +232,60 @@ describe('fetchRecruitee', () => {
   });
 
   test('prefixes remote locations', async (t) => {
-    mockFetch(t, { body: withOffer({ remote: true }) });
+    mockFetch(t, { body: withOffer({ remote: true, hybrid: false }) });
     const [job] = await fetchRecruitee('channable');
     assert.equal(job.location, 'Remote - Utrecht, Netherlands');
     assert.equal(job.locationType, 'remote');
+    assert.deepEqual(job.workplace, { type: 'remote', source: 'ats' });
+    assert.deepEqual(job.locations, ['Remote - Utrecht, Netherlands', 'Utrecht, Netherlands']);
+  });
+
+  test('hybrid: true maps to hybrid with source ats and no prefix on the location', async (t) => {
+    mockFetch(t);
+    const [job] = await fetchRecruitee('channable');
+    assert.equal(job.location, 'Utrecht, Netherlands');
+    assert.equal(job.locationType, 'hybrid');
+    assert.deepEqual(job.workplace, { type: 'hybrid', source: 'ats' });
+  });
+
+  test('hybrid wins when remote is also set', async (t) => {
+    mockFetch(t, { body: withOffer({ remote: true, hybrid: true }) });
+    const [job] = await fetchRecruitee('channable');
+    assert.deepEqual(job.workplace, { type: 'hybrid', source: 'ats' });
+  });
+
+  test('on_site alone is onsite; no flag set leaves the type unknown', async (t) => {
+    mockFetch(t, { body: withOffer({ remote: false, hybrid: false, on_site: true }) });
+    assert.deepEqual((await fetchRecruitee('channable'))[0].workplace, { type: 'onsite', source: 'ats' });
+
+    mockFetch(t, { body: withOffer({ remote: false, hybrid: false, on_site: false }) });
+    const [job] = await fetchRecruitee('channable');
+    assert.deepEqual(job.workplace, { type: 'unknown', source: null });
+    assert.equal(job.locationType, 'unknown');
+  });
+
+  test('locations lists every locations[] office, primary first, without touching the id', async (t) => {
+    mockFetch(t, { body: withOffer({ locations: [...FIXTURE.offers[0].locations, NYC_LOCATION] }) });
+    const [job] = await fetchRecruitee('channable');
+    assert.equal(job.location, 'Utrecht, Netherlands');
+    assert.deepEqual(job.locations, ['Utrecht, Netherlands', 'New York City, United States']);
+    assert.equal(job.id, '6fc152a43cc7');
+  });
+
+  test('location_includes matches a secondary office; excludes drop only when every office matches', async (t) => {
+    mockFetch(t, { body: withOffer({ locations: [...FIXTURE.offers[0].locations, NYC_LOCATION] }) });
+    const jobs = await fetchRecruitee('channable');
+    assert.equal(applyFilters(jobs, { locationIncludes: ['United States'] }).length, 1);
+    assert.equal(applyFilters(jobs, { locationIncludes: ['New York'] }).length, 1);
+    assert.equal(applyFilters(jobs, { locationIncludes: ['Germany'] }).length, 0);
+    assert.equal(applyFilters(jobs, { locationExcludes: ['Netherlands'] }).length, 1, 'still open in New York');
+    assert.equal(applyFilters(jobs, { locationExcludes: ['Netherlands', 'United States'] }).length, 0);
+  });
+
+  test('job id is unchanged (location still feeds the id, locations does not)', async (t) => {
+    mockFetch(t);
+    const [job] = await fetchRecruitee('channable');
+    assert.equal(job.id, '6fc152a43cc7');
   });
 
   test('handles empty offers array', async (t) => {
