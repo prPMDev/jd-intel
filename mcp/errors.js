@@ -1,9 +1,16 @@
 /**
  * Error code taxonomy for all MCP tools.
  *
- * The canonical codes now live in the jd-intel library (src/errors.js), so the
- * library (which throws AtsError with a .code) and the MCP layer share one
- * source of truth. Re-exported here to keep the existing import path stable.
+ * The library (src/errors.js) owns the codes its adapters throw as AtsError,
+ * and the MCP layer re-exports them so both sides read one source of truth.
+ * The MCP layer adds one code of its own: internal_error, for an exception
+ * that escapes a tool handler. Only the MCP layer has that boundary, so the
+ * code lives here rather than in the library.
  */
 
-export { ERROR_CODES } from 'jd-intel';
+import { ERROR_CODES as LIBRARY_ERROR_CODES } from 'jd-intel';
+
+export const ERROR_CODES = {
+  ...LIBRARY_ERROR_CODES,
+  INTERNAL_ERROR: 'internal_error', // Unexpected exception escaped a handler
+};

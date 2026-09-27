@@ -46,9 +46,24 @@ const REGISTRY_ENTRY = z
   .object({ slug: z.string(), name: z.string(), sector: z.string().optional(), ats: z.string() })
   .passthrough();
 
+// An exception that escapes a handler would otherwise reach the model as the
+// SDK's plain-text isError, with no envelope and no error.code. fetch_jobs maps
+// AtsError and library argument errors itself; this catches everything else.
+function withEnvelope(handler) {
+  return async (args, extra) => {
+    try {
+      return await handler(args, extra);
+    } catch (err) {
+      return error(ERROR_CODES.INTERNAL_ERROR, err?.message);
+    }
+  };
+}
+
 export function registerTools(server, deps = {}) {
   const _fetchJobs = deps.fetchJobs || fetchJobs;
   const _findAtsBySlug = deps.findAtsBySlug || findAtsBySlug;
+  const _searchRegistry = deps.searchRegistry || searchRegistry;
+  const _detectAts = deps.detectAts || libDetectAts;
 
   server.registerTool(
     'fetch_jobs',
@@ -76,7 +91,7 @@ export function registerTools(server, deps = {}) {
           .describe('Override the registry for a Workday board not indexed. Derive all three from the careers URL https://{tenant}.{env}.myworkdayjobs.com/{site}. Never guess these.'),
       }).strict(),
     },
-    async (args) => {
+    withEnvelope(async (args) => {
       let ats;
       let config;
       if (args.workday) {
@@ -142,7 +157,7 @@ export function registerTools(server, deps = {}) {
         // Anything else is an arg-validation error from the library.
         return error(ERROR_CODES.INVALID_ARGS, msg);
       }
-    }
+    })
   );
 
   server.registerTool(
@@ -157,7 +172,7 @@ export function registerTools(server, deps = {}) {
         sector: z.string().optional().describe('Match against sector (e.g. "fintech", "developer tools")'),
       }).strict(),
     },
-    async (args) => {
+    withEnvelope(async (args) => {
       if (!args.query && !args.sector) {
         return error(ERROR_CODES.INVALID_ARGS, 'Provide query or sector');
       }
@@ -165,7 +180,7 @@ export function registerTools(server, deps = {}) {
       // searchRegistry searches both name and sector via a single query string.
       // We combine args into a single search string, preferring query if both given.
       const searchTerm = args.query || args.sector;
-      const results = await searchRegistry(searchTerm);
+      const results = await _searchRegistry(searchTerm);
 
       // If sector was specified, further filter by sector match
       const filtered = args.sector
@@ -179,7 +194,7 @@ export function registerTools(server, deps = {}) {
         version: VERSION,
         registry_source: getRegistrySource(),
       });
-    }
+    })
   );
 
   server.registerTool(
@@ -193,8 +208,8 @@ export function registerTools(server, deps = {}) {
         company: z.string().describe('Company name or slug'),
       }).strict(),
     },
-    async (args) => {
-      const results = await libDetectAts(args.company);
+    withEnvelope(async (args) => {
+      const results = await _detectAts(args.company);
 
       if (results.length === 0) {
         return success(null, { attempted: ATS_NAMES, succeeded: [] });
@@ -216,6 +231,6 @@ export function registerTools(server, deps = {}) {
           notes: [`Company found on multiple platforms: ${results.map((r) => r.ats).join(', ')}. Returning first match.`],
         }
       );
-    }
+    })
   );
 }

@@ -1,6 +1,8 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import { z } from 'zod';
 import { registerTools } from '../tools.js';
+import { success, error, envelopeSchema } from '../envelope.js';
 import { AtsError } from 'jd-intel';
 
 /**
@@ -185,6 +187,16 @@ describe('mcp envelope — structuredContent and isError', () => {
     assert.equal(result.isError, true);
     assert.equal(result.structuredContent.error.code, 'company_not_found');
   });
+
+  test('error() always emits a string message, whatever a handler forwards', () => {
+    const schema = envelopeSchema(z.array(z.string()).nullable());
+    const cases = [[42, '42'], [undefined, 'Unknown error'], [null, 'Unknown error'], ['', 'Unknown error'], ['boom', 'boom']];
+    for (const [input, expected] of cases) {
+      const { structuredContent } = error('internal_error', input);
+      assert.equal(structuredContent.error.message, expected);
+      assert.ok(schema.safeParse(structuredContent).success);
+    }
+  });
 });
 
 describe('mcp server — end to end over an in-memory transport', async () => {
@@ -192,15 +204,25 @@ describe('mcp server — end to end over an in-memory transport', async () => {
   const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
   const { InMemoryTransport } = await import('@modelcontextprotocol/sdk/inMemory.js');
 
-  async function connect(deps) {
-    const server = new McpServer({ name: 'jd-intel-test', version: '0.0.0' });
-    registerTools(server, deps);
+  // The Client compiles its output validators inside listTools(), so a client
+  // that has not listed tools runs no client-side validation on callTool.
+  // Every test here goes through a listed client so both validators run.
+  async function connectTo(server) {
     const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
     const client = new Client({ name: 'test-client', version: '0.0.0' });
     await Promise.all([server.connect(serverSide), client.connect(clientSide)]);
+    await client.listTools();
     return client;
   }
 
+  async function connect(deps) {
+    const server = new McpServer({ name: 'jd-intel-test', version: '0.0.0' });
+    registerTools(server, deps);
+    return connectTo(server);
+  }
+
+  // Carries fields JOB does not declare (companySlug, department, ...), so a
+  // success built from it only validates while JOB stays passthrough.
   const job = {
     id: 'x1', company: 'Stripe', companySlug: 'stripe', ats: 'greenhouse', title: 'PM',
     department: '', location: 'Remote', locationType: 'remote', salary: null,
@@ -208,7 +230,10 @@ describe('mcp server — end to end over an in-memory transport', async () => {
     firstSeen: 't', lastSeen: 't', status: 'open', metadata: {},
   };
 
-  test('tools advertise annotations, outputSchema and strict inputs', async () => {
+  test('tools advertise annotations, an object outputSchema and closed inputs', async () => {
+    // This asserts what tools/list advertises, not what the server enforces:
+    // a raw shape and a plain z.object also advertise additionalProperties
+    // false. The unknown-argument tests below prove enforcement.
     const client = await connect({});
     const { tools } = await client.listTools();
     const byName = Object.fromEntries(tools.map((t) => [t.name, t]));
@@ -219,13 +244,40 @@ describe('mcp server — end to end over an in-memory transport', async () => {
       assert.equal(t.annotations.idempotentHint, true);
       assert.equal(t.inputSchema.additionalProperties, false);
       assert.equal(t.outputSchema.type, 'object');
+      assert.equal(t.outputSchema.additionalProperties, true);
+      assert.equal(t.outputSchema.properties.error.additionalProperties, true);
     }
     assert.equal(byName.fetch_jobs.annotations.openWorldHint, true);
     assert.equal(byName.detect_ats.annotations.openWorldHint, true);
     assert.equal(byName.search_registry.annotations.openWorldHint, false);
   });
 
-  test('fetch_jobs success passes SDK output validation', async () => {
+  test('envelope top level and error object accept fields the schema does not declare', async () => {
+    // Guards the extension rule in envelopeSchema(): a client holding an older
+    // tools/list must not throw when a field lands at the top level or on error.
+    const server = new McpServer({ name: 'jd-intel-test', version: '0.0.0' });
+    server.registerTool(
+      'probe',
+      {
+        inputSchema: z.object({ mode: z.enum(['success', 'error']) }),
+        outputSchema: envelopeSchema(z.array(z.string()).nullable()),
+      },
+      async ({ mode }) => {
+        const result = mode === 'success' ? success(['a']) : error('rate_limited', 'slow down');
+        if (mode === 'success') result.structuredContent.warnings = [];
+        else result.structuredContent.error.retry_after = 30;
+        return result;
+      }
+    );
+    const client = await connectTo(server);
+    const ok = await client.callTool({ name: 'probe', arguments: { mode: 'success' } });
+    assert.deepEqual(ok.structuredContent.warnings, []);
+    const bad = await client.callTool({ name: 'probe', arguments: { mode: 'error' } });
+    assert.equal(bad.isError, true);
+    assert.equal(bad.structuredContent.error.retry_after, 30);
+  });
+
+  test('fetch_jobs success with undeclared job fields passes both validators', async () => {
     const client = await connect({
       fetchJobs: async () => [job],
       findAtsBySlug: async () => 'greenhouse',
@@ -234,23 +286,26 @@ describe('mcp server — end to end over an in-memory transport', async () => {
     assert.equal(result.isError, undefined);
     assert.equal(result.structuredContent.status, 'success');
     assert.equal(result.structuredContent.data[0].title, 'PM');
+    assert.equal(result.structuredContent.data[0].companySlug, 'stripe');
   });
 
-  test('fetch_jobs error comes back with isError at the protocol level', async () => {
+  test('fetch_jobs error envelope passes client-side validation and sets isError', async () => {
     const client = await connect({ fetchJobs: async () => [], findAtsBySlug: async () => null });
     const result = await client.callTool({ name: 'fetch_jobs', arguments: { company: 'zzzz' } });
     assert.equal(result.isError, true);
+    assert.equal(result.structuredContent.status, 'error');
+    assert.equal(result.structuredContent.data, null);
     assert.equal(result.structuredContent.error.code, 'company_not_found');
   });
 
-  test('unknown argument is rejected instead of silently ignored', async () => {
+  test('fetch_jobs unknown argument is rejected with text naming it', async () => {
     const client = await connect({ fetchJobs: async () => [job], findAtsBySlug: async () => 'greenhouse' });
     const result = await client.callTool({ name: 'fetch_jobs', arguments: { company: 'stripe', titel_filter: 'PM' } });
     assert.equal(result.isError, true);
     assert.match(result.content[0].text, /titel_filter|Unrecognized/i);
   });
 
-  test('search_registry success passes SDK output validation', async () => {
+  test('search_registry success against the bundled registry passes both validators', async () => {
     const prev = process.env.JD_INTEL_REGISTRY_URL;
     process.env.JD_INTEL_REGISTRY_URL = ''; // bundled registry, no network
     try {
@@ -261,6 +316,106 @@ describe('mcp server — end to end over an in-memory transport', async () => {
     } finally {
       if (prev === undefined) delete process.env.JD_INTEL_REGISTRY_URL;
       else process.env.JD_INTEL_REGISTRY_URL = prev;
+    }
+  });
+
+  test('search_registry success with undeclared entry fields passes both validators', async () => {
+    const client = await connect({
+      searchRegistry: async () => [{ slug: 'acme', name: 'Acme', sector: 'fintech', ats: 'lever', verified_at: '2026-01-01' }],
+    });
+    const result = await client.callTool({ name: 'search_registry', arguments: { query: 'acme' } });
+    assert.equal(result.isError, undefined);
+    assert.equal(result.structuredContent.status, 'success');
+    assert.equal(result.structuredContent.data[0].verified_at, '2026-01-01');
+  });
+
+  test('search_registry error envelope (invalid_args) passes client-side validation', async () => {
+    const client = await connect({});
+    const result = await client.callTool({ name: 'search_registry', arguments: {} });
+    assert.equal(result.isError, true);
+    assert.equal(result.structuredContent.status, 'error');
+    assert.equal(result.structuredContent.data, null);
+    assert.equal(result.structuredContent.error.code, 'invalid_args');
+  });
+
+  test('search_registry unknown argument is rejected with text naming it', async () => {
+    const client = await connect({ searchRegistry: async () => [] });
+    const result = await client.callTool({ name: 'search_registry', arguments: { query: 'acme', sectr: 'fintech' } });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /sectr|Unrecognized/i);
+  });
+
+  test('search_registry: a thrown library error comes back as an internal_error envelope', async () => {
+    const client = await connect({
+      searchRegistry: async () => { throw new TypeError("Cannot read properties of null (reading 'name')"); },
+    });
+    const result = await client.callTool({ name: 'search_registry', arguments: { query: 'acme' } });
+    assert.equal(result.isError, true);
+    assert.equal(result.structuredContent.status, 'error');
+    assert.equal(result.structuredContent.error.code, 'internal_error');
+    assert.match(result.structuredContent.error.message, /reading 'name'/);
+  });
+
+  test('detect_ats single match returns success and passes both validators', async () => {
+    const client = await connect({ detectAts: async () => [{ ats: 'lever', slug: 'acme' }] });
+    const result = await client.callTool({ name: 'detect_ats', arguments: { company: 'Acme' } });
+    assert.equal(result.isError, undefined);
+    assert.equal(result.structuredContent.status, 'success');
+    assert.equal(result.structuredContent.data, 'lever');
+  });
+
+  test('detect_ats no match returns success with data null and passes both validators', async () => {
+    const client = await connect({ detectAts: async () => [] });
+    const result = await client.callTool({ name: 'detect_ats', arguments: { company: 'acme' } });
+    assert.equal(result.isError, undefined);
+    assert.equal(result.structuredContent.status, 'success');
+    assert.equal(result.structuredContent.data, null);
+  });
+
+  test('detect_ats multi-match returns partial with notes in metadata and passes both validators', async () => {
+    // data is a scalar here, so the undeclared-field case lives in metadata.
+    const client = await connect({
+      detectAts: async () => [{ ats: 'lever', slug: 'acme' }, { ats: 'ashby', slug: 'acme' }],
+    });
+    const result = await client.callTool({ name: 'detect_ats', arguments: { company: 'acme' } });
+    assert.equal(result.isError, undefined);
+    assert.equal(result.structuredContent.status, 'partial');
+    assert.deepEqual(result.structuredContent.metadata.succeeded, ['lever', 'ashby']);
+    assert.equal(result.structuredContent.metadata.notes.length, 1);
+  });
+
+  test('detect_ats unknown argument is rejected with text naming it', async () => {
+    const client = await connect({ detectAts: async () => [] });
+    const result = await client.callTool({ name: 'detect_ats', arguments: { company: 'acme', compnay: 'acme' } });
+    assert.equal(result.isError, true);
+    assert.match(result.content[0].text, /compnay|Unrecognized/i);
+  });
+
+  test('detect_ats: a thrown library error comes back as an internal_error envelope', async () => {
+    const client = await connect({ detectAts: async () => { throw new Error('probe exploded'); } });
+    const result = await client.callTool({ name: 'detect_ats', arguments: { company: 'acme' } });
+    assert.equal(result.isError, true);
+    assert.equal(result.structuredContent.status, 'error');
+    assert.equal(result.structuredContent.data, null);
+    assert.equal(result.structuredContent.error.code, 'internal_error');
+    assert.equal(result.structuredContent.error.message, 'probe exploded');
+  });
+
+  test('a thrown non-Error with a non-string message still yields a client-valid error envelope', async () => {
+    // Without coercion in error(), error.message would be 42 and the listed
+    // client would throw "data/error/message must be string" on every tool.
+    const thrower = async () => { throw { message: 42 }; };
+    const calls = [
+      ['fetch_jobs', { fetchJobs: thrower, findAtsBySlug: async () => null }, { company: 'acme' }],
+      ['search_registry', { searchRegistry: thrower }, { query: 'acme' }],
+      ['detect_ats', { detectAts: thrower }, { company: 'acme' }],
+    ];
+    for (const [name, deps, args] of calls) {
+      const client = await connect(deps);
+      const result = await client.callTool({ name, arguments: args });
+      assert.equal(result.isError, true, name);
+      assert.equal(result.structuredContent.status, 'error', name);
+      assert.equal(result.structuredContent.error.message, '42', name);
     }
   });
 });

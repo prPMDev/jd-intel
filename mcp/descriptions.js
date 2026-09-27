@@ -40,7 +40,8 @@ ERROR CODES:
 - company_not_found: slug not in registry, not detected
 - ats_unreachable: known ATS failed, or a supplied workday {tenant,env,site} was rejected by Workday
 - invalid_args: missing/malformed args, including an incomplete workday triple
-- rate_limited: upstream 429`;
+- rate_limited: upstream 429
+- internal_error: unexpected server failure, not an argument problem. Retry once; if it repeats, tell the user.`;
 
 export const SEARCH_REGISTRY = `Find companies in the indexed registry by name or sector.
 
@@ -60,7 +61,8 @@ At least one argument required. Returns companies matching either.
 RESPONSE: { status, data: [{ slug, name, sector, ats }], metadata }. Each result includes the ATS platform for that company.
 
 ERROR CODES:
-- invalid_args: both query and sector missing`;
+- invalid_args: both query and sector missing
+- internal_error: unexpected server failure, not an argument problem. Retry once; if it repeats, tell the user.`;
 
 export const DETECT_ATS = `Detect which ATS platform (Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee) a company uses by probing. Workday is registry-only and never returned here; find Workday-hosted companies via search_registry or fetch_jobs (which auto-detects from the registry).
 
@@ -76,7 +78,8 @@ RESPONSE: { status, data: "greenhouse" | "lever" | "ashby" | "smartrecruiters" |
 
 ERROR CODES:
 - invalid_args: company arg missing
-- partial_failure: some probes failed`;
+- partial_failure: some probes failed
+- internal_error: unexpected server failure, not an argument problem. Retry once; if it repeats, tell the user.`;
 
 export const REGISTRY_RESOURCE = `The full jd-intel company registry, grouped by ATS platform.
 
