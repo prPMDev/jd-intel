@@ -57,6 +57,13 @@ describe('stripHtml', () => {
     assert.equal(stripHtml('<ul><li class="x">item one</li><li>item two</li></ul>'), '- item one\n- item two');
   });
 
+  test('keeps the item text on the bullet line when <li> opens with a <p>', () => {
+    assert.equal(
+      stripHtml('<ul>\n<li role="listitem">\n<p><span>5+ years</span></p>\n</li>\n<li>plain</li>\n</ul>'),
+      '- 5+ years\n\n- plain'
+    );
+  });
+
   test('keeps text that was escaped on purpose (&lt;5 years)', () => {
     // Entities decode after tags are removed, so a literal < never
     // becomes a tag that gets stripped.
