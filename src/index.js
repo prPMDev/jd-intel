@@ -32,8 +32,8 @@ export async function fetchJobs(options = {}) {
  * @param {string} [options.titleFilter] - Regex matched against title only. Use for role identity ("product manager", "staff engineer").
  * @param {string} [options.filter] - Regex matched across title, department, description. Use for topic/scope.
  * @param {number} [options.postedWithinDays] - Only return jobs posted within N days.
- * @param {string[]} [options.locationIncludes] - Keep jobs whose location contains any of these (case-insensitive).
- * @param {string[]} [options.locationExcludes] - Drop jobs whose location contains any of these (case-insensitive).
+ * @param {string[]} [options.locationIncludes] - Keep jobs where any listed location contains any of these (case-insensitive).
+ * @param {string[]} [options.locationExcludes] - Drop jobs only when every listed location contains one of these (case-insensitive).
  * @param {'newest'|'board'} [options.order='newest'] - 'newest': by postedAt descending, undated last, ties by id. 'board': the adapter's own order.
  * @param {number} [options.offset=0] - Matches to skip after sorting (paging).
  * @param {number} [options.limit=100] - Maximum jobs to return after offset.

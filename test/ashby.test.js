@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { fetchAshby } from '../src/adapters/ashby.js';
+import { applyFilters } from '../src/filters.js';
 
 /**
  * Ashby has two APIs: REST (primary, has compensation) and GraphQL (fallback).
@@ -227,7 +228,7 @@ describe('fetchAshby', () => {
     assert.equal(job.ats, 'ashby');
     assert.equal(job.department, 'Engineering');
     assert.equal(job.location, 'New York, NY (HQ)');
-    assert.equal(job.locationType, 'onsite');
+    assert.equal(job.locationType, 'hybrid');
     assert.equal(job.url, 'https://jobs.ashbyhq.com/ramp/34413f8d-26bf-4bbc-8ade-eb309a0e2245');
     assert.equal(job.postedAt, '2026-04-07T17:12:35.753+00:00');
     assert.equal(job.description, '## About Ramp\n\nRamp is building the smart infrastructure for finance teams, embedded in the transaction flow of every dollar a business spends.');
@@ -310,6 +311,53 @@ describe('fetchAshby', () => {
     assert.deepEqual(job.metadata.compensationTiers, [
       { title: '', summary: '$211.4K – $290.6K • Offers Equity', additionalInformation: '' },
     ]);
+  });
+
+  test('job ids are unchanged (location still feeds the id, locations does not)', async (t) => {
+    mockFetch(t);
+    const jobs = await fetchAshby('ramp');
+    assert.deepEqual(jobs.map(j => j.id), ['3fde1ff595a1', '906b668c2b8b', 'e68d6026cb20']);
+  });
+
+  test('workplaceType wins over a location string with no keyword and over isRemote', async (t) => {
+    // "New York, NY (HQ)" says nothing, isRemote is true, workplaceType is Hybrid.
+    mockFetch(t);
+    const [hybrid, onsite] = await fetchAshby('ramp');
+    assert.equal(hybrid.locationType, 'hybrid');
+    assert.deepEqual(hybrid.workplace, { type: 'hybrid', source: 'ats' });
+    assert.equal(onsite.locationType, 'onsite');
+    assert.deepEqual(onsite.workplace, { type: 'onsite', source: 'ats' });
+  });
+
+  test('workplaceType is matched case-insensitively', async (t) => {
+    mockFetch(t, { body: withJobs({ ...NO_PAY_JOB, workplaceType: 'Remote' }, { ...NO_PAY_JOB, workplaceType: 'remote' }, { ...NO_PAY_JOB, workplaceType: 'ONSITE' }) });
+    const jobs = await fetchAshby('ramp');
+    assert.deepEqual(jobs.map(j => j.workplace.type), ['remote', 'remote', 'onsite']);
+  });
+
+  test('falls back to isRemote when workplaceType is absent; false is no signal', async (t) => {
+    const { workplaceType, ...noType } = USD_JOB;
+    mockFetch(t, { body: withJobs({ ...noType, isRemote: true }, { ...noType, isRemote: false }) });
+    const [remote, unknown] = await fetchAshby('ramp');
+    assert.deepEqual(remote.workplace, { type: 'remote', source: 'ats' });
+    assert.deepEqual(unknown.workplace, { type: 'unknown', source: null });
+    assert.equal(unknown.locationType, 'unknown');
+  });
+
+  test('locations carries the primary then every secondaryLocations entry', async (t) => {
+    mockFetch(t);
+    const [multi, single] = await fetchAshby('ramp');
+    assert.equal(multi.location, 'New York, NY (HQ)');
+    assert.deepEqual(multi.locations, ['New York, NY (HQ)', 'Remote (US)']);
+    assert.deepEqual(single.locations, ['London']);
+  });
+
+  test('location_includes matches a secondary location', async (t) => {
+    mockFetch(t);
+    const jobs = await fetchAshby('ramp');
+    assert.deepEqual(applyFilters(jobs, { locationIncludes: ['US'] }).map(j => j.title), [' Security Engineer, Cloud']);
+    assert.equal(applyFilters(jobs, { locationExcludes: ['New York'] }).length, 3, 'still open remotely in the US');
+    assert.equal(applyFilters(jobs, { locationExcludes: ['New York', 'US'] }).length, 2);
   });
 
   test('keeps per-tier summaries so OTE and split labels survive', async (t) => {

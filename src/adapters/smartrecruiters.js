@@ -71,8 +71,14 @@ export async function fetchSmartrecruiters(slug) {
     const place = loc.fullLocation
       || [loc.city, loc.region, loc.country].filter(Boolean).join(', ');
     let location = place;
-    if (loc.remote) location = `Remote - ${place}`.replace(/ - $/, ' ');
-    else if (loc.hybrid) location = `Hybrid - ${place}`.replace(/ - $/, ' ');
+    let workplace = null;
+    if (loc.remote) {
+      location = `Remote - ${place}`.replace(/ - $/, ' ');
+      workplace = 'remote';
+    } else if (loc.hybrid) {
+      location = `Hybrid - ${place}`.replace(/ - $/, ' ');
+      workplace = 'hybrid';
+    }
 
     return normalize({
       companySlug: slug,
@@ -80,6 +86,7 @@ export async function fetchSmartrecruiters(slug) {
       title: p.name || '',
       department: p.department?.label || p.function?.label || '',
       location,
+      workplace,
       description,
       url: postingUrl,
       postedAt: p.releasedDate || null,

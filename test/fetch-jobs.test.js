@@ -136,6 +136,48 @@ describe('fetchJobsDetailed — order, offset and total_matched', () => {
   });
 });
 
+describe('fetchJobs — Workday multi-location rows reach the post-detail location filter (issue #68)', () => {
+  const list = {
+    total: 2,
+    jobPostings: [
+      { title: 'Staff Engineer', externalPath: '/job/Vancouver/Staff-Engineer_R7', locationsText: '2 Locations', postedOn: 'Posted Today' },
+      { title: 'Account Manager', externalPath: '/job/Galway/Account-Manager_R8', locationsText: 'Galway, Ireland', postedOn: 'Posted Today' },
+    ],
+  };
+  const detail = {
+    jobPostingInfo: {
+      jobDescription: '<p>Build.</p>',
+      startDate: '2026-09-19',
+      location: 'Vancouver, British Columbia, Canada',
+      additionalLocations: ['Austin, Texas, United States of America'],
+      remoteType: 'Remote',
+    },
+  };
+
+  test('location_includes on a secondary location returns the job, with one detail fetch', async (t) => {
+    let detailCalls = 0;
+    t.mock.method(global, 'fetch', async (url) => {
+      if (String(url).endsWith('/jobs')) return { ok: true, status: 200, json: async () => list };
+      detailCalls += 1;
+      return { ok: true, status: 200, json: async () => detail };
+    });
+    const jobs = await fetchJobs({ company: 'fixtureco', ats: 'workday', locationIncludes: ['United States'] });
+    assert.equal(detailCalls, 1, 'the "2 Locations" row is hydrated, Galway is not');
+    assert.deepEqual(jobs.map(j => j.title), ['Staff Engineer']);
+    assert.deepEqual(jobs[0].locations, ['Vancouver, British Columbia, Canada', 'Austin, Texas, United States of America']);
+    assert.deepEqual(jobs[0].workplace, { type: 'remote', source: 'ats' });
+  });
+
+  test('the post-detail pass still drops it when no listed location matches', async (t) => {
+    t.mock.method(global, 'fetch', async (url) => {
+      if (String(url).endsWith('/jobs')) return { ok: true, status: 200, json: async () => list };
+      return { ok: true, status: 200, json: async () => detail };
+    });
+    const jobs = await fetchJobs({ company: 'fixtureco', ats: 'workday', locationIncludes: ['Germany'] });
+    assert.deepEqual(jobs, []);
+  });
+});
+
 describe('fetchJobs — canonical-cased registry slug routing', () => {
   test('auto-detect routes a PascalCase SmartRecruiters slug from lowercased input', async (t) => {
     const calls = { urls: [] };

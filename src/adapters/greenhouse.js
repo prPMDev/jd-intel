@@ -29,6 +29,7 @@ export async function fetchGreenhouse(slug) {
     title: job.title || '',
     department: job.departments?.[0]?.name || '',
     location: job.location?.name || '',
+    workplace: parseGreenhouseWorkplace(job.metadata),
     // `content` arrives HTML-escaped (`&lt;p&gt;`). Decode that outer layer
     // once so normalize() sees real tags; it strips and decodes the rest.
     description: decodeEntities(job.content || ''),
@@ -45,6 +46,23 @@ export async function fetchGreenhouse(slug) {
       updatedAt: job.updated_at,
     },
   }, 'greenhouse'));
+}
+
+/**
+ * Greenhouse has no native workplace field. Boards that track it define a
+ * custom field ("Location Type", "Workplace Type") that arrives in the
+ * job's `metadata[]`, with `value` a string for single-select fields and
+ * an array for multi-select. Values seen: On-Site, Hybrid (Travel-Required),
+ * Remote. Anything else is no signal and the location string decides.
+ */
+function parseGreenhouseWorkplace(metadata) {
+  const field = (metadata || []).find(m => /location type|workplace type/i.test(m?.name || ''));
+  if (!field) return null;
+  const value = [].concat(field.value ?? []).join(' ').toLowerCase();
+  if (/remote/.test(value)) return 'remote';
+  if (/hybrid/.test(value)) return 'hybrid';
+  if (/on-?site/.test(value)) return 'onsite';
+  return null;
 }
 
 /**

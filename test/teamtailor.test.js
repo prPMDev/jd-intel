@@ -1,11 +1,17 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { fetchTeamtailor } from '../src/adapters/teamtailor.js';
+import { applyFilters } from '../src/filters.js';
 
 /**
  * TeamTailor is RSS-based, not JSON. The mock returns text() (not json()).
  * Description is HTML-entity-encoded inside the XML, mirroring the real feed.
  * t.mock.method auto-restores per test; no afterEach needed.
+ *
+ * EXTRA_ITEMS follow the item shape a live feed returns (2026-09-27):
+ * <remoteStatus> is one of none, hybrid, fully, onsite, and each office is
+ * a <tt:location> with <tt:name>, an empty <tt:address/>, <tt:zip>,
+ * <tt:city> and <tt:country>. The second item lists two offices.
  */
 
 const FIXTURE_XML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -32,6 +38,60 @@ const FIXTURE_XML = `<?xml version="1.0" encoding="UTF-8"?>
     </item>
   </channel>
 </rss>`;
+
+const EXTRA_ITEMS = `
+    <item>
+      <title>Senior Product Designer</title>
+      <description>&lt;p&gt;Design the app.&lt;/p&gt;</description>
+      <pubDate>Mon, 15 Sep 2026 10:02:11 +0200</pubDate>
+      <link>https://testco.teamtailor.com/jobs/456-senior-product-designer</link>
+      <remoteStatus>fully</remoteStatus>
+      <guid>def-uuid-456</guid>
+      <company_name>Test Company</company_name>
+      <company_uuid>K5gBpFXnPio</company_uuid>
+      <tt:locations>
+        <tt:location>
+          <tt:name>Zagreb, Croatia</tt:name>
+          <tt:address/>
+          <tt:zip>10000</tt:zip>
+          <tt:city>Zagreb</tt:city>
+          <tt:country>Croatia</tt:country>
+        </tt:location>
+      </tt:locations>
+      <tt:department>Design</tt:department>
+      <tt:role/>
+    </item>
+    <item>
+      <title>Backend Engineer</title>
+      <description>&lt;p&gt;Build the platform.&lt;/p&gt;</description>
+      <pubDate>Tue, 16 Sep 2026 08:30:00 +0200</pubDate>
+      <link>https://testco.teamtailor.com/jobs/789-backend-engineer</link>
+      <remoteStatus>none</remoteStatus>
+      <guid>ghi-uuid-789</guid>
+      <company_name>Test Company</company_name>
+      <company_uuid>K5gBpFXnPio</company_uuid>
+      <tt:locations>
+        <tt:location>
+          <tt:name>Berlin</tt:name>
+          <tt:address/>
+          <tt:zip>10115</tt:zip>
+          <tt:city>Berlin</tt:city>
+          <tt:country>Germany</tt:country>
+        </tt:location>
+        <tt:location>
+          <tt:name>Stockholm</tt:name>
+          <tt:address/>
+          <tt:zip>111 22</tt:zip>
+          <tt:city>Stockholm</tt:city>
+          <tt:country>Sweden</tt:country>
+        </tt:location>
+      </tt:locations>
+      <tt:department>Engineering</tt:department>
+      <tt:role/>
+    </item>`;
+
+// The hybrid Berlin item above, then a fully remote item and a two-office item.
+const MULTI_XML = FIXTURE_XML.replace('  </channel>', `${EXTRA_ITEMS}\n  </channel>`);
 
 function mockFetch(t, { status = 200, body = FIXTURE_XML } = {}) {
   t.mock.method(global, 'fetch', async () => ({
@@ -122,6 +182,50 @@ describe('fetchTeamtailor', () => {
     assert.equal(jobs[0].companySlug, 'crunchbase');
     assert.match(calls[0], /^https:\/\/crunchbase\.teamtailor\.com\/jobs\.rss$/);
     assert.match(calls[1], /^https:\/\/crunchbase\.na\.teamtailor\.com\/jobs\.rss$/);
+  });
+
+  test('job id is unchanged (location still feeds the id, locations does not)', async (t) => {
+    mockFetch(t);
+    const [job] = await fetchTeamtailor('testco');
+    assert.equal(job.id, '6838bb6f4121');
+  });
+
+  test('remoteStatus maps to workplace: hybrid, fully -> remote, none is no signal', async (t) => {
+    mockFetch(t, { body: MULTI_XML });
+    const [hybrid, fully, none] = await fetchTeamtailor('testco');
+    assert.equal(hybrid.locationType, 'hybrid');
+    assert.deepEqual(hybrid.workplace, { type: 'hybrid', source: 'ats' });
+    assert.equal(fully.locationType, 'remote');
+    assert.deepEqual(fully.workplace, { type: 'remote', source: 'ats' });
+    assert.equal(fully.location, 'Zagreb, Croatia', 'no Remote prefix is added to the location');
+    assert.equal(none.locationType, 'unknown');
+    assert.deepEqual(none.workplace, { type: 'unknown', source: null });
+  });
+
+  test('remoteStatus onsite maps to onsite', async (t) => {
+    mockFetch(t, { body: FIXTURE_XML.replace('<remoteStatus>hybrid</remoteStatus>', '<remoteStatus>onsite</remoteStatus>') });
+    const [job] = await fetchTeamtailor('testco');
+    assert.deepEqual(job.workplace, { type: 'onsite', source: 'ats' });
+  });
+
+  test('locations lists every tt:location as "city, country", primary first', async (t) => {
+    mockFetch(t, { body: MULTI_XML });
+    const [single, , multi] = await fetchTeamtailor('testco');
+    assert.deepEqual(single.locations, ['Berlin, Germany']);
+    assert.equal(multi.location, 'Berlin, Germany');
+    assert.deepEqual(multi.locations, ['Berlin, Germany', 'Stockholm, Sweden']);
+  });
+
+  test('location_includes matches a secondary office; excludes drop only when every office matches', async (t) => {
+    mockFetch(t, { body: MULTI_XML });
+    const jobs = await fetchTeamtailor('testco');
+    assert.deepEqual(applyFilters(jobs, { locationIncludes: ['Stockholm'] }).map(j => j.title), ['Backend Engineer']);
+    assert.deepEqual(
+      applyFilters(jobs, { locationExcludes: ['Germany'] }).map(j => j.title).sort(),
+      ['Backend Engineer', 'Senior Product Designer'],
+      'the Berlin-only role drops, the Berlin/Stockholm role stays'
+    );
+    assert.deepEqual(applyFilters(jobs, { locationExcludes: ['Germany', 'Sweden'] }).map(j => j.title), ['Senior Product Designer']);
   });
 
   test('handles a feed with no items', async (t) => {

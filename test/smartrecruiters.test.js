@@ -160,6 +160,31 @@ describe('fetchSmartrecruiters', () => {
     assert.equal(job.postedAt, '2026-04-01T10:00:00Z');
   });
 
+  test('job id is unchanged (location still feeds the id, locations does not)', async (t) => {
+    mockFetch(t);
+    const [job] = await fetchSmartrecruiters('testco');
+    assert.equal(job.id, '5b8eb8b03feb');
+  });
+
+  test('location.hybrid and location.remote are the ATS speaking, so workplace.source is ats', async (t) => {
+    mockFetch(t);
+    const [hybrid] = await fetchSmartrecruiters('testco');
+    assert.deepEqual(hybrid.workplace, { type: 'hybrid', source: 'ats' });
+    assert.deepEqual(hybrid.locations, ['Hybrid - Austin, TX, United States']);
+
+    const remoteRow = { ...LIST_FIXTURE.content[0], location: { ...LIST_FIXTURE.content[0].location, remote: true, hybrid: false } };
+    mockFetch(t, { list: { ...LIST_FIXTURE, content: [remoteRow] } });
+    const [remote] = await fetchSmartrecruiters('testco');
+    assert.equal(remote.location, 'Remote - Austin, TX, United States');
+    assert.deepEqual(remote.workplace, { type: 'remote', source: 'ats' });
+
+    const plainRow = { ...LIST_FIXTURE.content[0], location: { ...LIST_FIXTURE.content[0].location, remote: false, hybrid: false } };
+    mockFetch(t, { list: { ...LIST_FIXTURE, content: [plainRow] } });
+    const [plain] = await fetchSmartrecruiters('testco');
+    assert.deepEqual(plain.workplace, { type: 'unknown', source: null });
+    assert.equal(plain.locationType, 'unknown');
+  });
+
   test('falls back to text extraction when the detail has no compensation', async (t) => {
     mockFetch(t);
     const [job] = await fetchSmartrecruiters('testco');

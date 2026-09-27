@@ -61,18 +61,12 @@ export function applyFiltersDetailed(jobs, options = {}) {
 
   if (Array.isArray(locationIncludes) && locationIncludes.length > 0) {
     const matchers = locationIncludes.map(makeLocationMatcher);
-    result = result.filter(j => {
-      const loc = (j.location || '').toLowerCase();
-      return matchers.some(m => m(loc));
-    });
+    result = result.filter(j => jobLocations(j).some(loc => matchers.some(m => m(loc))));
   }
 
   if (Array.isArray(locationExcludes) && locationExcludes.length > 0) {
     const matchers = locationExcludes.map(makeLocationMatcher);
-    result = result.filter(j => {
-      const loc = (j.location || '').toLowerCase();
-      return !matchers.some(m => m(loc));
-    });
+    result = result.filter(j => !jobLocations(j).every(loc => matchers.some(m => m(loc))));
   }
 
   const total_matched = result.length;
@@ -88,6 +82,20 @@ export function applyFiltersDetailed(jobs, options = {}) {
   }
 
   return { jobs: result, total_matched };
+}
+
+/**
+ * Every location a job is open in, lowercased. A job passes an include when
+ * any of them matches and is dropped by an exclude only when all of them
+ * match: a role open in Berlin and New York is still open in Berlin for
+ * someone excluding the US (issue #68). Jobs from before `locations`
+ * existed fall back to the single `location` string.
+ */
+function jobLocations(job) {
+  const list = Array.isArray(job.locations) && job.locations.length > 0
+    ? job.locations
+    : [job.location || ''];
+  return list.map(loc => String(loc).toLowerCase());
 }
 
 function postedTime(job) {

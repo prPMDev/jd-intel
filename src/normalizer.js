@@ -18,19 +18,28 @@ export function jobId(company, title, ats, location = '') {
  * stripped and decoded (issue #66): a second pass would delete text the
  * author escaped on purpose (`&lt;5 years`) and leave entities the first
  * pass exposed (`&amp;mdash;` -> `&mdash;`) as literal noise.
+ *
+ * `raw.workplace` is the ATS's own arrangement, already mapped by the
+ * adapter to 'remote' | 'hybrid' | 'onsite', or null when the platform
+ * gives no signal. `raw.locations` lists every place the posting is open
+ * in; `location` stays the primary because it feeds the id (issue #68).
  */
 export function normalize(raw, ats) {
   const now = new Date().toISOString();
   const description = stripHtml(raw.description || '');
+  const location = raw.location || '';
+  const workplace = resolveWorkplace(raw.workplace, location);
   return {
-    id: jobId(raw.company || raw.companySlug, raw.title, ats, raw.location || ''),
+    id: jobId(raw.company || raw.companySlug, raw.title, ats, location),
     company: raw.company || raw.companySlug || '',
     companySlug: raw.companySlug || '',
     ats,
     title: raw.title || '',
     department: raw.department || '',
-    location: raw.location || '',
-    locationType: detectLocationType(raw.location || ''),
+    location,
+    locations: uniqueLocations(location, raw.locations),
+    locationType: workplace.type,
+    workplace,
     salary: raw.salary || extractSalaryFromText(description),
     description,
     url: raw.url || '',
@@ -138,12 +147,41 @@ function periodWord(text) {
   return null;
 }
 
-function detectLocationType(location) {
-  const lower = location.toLowerCase();
-  if (/remote/i.test(lower)) return 'remote';
-  if (/hybrid/i.test(lower)) return 'hybrid';
-  if (/on-?site/i.test(lower)) return 'onsite';
-  return location ? 'onsite' : 'unknown';
+const WORKPLACE_TYPES = new Set(['remote', 'hybrid', 'onsite']);
+
+/**
+ * The platform's own value wins. Without one, a keyword in the location
+ * string is the next best signal. Without either the type is 'unknown':
+ * a city name alone does not say the role is onsite, and a guessed
+ * 'onsite' reads as a fact to whoever consumes it.
+ *
+ * @returns {{type:('remote'|'hybrid'|'onsite'|'unknown'), source:('ats'|'text'|null)}}
+ */
+function resolveWorkplace(native, location) {
+  if (WORKPLACE_TYPES.has(native)) return { type: native, source: 'ats' };
+  const guessed = workplaceFromText(location);
+  if (guessed) return { type: guessed, source: 'text' };
+  return { type: 'unknown', source: null };
+}
+
+function workplaceFromText(location) {
+  const lower = (location || '').toLowerCase();
+  if (/remote/.test(lower)) return 'remote';
+  if (/hybrid/.test(lower)) return 'hybrid';
+  if (/on-?site/.test(lower)) return 'onsite';
+  return null;
+}
+
+function uniqueLocations(primary, extra) {
+  const out = [];
+  const seen = new Set();
+  for (const loc of [primary, ...(Array.isArray(extra) ? extra : [])]) {
+    const s = typeof loc === 'string' ? loc.trim() : '';
+    if (!s || seen.has(s.toLowerCase())) continue;
+    seen.add(s.toLowerCase());
+    out.push(s);
+  }
+  return out;
 }
 
 /**

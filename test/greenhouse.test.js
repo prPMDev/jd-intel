@@ -179,6 +179,12 @@ describe('fetchGreenhouse', () => {
     assert.equal(job.metadata.greenhouseId, 5179639004);
   });
 
+  test('job ids are unchanged (location still feeds the id, locations does not)', async (t) => {
+    mockFetch(t);
+    const jobs = await fetchGreenhouse('vercel');
+    assert.deepEqual(jobs.map(j => j.id), ['7cd973622506', '666025dbd8ff']);
+  });
+
   test('handles empty jobs array', async (t) => {
     mockFetch(t, { body: { jobs: [], meta: { total: 0 } } });
     const jobs = await fetchGreenhouse('emptyco');
@@ -202,6 +208,56 @@ describe('fetchGreenhouse', () => {
 
     assert.equal(recent.length, 1);
     assert.equal(recent[0].title, 'Design Engineer');
+  });
+});
+
+describe('fetchGreenhouse workplace from a board custom field (issue #68)', () => {
+  // Greenhouse's per-job `metadata[]` carries board-defined custom fields as
+  // { id, name, value, value_type }. `value` is a string for single_select
+  // and an array for multi_select. The names and values below are the ones
+  // seen on boards that track workplace this way.
+  const field = (name, value, value_type = 'single_select') => ({ id: 4000000123, name, value, value_type });
+  const [cdn, design] = FIXTURE.jobs;
+  const withJobs = (...jobs) => ({ jobs, meta: { total: jobs.length } });
+
+  test('with no such field the location string is the only signal, marked as text', async (t) => {
+    mockFetch(t, { body: withJobs({ ...cdn, metadata: [field('Career Site Categories', 'Engineering')] }, design) });
+    const [hybrid, remote] = await fetchGreenhouse('vercel');
+    assert.deepEqual(hybrid.workplace, { type: 'hybrid', source: 'text' });
+    assert.deepEqual(remote.workplace, { type: 'remote', source: 'text' });
+    assert.deepEqual(hybrid.locations, ['Hybrid - San Francisco, New York City']);
+  });
+
+  test('a Location Type or Workplace Type field wins over the location string', async (t) => {
+    mockFetch(t, {
+      body: withJobs(
+        { ...cdn, location: { name: 'Remote-Friendly - San Francisco, CA' }, metadata: [field('Location Type', 'On-Site')] },
+        { ...design, location: { name: 'United States' }, metadata: [field('Workplace Type', 'Remote')] },
+        { ...design, location: { name: 'New York City, NY' }, metadata: [field('Location Type', 'Hybrid (Travel-Required)')] },
+        { ...design, location: { name: 'Austin, TX' }, metadata: [field('Workplace Type', ['Remote'], 'multi_select')] },
+      ),
+    });
+    const [onsite, remote, hybrid, multiSelect] = await fetchGreenhouse('vercel');
+    assert.equal(onsite.locationType, 'onsite');
+    assert.deepEqual(onsite.workplace, { type: 'onsite', source: 'ats' });
+    assert.deepEqual(remote.workplace, { type: 'remote', source: 'ats' });
+    assert.deepEqual(hybrid.workplace, { type: 'hybrid', source: 'ats' });
+    assert.deepEqual(multiSelect.workplace, { type: 'remote', source: 'ats' });
+  });
+
+  test('an unrecognized or empty field value leaves the text fallback in charge', async (t) => {
+    mockFetch(t, {
+      body: withJobs(
+        { ...design, location: { name: 'Austin, TX' }, metadata: [field('Location Type', 'Flexible')] },
+        { ...design, location: { name: 'Austin, TX' }, metadata: [field('Location Type', null)] },
+        { ...design, location: { name: 'Remote - United States' }, metadata: [field('Location Type', null)] },
+      ),
+    });
+    const [flexible, empty, remoteText] = await fetchGreenhouse('vercel');
+    assert.deepEqual(flexible.workplace, { type: 'unknown', source: null });
+    assert.equal(flexible.locationType, 'unknown');
+    assert.deepEqual(empty.workplace, { type: 'unknown', source: null });
+    assert.deepEqual(remoteText.workplace, { type: 'remote', source: 'text' });
   });
 });
 
