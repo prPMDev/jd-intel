@@ -4,6 +4,8 @@ import { atsErrorFromStatus } from '../errors.js';
 const BASE_URL = 'https://api.lever.co/v0/postings';
 
 const PERIODS = { 'per-year-salary': 'year', 'per-month-salary': 'month', 'per-hour-wage': 'hour' };
+// Lever's workplaceType is one of these or 'unspecified'.
+const WORKPLACE_TYPES = new Set(['remote', 'hybrid', 'onsite']);
 
 /**
  * Fetch all jobs from a Lever job board.
@@ -34,6 +36,8 @@ export async function fetchLever(slug) {
     title: job.text || '',
     department: job.categories?.department || job.categories?.team || '',
     location: job.categories?.location || '',
+    locations: job.categories?.allLocations || [],
+    workplace: WORKPLACE_TYPES.has(job.workplaceType) ? job.workplaceType : null,
     description: buildDescription(job),
     url: job.hostedUrl || '',
     postedAt: job.createdAt ? new Date(job.createdAt).toISOString() : null,

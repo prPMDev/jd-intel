@@ -44,6 +44,8 @@ async function fetchAshbyRest(slug) {
       title: job.title || '',
       department: job.department || '',
       location: job.location || '',
+      locations: (job.secondaryLocations || []).map(l => l?.location || ''),
+      workplace: parseAshbyWorkplace(job),
       description: job.descriptionHtml || job.descriptionPlain || '',
       url: `https://jobs.ashbyhq.com/${slug}/${job.id}`,
       postedAt: job.publishedAt || null,
@@ -116,6 +118,19 @@ async function fetchAshbyGraphQL(slug) {
       compensationSummary: job.compensationTierSummary || '',
     },
   }, 'ashby'));
+}
+
+const WORKPLACE_TYPES = { remote: 'remote', hybrid: 'hybrid', onsite: 'onsite' };
+
+/**
+ * `workplaceType` is 'Remote', 'Hybrid' or 'OnSite'. `isRemote` is the
+ * older flag and can only say remote, so it is the fallback when the type
+ * is absent. false means nothing: the role may be hybrid or onsite.
+ */
+function parseAshbyWorkplace(job) {
+  const type = WORKPLACE_TYPES[String(job.workplaceType || '').toLowerCase()];
+  if (type) return type;
+  return job.isRemote === true ? 'remote' : null;
 }
 
 const INTERVAL_PERIOD = { '1 YEAR': 'year', '1 MONTH': 'month', '1 HOUR': 'hour' };

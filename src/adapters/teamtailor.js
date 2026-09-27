@@ -29,6 +29,9 @@ import { atsErrorFromStatus } from '../errors.js';
 // segment, e.g. crunchbase.na.teamtailor.com. '' is the base host.
 const TT_REGIONS = ['', 'na', 'eu'];
 
+// Feeds send `none`, `hybrid`, `fully` or `onsite`. `none` is no signal.
+const REMOTE_STATUS = { hybrid: 'hybrid', fully: 'remote', onsite: 'onsite' };
+
 /**
  * Resolve which TeamTailor host actually serves this slug's feed.
  * Returns the first 200 Response, throws on a non-404 error, or
@@ -65,8 +68,8 @@ export async function fetchTeamtailor(slug) {
   const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => m[1]);
 
   return items.map(item => {
-    const pick = (tag) => {
-      const m = item.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`));
+    const pick = (tag, src = item) => {
+      const m = src.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`));
       return m ? m[1].trim() : '';
     };
 
@@ -78,6 +81,12 @@ export async function fetchTeamtailor(slug) {
     const city = decodeEntities(pick('tt:city'));
     const country = decodeEntities(pick('tt:country'));
     const remoteStatus = decodeEntities(pick('remoteStatus'));
+
+    // One <tt:location> per office the posting is open in, read the same
+    // way as the primary above so the entries line up.
+    const locations = [...item.matchAll(/<tt:location>([\s\S]*?)<\/tt:location>/g)].map(m =>
+      [decodeEntities(pick('tt:city', m[1])), decodeEntities(pick('tt:country', m[1]))].filter(Boolean).join(', ')
+    );
 
     let location = [city, country].filter(Boolean).join(', ');
     if (/remote/i.test(remoteStatus)) {
@@ -96,6 +105,8 @@ export async function fetchTeamtailor(slug) {
       title,
       department,
       location,
+      locations,
+      workplace: REMOTE_STATUS[remoteStatus.toLowerCase()] || null,
       description: decodeEntities(pick('description')),
       url: link,
       postedAt,

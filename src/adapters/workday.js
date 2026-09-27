@@ -7,6 +7,8 @@ const LIST_PAGE_SIZE = 20;
 // postings scanned. Paging usually stops sooner, on a short page or when
 // offset reaches the first page's total (see the loop below).
 const LIST_PAGE_HARD_CAP = 100;
+// A multi-location posting's list row reads "2 Locations", "14 Locations".
+const MULTI_LOCATION = /^\s*\d+\s+locations?\s*$/;
 
 /**
  * Fetch jobs from a Workday tenant via the public "CXS" JSON API.
@@ -85,6 +87,9 @@ export async function fetchWorkday(slug, ctx = {}) {
     const inc = fc.locationIncludes.map(s => String(s).toLowerCase());
     candidates = candidates.filter(p => {
       const loc = (p.locationsText || '').toLowerCase();
+      // "2 Locations" says nothing about where. The row stays a candidate
+      // and the pass after hydration decides on the detail's location list.
+      if (MULTI_LOCATION.test(loc)) return true;
       return inc.some(s => loc.includes(s));
     });
   }
@@ -140,6 +145,8 @@ export async function fetchWorkday(slug, ctx = {}) {
       title: p.title || info.title || '',
       department: '',
       location: info.location || p.locationsText || '',
+      locations: info.additionalLocations || [],
+      workplace: parseWorkdayRemoteType(info.remoteType),
       description: info.jobDescription || '',
       url: `https://${tenant}.${env}.myworkdayjobs.com/${site}${externalPath}`,
       postedAt: parseWorkdayDate(info.startDate) || normalizePostedOn(p.postedOn),
@@ -154,6 +161,20 @@ export async function fetchWorkday(slug, ctx = {}) {
   }));
 
   return jobs;
+}
+
+/**
+ * Detail `remoteType` is free text set per tenant: "Remote", "Hybrid",
+ * "Office - Flexible", "On-site". A flexible office arrangement counts as
+ * hybrid, so that check runs before the office one. Some tenants send no
+ * value at all; the location string decides then.
+ */
+function parseWorkdayRemoteType(remoteType) {
+  const s = String(remoteType || '').toLowerCase();
+  if (/remote/.test(s)) return 'remote';
+  if (/hybrid|flexible/.test(s)) return 'hybrid';
+  if (/office|on-?site/.test(s)) return 'onsite';
+  return null;
 }
 
 /**

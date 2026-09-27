@@ -202,7 +202,9 @@ Every job normalizes to one schema, across every platform:
   "title": "Senior Software Engineer, Platform",
   "department": "Engineering",
   "location": "Remote - US",
+  "locations": ["Remote - US", "Toronto, Canada"],
   "locationType": "remote",
+  "workplace": { "type": "remote", "source": "ats" },
   "salary": { "min": 180000, "max": 240000, "currency": "USD", "period": "year", "source": "text" },
   "description": "Design and build the API surface our customers integrate against...",
   "url": "https://boards.example.com/jobs/12345",
@@ -219,8 +221,10 @@ No custom parsing per company.
 | `title` | Full job title |
 | `company` | Normalized company name |
 | `department` | Team or department (when provided) |
-| `location` | City, state, country, or remote |
-| `locationType` | `remote`, `hybrid`, or `onsite` |
+| `location` | Primary location: city, state, country, or remote |
+| `locations` | Every location the posting is open in, primary first. The location filters check each entry |
+| `locationType` | `remote`, `hybrid`, `onsite`, or `unknown` when neither the platform nor the location text says |
+| `workplace` | `{ type, source }`. `type` repeats `locationType`; `source` is `ats` when the platform stated it, `text` when read from the location string, null when unknown |
 | `salary` | Min-max range with `currency`, plus `period` (`year`, `month`, `hour`, or null) and `source` (`ats` when the platform supplied it, `text` when parsed from the posting). Null when nothing is stated |
 | `description` | Full JD in clean markdown |
 | `url` | Direct link to the posting |
