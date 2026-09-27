@@ -36,23 +36,31 @@ async function fetchAshbyRest(slug) {
   const jobs = data.jobs || [];
 
   return jobs.map(job => {
-    const salary = parseAshbyCompensation(job.compensation);
+    const comp = job.compensation || {};
 
     return normalize({
       companySlug: slug,
       company: data.organizationName || slug,
       title: job.title || '',
-      department: job.departmentName || '',
+      department: job.department || '',
       location: job.location || '',
       description: job.descriptionHtml || job.descriptionPlain || '',
       url: `https://jobs.ashbyhq.com/${slug}/${job.id}`,
       postedAt: job.publishedAt || null,
-      salary,
+      salary: parseAshbyCompensation(comp),
       metadata: {
         ashbyId: job.id,
         employmentType: job.employmentType || '',
         isRemote: job.isRemote || false,
-        team: job.teamName || '',
+        team: job.team || '',
+        // The rendered summaries keep what min/max drop: "Offers Equity",
+        // "Multiple Ranges", and per-location tiers labelled OTE.
+        compensationSummary: comp.compensationTierSummary || '',
+        compensationTiers: (comp.compensationTiers || []).map(tier => ({
+          title: tier.title || '',
+          summary: tier.tierSummary || '',
+          additionalInformation: tier.additionalInformation || '',
+        })),
       },
     }, 'ashby');
   });
@@ -110,28 +118,34 @@ async function fetchAshbyGraphQL(slug) {
   }, 'ashby'));
 }
 
+const INTERVAL_PERIOD = { '1 YEAR': 'year', '1 MONTH': 'month', '1 HOUR': 'hour' };
+
+/**
+ * Read pay from Ashby's `compensation` object (issue #67).
+ *
+ * `summaryComponents` carries one structured entry per component type
+ * (Salary, Bonus, Commission, Equity); the Salary entry spans every tier.
+ * `scrapeableCompensationSalarySummary` and `compensationTierSummary` are
+ * the rendered strings. A board that publishes no pay still sends the
+ * object, with null summaries and empty arrays, so a miss here has to
+ * return null for the normalizer's text fallback to run.
+ */
 function parseAshbyCompensation(comp) {
-  if (!comp) return null;
-  // Ashby compensation can be a string or structured object
-  if (typeof comp === 'string') {
-    // The field is the ATS's own compensation summary, so it counts as
-    // source 'ats' even though the range is read out of a string.
-    const parsed = extractSalaryFromText(comp);
-    if (parsed) return { ...parsed, source: 'ats' };
-    const match = comp.match(/([\d,]+)\s*[-–]\s*([\d,]+)/);
-    if (!match) return null;
+  const salary = (comp.summaryComponents || []).find(c => c.compensationType === 'Salary');
+  if (salary && (salary.minValue != null || salary.maxValue != null)) {
     return {
-      min: parseInt(match[1].replace(/,/g, '')),
-      max: parseInt(match[2].replace(/,/g, '')),
-      currency: 'USD',
-      period: null,
+      min: salary.minValue ?? null,
+      max: salary.maxValue ?? null,
+      currency: salary.currencyCode || 'USD',
+      period: INTERVAL_PERIOD[salary.interval] || null,
       source: 'ats',
     };
   }
-  if (comp.min && comp.max) {
-    return { min: comp.min, max: comp.max, currency: comp.currency || 'USD', period: null, source: 'ats' };
-  }
-  return null;
+  // The summaries are still the ATS's own compensation field, so a range
+  // read out of one counts as source 'ats'.
+  const parsed = extractSalaryFromText(comp.scrapeableCompensationSalarySummary)
+    || extractSalaryFromText(comp.compensationTierSummary);
+  return parsed ? { ...parsed, source: 'ats' } : null;
 }
 
 export async function hasAshby(slug) {
