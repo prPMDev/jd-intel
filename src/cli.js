@@ -164,8 +164,8 @@ Fetch options:
   --title-filter pattern          Regex matched against TITLE only (role identity)
   --filter pattern                Regex matched across title, department, description (topic/scope)
   --posted-within-days N          Only jobs posted in the last N days
-  --location-include "A,B,C"      Keep jobs whose location contains any of these
-  --location-exclude "A,B,C"      Drop jobs whose location contains any of these
+  --location-include "A,B,C"      Keep jobs where any listed location contains one of these
+  --location-exclude "A,B,C"      Drop jobs only when every listed location contains one of these
   --limit N                       Cap results (default 100)
   --json                          Output full JSON
 
