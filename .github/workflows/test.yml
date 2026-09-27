@@ -21,7 +21,7 @@ jobs:
           node-version: ${{ matrix.node }}
 
       # The library, CLI and test suite have zero dependencies, so there is
-      # nothing to install. mcp/ has its own deps and its own smoke test.
+      # nothing to install. mcp/ has its own deps and its own job below.
       - name: Registry files are valid JSON
         run: |
           for f in registry/*.json docs/registry/*.json; do
@@ -30,6 +30,33 @@ jobs:
           done
 
       - name: Run tests
+        run: node --test test/*.test.js
+
+  mcp:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['18', '20', '22']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # Install mcp's locked deps, then swap in the library from this checkout
+      # (--no-save keeps package.json untouched), so a PR that changes src/
+      # is tested against the MCP server, not the last published jd-intel.
+      - name: Install mcp deps against the local library
+        working-directory: mcp
+        run: |
+          npm ci
+          npm install --no-save ..
+
+      - name: Run mcp tests
+        working-directory: mcp
         run: node --test test/*.test.js
 
   registry-sync:

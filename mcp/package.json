@@ -6,7 +6,7 @@
   "type": "module",
   "main": "server.js",
   "bin": {
-    "jd-intel-mcp": "./cli.js"
+    "jd-intel-mcp": "cli.js"
   },
   "files": [
     "cli.js",
