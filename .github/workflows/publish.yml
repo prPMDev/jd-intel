@@ -94,6 +94,26 @@ jobs:
           generate_release_notes: true
           files: dist/jd-intel.mcpb
 
+      # The Registry validates the npm version it is asked to list, and npm can
+      # take a couple of minutes to serve a fresh publish. Without this wait
+      # the listing step has failed on two releases in a row and needed a
+      # manual re-run.
+      - name: Wait for jd-intel-mcp to be resolvable on npm
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: mcp
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          for i in $(seq 1 30); do
+            if npm view "jd-intel-mcp@$VERSION" version > /dev/null 2>&1; then
+              echo "jd-intel-mcp@$VERSION is available."
+              exit 0
+            fi
+            echo "Attempt $i: not yet available, retrying in 10s..."
+            sleep 10
+          done
+          echo "Timed out waiting for jd-intel-mcp@$VERSION on the registry." >&2
+          exit 1
+
       # List jd-intel-mcp in the official MCP Registry so it surfaces in client
       # catalogs. Best-effort: continue-on-error keeps a registry hiccup from
       # failing the npm release. Auth via GitHub OIDC for the io.github.prPMDev
