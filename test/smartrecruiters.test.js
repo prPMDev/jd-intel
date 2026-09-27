@@ -109,7 +109,18 @@ describe('fetchSmartrecruiters', () => {
   test('extracts salary from concatenated description text', async (t) => {
     mockFetch(t);
     const [job] = await fetchSmartrecruiters('testco');
-    assert.deepEqual(job.salary, { min: 150000, max: 200000, currency: 'USD' });
+    assert.deepEqual(job.salary, { min: 150000, max: 200000, currency: 'USD', period: 'year', source: 'text' });
+  });
+
+  test('decodes hex entities (&#xa0;) and named entities in the description', async (t) => {
+    // SmartRecruiters writes non-breaking spaces as &#xa0; throughout its sections.
+    const detail = {
+      ...DETAIL_FIXTURE,
+      jobAd: { sections: { jobDescription: { text: '<p>5&#xa0;years&#xa0;experience &mdash; &quot;senior&quot; level.</p>' } } },
+    };
+    mockFetch(t, { detail });
+    const [job] = await fetchSmartrecruiters('testco');
+    assert.equal(job.description, '5 years experience — "senior" level.');
   });
 
   test('concatenates jobAd sections into the description', async (t) => {

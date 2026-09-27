@@ -103,7 +103,7 @@ describe('fetchTeamtailor', () => {
   test('extracts salary from decoded description', async (t) => {
     mockFetch(t);
     const [job] = await fetchTeamtailor('testco');
-    assert.deepEqual(job.salary, { min: 150000, max: 200000, currency: 'USD' });
+    assert.deepEqual(job.salary, { min: 150000, max: 200000, currency: 'USD', period: 'year', source: 'text' });
   });
 
   test('falls back to a regional subdomain when base 404s', async (t) => {

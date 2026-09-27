@@ -76,7 +76,7 @@ describe('fetchAshby', () => {
   test('parses compensation string to salary object', async (t) => {
     mockFetch(t);
     const [job] = await fetchAshby('testco');
-    assert.deepEqual(job.salary, { min: 150000, max: 200000, currency: 'USD' });
+    assert.deepEqual(job.salary, { min: 150000, max: 200000, currency: 'USD', period: 'year', source: 'ats' });
   });
 
   test('parses structured compensation object', async (t) => {
@@ -89,7 +89,7 @@ describe('fetchAshby', () => {
     };
     mockFetch(t, { body });
     const [job] = await fetchAshby('testco');
-    assert.deepEqual(job.salary, { min: 120000, max: 180000, currency: 'USD' });
+    assert.deepEqual(job.salary, { min: 120000, max: 180000, currency: 'USD', period: null, source: 'ats' });
   });
 
   test('preserves Ashby-specific metadata', async (t) => {

@@ -190,7 +190,7 @@ Every job normalizes to one schema, across every platform:
   "department": "Engineering",
   "location": "Remote - US",
   "locationType": "remote",
-  "salary": { "min": 180000, "max": 240000, "currency": "USD" },
+  "salary": { "min": 180000, "max": 240000, "currency": "USD", "period": "year", "source": "text" },
   "description": "Design and build the API surface our customers integrate against...",
   "url": "https://boards.example.com/jobs/12345",
   "postedAt": "2026-04-10T14:30:00Z"
@@ -208,7 +208,7 @@ No custom parsing per company.
 | `department` | Team or department (when provided) |
 | `location` | City, state, country, or remote |
 | `locationType` | `remote`, `hybrid`, or `onsite` |
-| `salary` | Min-max range with currency (when available) |
+| `salary` | Min-max range with `currency`, plus `period` (`year`, `month`, `hour`, or null) and `source` (`ats` when the platform supplied it, `text` when parsed from the posting). Null when nothing is stated |
 | `description` | Full JD in clean markdown |
 | `url` | Direct link to the posting |
 | `postedAt` | Publication date (when provided) |

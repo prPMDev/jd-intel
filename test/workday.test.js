@@ -140,7 +140,24 @@ describe('fetchWorkday', () => {
     listMock(t);
     const jobs = await fetchWorkday('cisco', { ...CTX });
     const pm = jobs.find(j => j.title === 'Staff Product Manager');
-    assert.deepEqual(pm.salary, { min: 150000, max: 200000, currency: 'USD' });
+    assert.deepEqual(pm.salary, { min: 150000, max: 200000, currency: 'USD', period: 'year', source: 'text' });
+  });
+
+  test('decodes the decimal entities Workday uses for + \' = and @ (issue #66)', async (t) => {
+    const detail = {
+      jobPostingInfo: {
+        ...DETAIL_FIXTURE.jobPostingInfo,
+        jobDescription: '<p>Skills: C&#43;&#43;, and Python. 8&#43; years. Bachelor&#39;s degree.</p><p>TTC &#61; base &#43; commission. Contact hiring&#64;example.com.</p>',
+      },
+    };
+    listMock(t, { detail });
+    const jobs = await fetchWorkday('cisco', { ...CTX });
+    const pm = jobs.find(j => j.title === 'Staff Product Manager');
+    assert.match(pm.description, /C\+\+, and Python/);
+    assert.match(pm.description, /8\+ years/);
+    assert.match(pm.description, /Bachelor's degree/);
+    assert.match(pm.description, /TTC = base \+ commission/);
+    assert.match(pm.description, /hiring@example\.com/);
   });
 
   for (const [shape, shapeOpts] of LIST_SHAPES) {

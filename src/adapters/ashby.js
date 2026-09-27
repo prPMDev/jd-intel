@@ -1,4 +1,4 @@
-import { normalize } from '../normalizer.js';
+import { normalize, extractSalaryFromText } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 
 const API_URL = 'https://jobs.ashbyhq.com/api/non-user-graphql';
@@ -114,16 +114,22 @@ function parseAshbyCompensation(comp) {
   if (!comp) return null;
   // Ashby compensation can be a string or structured object
   if (typeof comp === 'string') {
-    const match = comp.match(/\$?([\d,]+)\s*[-–]\s*\$?([\d,]+)/);
+    // The field is the ATS's own compensation summary, so it counts as
+    // source 'ats' even though the range is read out of a string.
+    const parsed = extractSalaryFromText(comp);
+    if (parsed) return { ...parsed, source: 'ats' };
+    const match = comp.match(/([\d,]+)\s*[-–]\s*([\d,]+)/);
     if (!match) return null;
     return {
       min: parseInt(match[1].replace(/,/g, '')),
       max: parseInt(match[2].replace(/,/g, '')),
       currency: 'USD',
+      period: null,
+      source: 'ats',
     };
   }
   if (comp.min && comp.max) {
-    return { min: comp.min, max: comp.max, currency: comp.currency || 'USD' };
+    return { min: comp.min, max: comp.max, currency: comp.currency || 'USD', period: null, source: 'ats' };
   }
   return null;
 }

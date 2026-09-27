@@ -1,4 +1,4 @@
-import { normalize, stripHtml } from '../normalizer.js';
+import { normalize, decodeEntities } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 
 const BASE_URL = 'https://boards-api.greenhouse.io/v1/boards';
@@ -29,12 +29,14 @@ export async function fetchGreenhouse(slug) {
     title: job.title || '',
     department: job.departments?.[0]?.name || '',
     location: job.location?.name || '',
-    description: stripHtml(job.content || ''),
+    // `content` arrives HTML-escaped (`&lt;p&gt;`). Decode that outer layer
+    // once so normalize() sees real tags; it strips and decodes the rest.
+    description: decodeEntities(job.content || ''),
     url: job.absolute_url || '',
     // updated_at is an edit time that many boards bulk-refresh, so it is not
     // a posting date. first_published is. Fallback covers boards without it (#69).
     postedAt: job.first_published || job.updated_at || null,
-    salary: null, // Greenhouse doesn't expose salary in public API
+    salary: null, // list endpoint has no structured pay; normalizer parses the pay transparency text
     metadata: {
       greenhouseId: job.id,
       internal_job_id: job.internal_job_id,

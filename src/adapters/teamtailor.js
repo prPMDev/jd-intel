@@ -1,4 +1,4 @@
-import { normalize, stripHtml } from '../normalizer.js';
+import { normalize, decodeEntities } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 
 /**
@@ -16,10 +16,11 @@ import { atsErrorFromStatus } from '../errors.js';
  * to a custom domain (e.g. jobs.tibber.com).
  *
  * RSS quirk: descriptions are HTML-entity-encoded inside the XML
- * (`&lt;p&gt;...`). We decode that outer layer to real HTML, then
- * hand it to stripHtml() which strips tags and resolves the inner
- * entities. Decode order matters — `&amp;` resolves LAST so that
- * double-encoded sequences (`&amp;amp;`) collapse correctly.
+ * (`&lt;p&gt;...`). We decode that outer layer to real HTML with the
+ * shared decodeEntities() and hand the HTML to normalize(), which
+ * strips tags and resolves the inner entities. Decode order matters —
+ * `&amp;` resolves LAST so double-encoded sequences (`&amp;amp;`)
+ * collapse by one layer per pass.
  *
  * @param {string} slug - TeamTailor career-site slug (e.g., 'tibber')
  * @returns {Promise<Array>} Normalized job objects
@@ -95,7 +96,7 @@ export async function fetchTeamtailor(slug) {
       title,
       department,
       location,
-      description: stripHtml(decodeEntities(pick('description'))),
+      description: decodeEntities(pick('description')),
       url: link,
       postedAt,
       salary: null, // No structured salary; normalizer parses from text
@@ -105,22 +106,6 @@ export async function fetchTeamtailor(slug) {
       },
     }, 'teamtailor');
   });
-}
-
-/**
- * Decode the RSS entity/CDATA layer to real HTML.
- * `&amp;` is intentionally resolved LAST.
- */
-function decodeEntities(s) {
-  if (!s) return '';
-  return s
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&amp;/g, '&');
 }
 
 /**

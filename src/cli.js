@@ -85,7 +85,7 @@ async function main() {
       console.log(`Found ${jobs.length} jobs\n`);
 
       for (const job of jobs.slice(0, 20)) {
-        const salary = job.salary ? ` | $${job.salary.min?.toLocaleString()}-$${job.salary.max?.toLocaleString()}` : '';
+        const salary = job.salary ? ` | ${formatSalary(job.salary)}` : '';
         const loc = job.location ? ` | ${job.location}` : '';
         const dept = job.department ? ` [${job.department}]` : '';
         console.log(`  ${job.title}${dept}${loc}${salary}`);
@@ -182,6 +182,13 @@ Examples:
   jd-intel detect figma
   jd-intel registry search fintech`);
   }
+}
+
+function formatSalary({ min, max, currency, period }) {
+  const range = `${min?.toLocaleString()}-${max?.toLocaleString()} ${currency}`;
+  if (period === 'hour') return `${range}/hr`;
+  if (period === 'month') return `${range}/mo`;
+  return range;
 }
 
 main().catch(err => {

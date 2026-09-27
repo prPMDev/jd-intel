@@ -94,7 +94,13 @@ describe('fetchLever', () => {
   test('extracts salary from title (Lever pattern)', async (t) => {
     mockFetch(t);
     const [job] = await fetchLever('testco');
-    assert.deepEqual(job.salary, { min: 150000, max: 200000, currency: 'USD' });
+    assert.deepEqual(job.salary, { min: 150000, max: 200000, currency: 'USD', period: 'year', source: 'text' });
+  });
+
+  test('passes the HTML description through normalize (stripped once)', async (t) => {
+    mockFetch(t);
+    const [job] = await fetchLever('testco');
+    assert.equal(job.description, 'Own the partner integration ecosystem.');
   });
 
   test('preserves Lever-specific metadata', async (t) => {
