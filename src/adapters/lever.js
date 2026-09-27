@@ -1,4 +1,4 @@
-import { normalize, stripHtml } from '../normalizer.js';
+import { normalize, extractSalaryFromText } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 
 const BASE_URL = 'https://api.lever.co/v0/postings';
@@ -23,7 +23,8 @@ export async function fetchLever(slug) {
   if (!Array.isArray(jobs)) return [];
 
   return jobs.map(job => {
-    const salary = parseLeverSalary(job.categories?.commitment, job.text);
+    // Lever has no salary field, but some postings put the range in the title.
+    const salary = extractSalaryFromText(job.text || '');
 
     return normalize({
       companySlug: slug,
@@ -34,7 +35,7 @@ export async function fetchLever(slug) {
       title: job.text || '',
       department: job.categories?.department || job.categories?.team || '',
       location: job.categories?.location || '',
-      description: stripHtml(job.descriptionPlain || job.description || ''),
+      description: job.description || job.descriptionPlain || '',
       url: job.hostedUrl || '',
       postedAt: job.createdAt ? new Date(job.createdAt).toISOString() : null,
       salary,
@@ -53,19 +54,6 @@ function titleCaseSlug(slug) {
   // "cockroachlabs" → "Cockroachlabs", "netflix" → "Netflix"
   // Best-effort display name; users should prefer companySlug for exact matching.
   return slug.charAt(0).toUpperCase() + slug.slice(1);
-}
-
-function parseLeverSalary(commitment, title) {
-  // Lever doesn't have a salary field, but sometimes it's in the title
-  const match = (title || '').match(/\$[\d,]+\s*[-–]\s*\$[\d,]+/);
-  if (!match) return null;
-  const nums = match[0].match(/[\d,]+/g);
-  if (!nums || nums.length < 2) return null;
-  return {
-    min: parseInt(nums[0].replace(/,/g, '')),
-    max: parseInt(nums[1].replace(/,/g, '')),
-    currency: 'USD',
-  };
 }
 
 export async function hasLever(slug) {

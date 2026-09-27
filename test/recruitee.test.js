@@ -89,7 +89,15 @@ describe('fetchRecruitee', () => {
   test('extracts salary from description text', async (t) => {
     mockFetch(t);
     const [job] = await fetchRecruitee('testco');
-    assert.deepEqual(job.salary, { min: 150000, max: 200000, currency: 'USD' });
+    assert.deepEqual(job.salary, { min: 150000, max: 200000, currency: 'USD', period: 'year', source: 'text' });
+  });
+
+  test('strips HTML once: attributed <li> bullets and escaped text survive', async (t) => {
+    mockFetch(t, {
+      body: { offers: [{ ...FIXTURE.offers[0], description: '<ul><li class="req">C++ and &lt;5 years</li><li>Dutch is a plus</li></ul>' }] },
+    });
+    const [job] = await fetchRecruitee('testco');
+    assert.equal(job.description, '- C++ and <5 years\n- Dutch is a plus');
   });
 
   test('prefixes remote locations', async (t) => {

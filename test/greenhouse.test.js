@@ -55,6 +55,42 @@ const FIXTURE = {
 
 const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
 
+/**
+ * Trimmed from a live board response (issue #66). Greenhouse escapes the
+ * whole `content` string, so tags arrive as &lt;p&gt;, quotes as &quot;,
+ * apostrophes as &#39;, and the author's own entities double-encoded
+ * (&amp;mdash;, &amp;lt;). The pay transparency block is Greenhouse's own
+ * markup: title div, pay-range div, spans with a divider between them.
+ */
+const ESCAPED_FIXTURE = {
+  jobs: [
+    {
+      id: 4000000001,
+      internal_job_id: 4000000001,
+      title: 'Enterprise Account Executive',
+      updated_at: '2026-07-22T05:37:08-04:00',
+      absolute_url: 'https://boards.greenhouse.io/testco/jobs/4000000001?gh_jid=4000000001',
+      location: { name: 'San Francisco, CA • New York, NY • United States' },
+      departments: [{ name: 'Sales' }],
+      offices: [{ name: 'US' }],
+      content:
+        '&lt;div class=&quot;content-intro&quot;&gt;&lt;p&gt;We build tools for teams. If you&#39;re excited to shape the future of collaboration, join us!&lt;/p&gt;&lt;/div&gt;' +
+        '&lt;h4&gt;&lt;strong&gt;What you&#39;ll do:&lt;/strong&gt;&lt;/h4&gt;\n' +
+        '&lt;ul&gt;\n' +
+        '&lt;li&gt;Own services written in C++ and Python&lt;/li&gt;\n' +
+        '&lt;li&gt;Build relationships with key decision-makers in enterprise accounts (5000+ FTEs)&lt;/li&gt;\n' +
+        '&lt;/ul&gt;\n' +
+        '&lt;p&gt;You bring 8+ years of experience and &amp;lt;5 years in your current role.&lt;/p&gt;\n' +
+        '&lt;div&gt;&lt;div&gt;&lt;div class=&quot;description&quot;&gt;&lt;p&gt;Pay ranges are set by location and level.&lt;/p&gt;&lt;/div&gt;' +
+        '&lt;div class=&quot;title&quot;&gt;Annual Base Salary Range:&lt;/div&gt;' +
+        '&lt;div class=&quot;pay-range&quot;&gt;&lt;span&gt;$165,000&lt;/span&gt;&lt;span class=&quot;divider&quot;&gt;&amp;mdash;&lt;/span&gt;&lt;span&gt;$190,000 USD&lt;/span&gt;&lt;/div&gt;' +
+        '&lt;/div&gt;&lt;/div&gt;' +
+        '&lt;div class=&quot;content-conclusion&quot;&gt;&lt;p&gt;We are an &lt;a href=&quot;https://example.com/eeo&quot;&gt;equal opportunity workplace&lt;/a&gt;. ' +
+        'Applications are processed under our &lt;a class=&quot;c-link&quot; href=&quot;https://example.com/privacy&quot; target=&quot;_blank&quot;&gt;Candidate Privacy Notice&lt;/a&gt;.&lt;/p&gt;&lt;/div&gt;',
+    },
+  ],
+};
+
 function mockFetch(t, { status = 200, body = FIXTURE } = {}) {
   t.mock.method(global, 'fetch', async () => ({
     ok: status >= 200 && status < 300,
@@ -132,7 +168,7 @@ describe('fetchGreenhouse', () => {
   test('extracts salary from description text', async (t) => {
     mockFetch(t);
     const [job] = await fetchGreenhouse('vercel');
-    assert.deepEqual(job.salary, { min: 196000, max: 294000, currency: 'USD' });
+    assert.deepEqual(job.salary, { min: 196000, max: 294000, currency: 'USD', period: 'year', source: 'text' });
   });
 
   test('preserves departments and offices in metadata', async (t) => {
@@ -166,5 +202,46 @@ describe('fetchGreenhouse', () => {
 
     assert.equal(recent.length, 1);
     assert.equal(recent[0].title, 'Design Engineer');
+  });
+});
+
+describe('fetchGreenhouse with HTML-escaped content (issue #66)', () => {
+  test('keeps C++, apostrophes and a real dash', async (t) => {
+    mockFetch(t, { body: ESCAPED_FIXTURE });
+    const [job] = await fetchGreenhouse('testco');
+    assert.match(job.description, /C\+\+ and Python/);
+    assert.match(job.description, /you're excited/);
+    assert.match(job.description, /What you'll do:/);
+    assert.match(job.description, /8\+ years of experience/);
+    assert.match(job.description, /\$165,000—\$190,000 USD/);
+  });
+
+  test('keeps text the author escaped on purpose (&amp;lt;5 years -> <5 years)', async (t) => {
+    mockFetch(t, { body: ESCAPED_FIXTURE });
+    const [job] = await fetchGreenhouse('testco');
+    assert.match(job.description, /<5 years in your current role/);
+  });
+
+  test('parses the pay transparency range', async (t) => {
+    mockFetch(t, { body: ESCAPED_FIXTURE });
+    const [job] = await fetchGreenhouse('testco');
+    assert.deepEqual(job.salary, { min: 165000, max: 190000, currency: 'USD', period: 'year', source: 'text' });
+  });
+
+  test('breaks blocks so the pay range and the next paragraph do not run together', async (t) => {
+    mockFetch(t, { body: ESCAPED_FIXTURE });
+    const [job] = await fetchGreenhouse('testco');
+    assert.match(job.description, /Annual Base Salary Range:\n\$165,000/);
+    assert.match(job.description, /\$190,000 USD\n/);
+    assert.doesNotMatch(job.description, /USDWe/);
+  });
+
+  test('renders headings and bullets, leaves no tags or literal entities', async (t) => {
+    mockFetch(t, { body: ESCAPED_FIXTURE });
+    const [job] = await fetchGreenhouse('testco');
+    assert.match(job.description, /^## What you'll do:/m);
+    assert.match(job.description, /^- Own services written in C\+\+ and Python$/m);
+    assert.doesNotMatch(job.description, /<(?:p|div|span|a|li|ul|h4|strong)\b/);
+    assert.doesNotMatch(job.description, /&(?:mdash|lt|gt|quot|amp|#\d+);/);
   });
 });

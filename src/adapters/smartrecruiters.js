@@ -1,4 +1,4 @@
-import { normalize, stripHtml } from '../normalizer.js';
+import { normalize } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 
 const BASE_URL = 'https://api.smartrecruiters.com/v1/companies';
@@ -77,7 +77,7 @@ export async function fetchSmartrecruiters(slug) {
       title: p.name || '',
       department: p.department?.label || p.function?.label || '',
       location,
-      description: stripHtml(description),
+      description,
       url: postingUrl,
       postedAt: p.releasedDate || null,
       salary: null, // SmartRecruiters has no structured salary; normalizer parses text

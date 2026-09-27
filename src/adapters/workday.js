@@ -1,4 +1,4 @@
-import { normalize, stripHtml } from '../normalizer.js';
+import { normalize } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 
 const MAX_DETAIL_FETCHES = 100;
@@ -137,7 +137,7 @@ export async function fetchWorkday(slug, ctx = {}) {
       title: p.title || info.title || '',
       department: '',
       location: info.location || p.locationsText || '',
-      description: stripHtml(info.jobDescription || ''),
+      description: info.jobDescription || '',
       url: `https://${tenant}.${env}.myworkdayjobs.com/${site}${externalPath}`,
       postedAt: parseWorkdayDate(info.startDate) || normalizePostedOn(p.postedOn),
       salary: null, // normalizer extracts from description text

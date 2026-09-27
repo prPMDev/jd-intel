@@ -1,4 +1,4 @@
-import { normalize, stripHtml } from '../normalizer.js';
+import { normalize } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 
 /**
@@ -44,7 +44,7 @@ export async function fetchRecruitee(slug) {
       title: offer.title || '',
       department: offer.department || '',
       location,
-      description: stripHtml(offer.description || ''),
+      description: offer.description || '',
       url: offer.careers_url || offer.careers_apply_url || '',
       postedAt,
       salary: null, // No structured salary; normalizer parses from text
