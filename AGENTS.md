@@ -90,7 +90,7 @@ jd-intel/
 │   ├── resources.js              # Registry Resource
 │   ├── descriptions.js           # Tool description strings (the AI surface)
 │   ├── envelope.js               # {status, data, metadata} response wrapper
-│   ├── errors.js                 # 6-code error taxonomy
+│   ├── errors.js                 # 7-code error taxonomy (library's 6 + internal_error)
 │   ├── install.js                # `npx jd-intel-mcp install` auto-configurator
 │   └── README.md
 ├── .github/workflows/
@@ -126,7 +126,7 @@ jd-intel/
 - 3 tools (fetch_jobs, search_registry, detect_ats) + 1 Resource (registry)
 - Stdio transport; HTTP/Cloudflare Workers version is roadmap (#22 + future)
 - Uniform envelope `{status, data, metadata}` across every tool
-- 6-code error taxonomy (no `hint` field; tool description teaches recovery)
+- 7-code error taxonomy: the library's six plus internal_error for an exception that escapes a handler (no `hint` field; tool description teaches recovery)
 - Tool names use snake_case for MCP convention; library API uses camelCase
 
 **Registry-first routing:**

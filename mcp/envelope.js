@@ -29,9 +29,17 @@ export function error(code, message, metadata = {}) {
   return wrap({
     status: 'error',
     data: null,
-    error: { code, message },
+    error: { code, message: messageText(message) },
     metadata,
   });
+}
+
+// envelopeSchema declares error.message as a string and the SDK Client rejects
+// the whole envelope when it is not one. Handlers forward err.message from
+// whatever was thrown, which for a non-Error value can be anything.
+function messageText(message) {
+  if (typeof message === 'string' && message) return message;
+  return String(message ?? '') || 'Unknown error';
 }
 
 function wrap(payload) {
@@ -50,14 +58,24 @@ function wrap(payload) {
 
 /**
  * Build a tool's outputSchema from the schema of its `data` field.
- * Error responses skip SDK output validation (isError), so `data` schemas
- * only need to describe success/partial payloads.
+ *
+ * Two validators read this schema. The server skips isError results, but the
+ * SDK Client validates any structuredContent against the JSON Schema it cached
+ * from tools/list, error envelopes included. So `dataSchema` must accept null
+ * (every error envelope carries data: null) and the error object must match.
+ *
+ * Extension rule: new response information goes in `metadata` (an open
+ * record) or on the job items, never at the top level or on `error`. Those
+ * two are .passthrough() only so a client still holding an older tools/list
+ * keeps working if a field ever lands there.
  */
 export function envelopeSchema(dataSchema) {
-  return z.object({
-    status: z.enum(['success', 'partial', 'error']),
-    data: dataSchema,
-    error: z.object({ code: z.string(), message: z.string() }).optional(),
-    metadata: z.record(z.unknown()),
-  });
+  return z
+    .object({
+      status: z.enum(['success', 'partial', 'error']),
+      data: dataSchema,
+      error: z.object({ code: z.string(), message: z.string() }).passthrough().optional(),
+      metadata: z.record(z.unknown()),
+    })
+    .passthrough();
 }

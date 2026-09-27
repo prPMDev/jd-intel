@@ -125,7 +125,7 @@ All three tools return a uniform envelope:
 }
 ```
 
-On errors, the envelope adds `"error": { "code", "message" }`. Error codes come from a fixed taxonomy (`company_not_found`, `ats_unreachable`, `invalid_args`, `partial_failure`, `rate_limited`, `no_results`).
+On errors, the envelope adds `"error": { "code", "message" }`. Error codes come from a fixed taxonomy (`company_not_found`, `ats_unreachable`, `invalid_args`, `partial_failure`, `rate_limited`, `no_results`, `internal_error`). `internal_error` means an exception inside the server, not a problem with the arguments.
 
 The envelope comes back twice in every response: as JSON text for clients that only show text, and as typed `structuredContent` that matches each tool's published `outputSchema`. Error responses also set the protocol's `isError` flag, so clients can show them as failures.
 
