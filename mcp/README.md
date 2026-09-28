@@ -79,7 +79,7 @@ Plus one Resource: `registry://jd-intel/all`. Full company registry, grouped by 
 - `order` is `"newest"` (default: by `postedAt`, undated last, ties by `id`) or `"board"` (the ATS's own order). Sorting runs before the cut, so a cut drops the oldest matches first.
 - `offset` (default 0) skips the first N matches after sorting. Pass `offset = metadata.next_offset` for the next page. Every page fetches the board again, so narrow the filters first.
 
-Each success adds to `metadata`: `total_matched` (matches after filters, before offset, limit and the budget), `truncated` (`null`, or `{ reason: "limit" | "size", not_returned }`), `est_tokens` (characters/4 of the text block), `offset`, `next_offset` (`null` when nothing is left) and `order`. `count` stays the number of jobs returned. On Workday, `total_matched`, `truncated` and `next_offset` describe only the postings the adapter read, at most 100 per call, so the total can be a lower bound and offset pages can repeat or skip a posting until [#26](https://github.com/prPMDev/jd-intel/issues/26) ships its scan report.
+Each success adds to `metadata`: `total_matched` (matches after filters, before offset, limit and the budget), `truncated` (`null`, or `{ reason: "limit" | "size", not_returned }`), `est_tokens` (characters/4 of the text block), `offset`, `next_offset` (`null` when nothing is left) and `order`. `count` stays the number of jobs returned. On Workday and SmartRecruiters, `total_matched`, `truncated` and `next_offset` describe only the postings the adapter read, at most 100 per call, so the total can be a lower bound and offset pages can repeat or skip a posting until [#26](https://github.com/prPMDev/jd-intel/issues/26) ships its scan report.
 
 ---
 

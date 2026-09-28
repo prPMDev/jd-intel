@@ -1,12 +1,14 @@
 import { normalize } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 import { atsFetch, probeResult } from '../http.js';
+import { makeLocationMatcher } from '../filters.js';
 
 const BASE_URL = 'https://api.smartrecruiters.com/v1/companies';
 const PAGE_SIZE = 100;
+const MAX_DETAIL_FETCHES = 100;
 
 /**
- * Fetch all postings from a SmartRecruiters company.
+ * Fetch postings from a SmartRecruiters company.
  * Public API, no auth required.
  * Docs: https://developers.smartrecruiters.com/reference/postingsget-1
  *
@@ -15,14 +17,21 @@ const PAGE_SIZE = 100;
  *     and the structured `compensation` block with it.
  *   - jd-intel's contract is "full JD text", so we must fetch each
  *     posting's DETAIL endpoint to get jobAd.sections.
- * Large enterprise tenants with hundreds of openings will therefore be
- * slow against SmartRecruiters specifically. This is the API's shape,
- * not a bug here.
+ *
+ * The list does carry name, location and releasedDate, so the same
+ * pre-filter and detail budget Workday applies run here: list-evaluable
+ * filters narrow the candidates, then at most MAX_DETAIL_FETCHES of them
+ * are hydrated (see the budget note below). Without a filterContext the
+ * cap still holds, so a direct call on a 400-posting tenant reads 100.
  *
  * @param {string} slug - SmartRecruiters company identifier (e.g., 'Visa')
+ * @param {object} [ctx] - { filterContext, report }; report(scan) is called
+ *   once with { ats, listed, prefiltered, hydrated, capped } when given
  * @returns {Promise<Array>} Normalized job objects
  */
-export async function fetchSmartrecruiters(slug) {
+export async function fetchSmartrecruiters(slug, ctx = {}) {
+  const fc = ctx.filterContext || {};
+
   // 1. Page through the postings list.
   const postings = [];
   let offset = 0;
@@ -44,13 +53,69 @@ export async function fetchSmartrecruiters(slug) {
     if (content.length === 0 || offset >= (data.totalFound || 0)) break;
   }
 
-  // 2. Fetch detail per posting for the description. atsFetch's per-host
-  //    queue keeps this fan-out to 4 requests at a time, so a tenant with
-  //    hundreds of postings takes about N x 0.4s / 4 (a 412-posting tenant
-  //    measured 53s), past the MCP SDK's 60s default at roughly 500.
-  //    Bounding the detail set by the filters and `limit` first, the way
-  //    workday.js does, is #26; the ctx this function ignores carries them.
-  const jobs = await Promise.all(postings.map(async (p) => {
+  // 2. Filter-aware candidate selection BEFORE the N+1 detail cost.
+  //    The list row carries name, location and releasedDate, and the
+  //    library re-applies every filter after this returns, so a keep here
+  //    is never final. The detail adds no location (unlike Workday's
+  //    additionalLocations), so a row with none follows the library's
+  //    rule now: out under includes, kept under excludes.
+  let candidates = postings;
+
+  if (fc.titleFilter) {
+    const re = new RegExp(fc.titleFilter, 'i');
+    candidates = candidates.filter(p => re.test(p.name || ''));
+  }
+  if (Array.isArray(fc.locationIncludes) && fc.locationIncludes.length > 0) {
+    const matchers = fc.locationIncludes.map(makeLocationMatcher);
+    candidates = candidates.filter(p => {
+      const loc = listLocation(p).location.toLowerCase();
+      return matchers.some(m => m(loc));
+    });
+  }
+  if (Array.isArray(fc.locationExcludes) && fc.locationExcludes.length > 0) {
+    const matchers = fc.locationExcludes.map(makeLocationMatcher);
+    candidates = candidates.filter(p => {
+      const loc = listLocation(p).location.toLowerCase();
+      return !loc || !matchers.some(m => m(loc));
+    });
+  }
+  if (typeof fc.postedWithinDays === 'number') {
+    // postedAt comes from releasedDate alone, so the library's rule can
+    // run here in full: a missing or unparseable date is out either way.
+    const cutoff = Date.now() - fc.postedWithinDays * 86400000;
+    candidates = candidates.filter(p => {
+      const released = new Date(p.releasedDate || '').getTime();
+      return Number.isFinite(released) && released >= cutoff;
+    });
+  }
+
+  // 3. Bound the detail-fetch set, Workday's reasoning verbatim: a
+  //    description `filter` is applied by the library AFTER this returns,
+  //    so that case keeps the full backstop instead of truncating to
+  //    `limit` (which could hydrate jobs that all fail the regex while
+  //    better matches go unscanned). The library pages with `offset`
+  //    after this returns, so the budget covers the page plus what
+  //    precedes it. Candidates keep list order.
+  const limit = typeof fc.limit === 'number' && fc.limit > 0 ? fc.limit : 100;
+  const skip = typeof fc.offset === 'number' && fc.offset > 0 ? fc.offset : 0;
+  const cap = fc.filter ? MAX_DETAIL_FETCHES : Math.min(skip + limit, MAX_DETAIL_FETCHES);
+  const hydrate = candidates.slice(0, cap);
+
+  if (typeof ctx.report === 'function') {
+    ctx.report({
+      ats: 'smartrecruiters',
+      listed: postings.length,
+      prefiltered: candidates.length,
+      hydrated: hydrate.length,
+      capped: hydrate.length < candidates.length,
+    });
+  }
+
+  // 4. Fetch detail per candidate for the description. atsFetch's per-host
+  //    queue keeps this fan-out to 4 requests at a time (a 412-posting
+  //    tenant measured 53s unbounded), so the cap also holds the detail
+  //    step to roughly 13s.
+  const jobs = await Promise.all(hydrate.map(async (p) => {
     let sections = {};
     let postingUrl = '';
     let salary = null;
@@ -65,7 +130,7 @@ export async function fetchSmartrecruiters(slug) {
       }
     } catch {
       // Detail fetch failed, retries included: fall back to list-only
-      // fields (no description). Reporting this is #26.
+      // fields (no description). Reporting this is #85.
     }
 
     const description = [
@@ -74,18 +139,7 @@ export async function fetchSmartrecruiters(slug) {
       sections.additionalInformation?.text,
     ].filter(Boolean).join('\n\n');
 
-    const loc = p.location || {};
-    const place = loc.fullLocation
-      || [loc.city, loc.region, loc.country].filter(Boolean).join(', ');
-    let location = place;
-    let workplace = null;
-    if (loc.remote) {
-      location = `Remote - ${place}`.replace(/ - $/, ' ');
-      workplace = 'remote';
-    } else if (loc.hybrid) {
-      location = `Hybrid - ${place}`.replace(/ - $/, ' ');
-      workplace = 'hybrid';
-    }
+    const { location, workplace } = listLocation(p);
 
     return normalize({
       companySlug: slug,
@@ -109,6 +163,20 @@ export async function fetchSmartrecruiters(slug) {
   }));
 
   return jobs;
+}
+
+/**
+ * The location string and workplace type a list row yields. Built once
+ * here so the pre-filter matches exactly what the normalized job carries,
+ * "Remote - " and "Hybrid - " prefixes included.
+ */
+function listLocation(p) {
+  const loc = p.location || {};
+  const place = loc.fullLocation
+    || [loc.city, loc.region, loc.country].filter(Boolean).join(', ');
+  if (loc.remote) return { location: `Remote - ${place}`.replace(/ - $/, ' '), workplace: 'remote' };
+  if (loc.hybrid) return { location: `Hybrid - ${place}`.replace(/ - $/, ' '), workplace: 'hybrid' };
+  return { location: place, workplace: null };
 }
 
 const PERIODS = { YEARLY: 'year', MONTHLY: 'month', HOURLY: 'hour' };
