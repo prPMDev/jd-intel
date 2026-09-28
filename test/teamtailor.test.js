@@ -1,7 +1,10 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchTeamtailor } from '../src/adapters/teamtailor.js';
+import { fetchTeamtailor, hasTeamtailor } from '../src/adapters/teamtailor.js';
 import { applyFilters } from '../src/filters.js';
+import { disableRetries, isAtsError, probeFailureTests } from './helpers.js';
+
+disableRetries();
 
 /**
  * TeamTailor is RSS-based, not JSON. The mock returns text() (not json()).
@@ -121,12 +124,14 @@ describe('fetchTeamtailor', () => {
     assert.deepEqual(jobs, []);
   });
 
-  test('throws on non-404 error', async (t) => {
+  test('a 5xx throws ats_unreachable carrying the status', async (t) => {
     mockFetch(t, { status: 500, body: '' });
-    await assert.rejects(
-      () => fetchTeamtailor('testco'),
-      /TeamTailor RSS error for testco: 500/
-    );
+    await assert.rejects(() => fetchTeamtailor('testco'), isAtsError('ats_unreachable', 500));
+  });
+
+  test('a non-404 status other than 429 or 5xx throws with the adapter message', async (t) => {
+    mockFetch(t, { status: 403, body: '' });
+    await assert.rejects(() => fetchTeamtailor('testco'), /TeamTailor RSS error for testco: 403/);
   });
 
   test('maps a job to the unified schema', async (t) => {
@@ -233,4 +238,44 @@ describe('fetchTeamtailor', () => {
     const jobs = await fetchTeamtailor('emptyco');
     assert.deepEqual(jobs, []);
   });
+});
+
+describe('hasTeamtailor', () => {
+  // Routes by host: `byHost` maps a hostname to a status; anything else is a 404.
+  function regionalMock(t, byHost) {
+    const calls = [];
+    t.mock.method(global, 'fetch', async (url, init) => {
+      const host = new URL(url).hostname;
+      calls.push({ host, method: init.method });
+      const status = byHost[host] ?? 404;
+      return { ok: status >= 200 && status < 300, status, text: async () => '' };
+    });
+    return calls;
+  }
+
+  test('true when the base host serves the feed, using HEAD', async (t) => {
+    const calls = regionalMock(t, { 'testco.teamtailor.com': 200 });
+    assert.equal(await hasTeamtailor('testco'), true);
+    assert.deepEqual(calls, [{ host: 'testco.teamtailor.com', method: 'HEAD' }]);
+  });
+
+  test('a 404 on the base host moves to the regional hosts', async (t) => {
+    const calls = regionalMock(t, { 'crunchbase.na.teamtailor.com': 200 });
+    assert.equal(await hasTeamtailor('crunchbase'), true);
+    assert.deepEqual(calls.map(c => c.host), ['crunchbase.teamtailor.com', 'crunchbase.na.teamtailor.com']);
+  });
+
+  test('false only when the base and the na host both answer 404; eu is never probed', async (t) => {
+    const calls = regionalMock(t, {});
+    assert.equal(await hasTeamtailor('nonexistent'), false);
+    assert.deepEqual(calls.map(c => c.host), ['nonexistent.teamtailor.com', 'nonexistent.na.teamtailor.com']);
+  });
+
+  test('a 429 on the base host throws instead of moving to the regional host', async (t) => {
+    const calls = regionalMock(t, { 'testco.teamtailor.com': 429, 'testco.na.teamtailor.com': 200 });
+    await assert.rejects(hasTeamtailor('testco'), isAtsError('rate_limited', 429));
+    assert.deepEqual(calls.map(c => c.host), ['testco.teamtailor.com']);
+  });
+
+  probeFailureTests(hasTeamtailor, 'testco');
 });

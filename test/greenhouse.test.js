@@ -1,7 +1,8 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchGreenhouse } from '../src/adapters/greenhouse.js';
+import { fetchGreenhouse, hasGreenhouse } from '../src/adapters/greenhouse.js';
 import { applyFilters } from '../src/filters.js';
+import { disableRetries, isAtsError, probeFailureTests } from './helpers.js';
 
 /**
  * Why we mock fetch in adapter tests:
@@ -11,12 +12,15 @@ import { applyFilters } from '../src/filters.js';
  *
  * Node 22's fetch is a global, so we override it per-test using
  * t.mock.method(). It auto-restores after the test. No afterEach needed.
+ * Retries are off for the file (see helpers.js), so a 5xx is one call.
  *
  * FIXTURE is trimmed from a real /jobs?content=true response (2026-09-27).
  * Top-level keys are `jobs` and `meta` only; there is no `name`. Greenhouse
  * returns `content` HTML-entity-encoded, and the fixture keeps it that way.
  * The second job has `first_published` removed to cover the fallback.
  */
+
+disableRetries();
 
 const FIXTURE = {
   jobs: [
@@ -119,12 +123,14 @@ describe('fetchGreenhouse', () => {
     assert.deepEqual(jobs, []);
   });
 
-  test('throws on non-404 error', async (t) => {
+  test('a 5xx throws ats_unreachable carrying the status', async (t) => {
     mockFetch(t, { status: 500, body: {} });
-    await assert.rejects(
-      () => fetchGreenhouse('vercel'),
-      /Greenhouse API error for vercel: 500/
-    );
+    await assert.rejects(() => fetchGreenhouse('vercel'), isAtsError('ats_unreachable', 500));
+  });
+
+  test('a 429 throws rate_limited', async (t) => {
+    mockFetch(t, { status: 429, body: {} });
+    await assert.rejects(() => fetchGreenhouse('vercel'), isAtsError('rate_limited', 429));
   });
 
   test('maps a job to the unified schema', async (t) => {
@@ -300,4 +306,23 @@ describe('fetchGreenhouse with HTML-escaped content (issue #66)', () => {
     assert.doesNotMatch(job.description, /<(?:p|div|span|a|li|ul|h4|strong)\b/);
     assert.doesNotMatch(job.description, /&(?:mdash|lt|gt|quot|amp|#\d+);/);
   });
+});
+
+describe('hasGreenhouse', () => {
+  test('true on a 2xx, probing the board root with HEAD', async (t) => {
+    const calls = [];
+    t.mock.method(global, 'fetch', async (url, init) => {
+      calls.push({ url, method: init.method });
+      return { ok: true, status: 200 };
+    });
+    assert.equal(await hasGreenhouse('vercel'), true);
+    assert.deepEqual(calls, [{ url: 'https://boards-api.greenhouse.io/v1/boards/vercel', method: 'HEAD' }]);
+  });
+
+  test('false on a 404', async (t) => {
+    mockFetch(t, { status: 404, body: {} });
+    assert.equal(await hasGreenhouse('nonexistent'), false);
+  });
+
+  probeFailureTests(hasGreenhouse, 'vercel');
 });

@@ -1,6 +1,9 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { fetchSmartrecruiters, hasSmartrecruiters } from '../src/adapters/smartrecruiters.js';
+import { disableRetries, isAtsError, probeFailureTests } from './helpers.js';
+
+disableRetries();
 
 /**
  * SmartRecruiters is a two-call adapter (list + per-posting detail).
@@ -135,12 +138,40 @@ describe('fetchSmartrecruiters', () => {
     assert.deepEqual(jobs, []);
   });
 
-  test('throws on non-404 error', async (t) => {
+  test('a 5xx on the list throws ats_unreachable carrying the status', async (t) => {
     mockFetch(t, { listStatus: 500, list: {} });
-    await assert.rejects(
-      () => fetchSmartrecruiters('testco'),
-      /SmartRecruiters API error for testco: 500/
-    );
+    await assert.rejects(() => fetchSmartrecruiters('testco'), isAtsError('ats_unreachable', 500));
+  });
+
+  test('a detail 429 that outlasts the retries keeps the list-only fields', async (t) => {
+    // Reporting the missing description is #26; the posting itself survives.
+    t.mock.method(global, 'fetch', async (url) => {
+      if (url.includes('/postings/')) return { ok: false, status: 429, json: async () => ({}) };
+      return { ok: true, status: 200, json: async () => LIST_FIXTURE };
+    });
+    const [job] = await fetchSmartrecruiters('testco');
+    assert.equal(job.title, 'Staff Product Manager');
+    assert.equal(job.description, '');
+    assert.equal(job.url, '');
+  });
+
+  test('detail fetches run at most 4 at a time through the per-host queue', async (t) => {
+    const content = Array.from({ length: 10 }, (_, i) => ({ ...LIST_FIXTURE.content[0], id: `74400${i}` }));
+    let inFlight = 0;
+    let peak = 0;
+    t.mock.method(global, 'fetch', async (url) => {
+      if (!url.includes('/postings/')) {
+        return { ok: true, status: 200, json: async () => ({ ...LIST_FIXTURE, totalFound: 10, content }) };
+      }
+      inFlight += 1;
+      peak = Math.max(peak, inFlight);
+      await new Promise(r => setTimeout(r, 5));
+      inFlight -= 1;
+      return { ok: true, status: 200, json: async () => DETAIL_FIXTURE };
+    });
+    const jobs = await fetchSmartrecruiters('testco');
+    assert.equal(jobs.length, 10);
+    assert.equal(peak, 4);
   });
 
   test('maps a job to the unified schema', async (t) => {
@@ -284,4 +315,6 @@ describe('hasSmartrecruiters', () => {
     t.mock.method(global, 'fetch', async () => ({ ok: false, status: 404, json: async () => ({}) }));
     assert.equal(await hasSmartrecruiters('nope'), false);
   });
+
+  probeFailureTests(hasSmartrecruiters, 'testco');
 });

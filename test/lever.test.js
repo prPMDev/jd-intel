@@ -1,7 +1,10 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchLever } from '../src/adapters/lever.js';
+import { fetchLever, hasLever } from '../src/adapters/lever.js';
 import { applyFilters } from '../src/filters.js';
+import { disableRetries, isAtsError, probeFailureTests } from './helpers.js';
+
+disableRetries();
 
 /**
  * Lever's API returns a bare array of job objects (no wrapper). Each job has
@@ -121,12 +124,9 @@ describe('fetchLever', () => {
     assert.deepEqual(jobs, []);
   });
 
-  test('throws on non-404 error', async (t) => {
+  test('a 5xx throws ats_unreachable carrying the status', async (t) => {
     mockFetch(t, { status: 500, body: {} });
-    await assert.rejects(
-      () => fetchLever('outreach'),
-      /Lever API error for outreach: 500/
-    );
+    await assert.rejects(() => fetchLever('outreach'), isAtsError('ats_unreachable', 500));
   });
 
   test('returns [] when response is not an array', async (t) => {
@@ -301,4 +301,23 @@ describe('fetchLever', () => {
     const jobs = await fetchLever('empty');
     assert.deepEqual(jobs, []);
   });
+});
+
+describe('hasLever', () => {
+  test('true on a 2xx, probing the postings URL with HEAD', async (t) => {
+    const calls = [];
+    t.mock.method(global, 'fetch', async (url, init) => {
+      calls.push({ url, method: init.method });
+      return { ok: true, status: 200 };
+    });
+    assert.equal(await hasLever('outreach'), true);
+    assert.deepEqual(calls, [{ url: 'https://api.lever.co/v0/postings/outreach?mode=json', method: 'HEAD' }]);
+  });
+
+  test('false on a 404', async (t) => {
+    mockFetch(t, { status: 404, body: {} });
+    assert.equal(await hasLever('nonexistent'), false);
+  });
+
+  probeFailureTests(hasLever, 'outreach');
 });

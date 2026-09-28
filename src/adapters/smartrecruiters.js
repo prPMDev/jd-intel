@@ -1,5 +1,6 @@
 import { normalize } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
+import { atsFetch, probeResult } from '../http.js';
 
 const BASE_URL = 'https://api.smartrecruiters.com/v1/companies';
 const PAGE_SIZE = 100;
@@ -28,7 +29,7 @@ export async function fetchSmartrecruiters(slug) {
 
   while (true) {
     const listUrl = `${BASE_URL}/${slug}/postings?limit=${PAGE_SIZE}&offset=${offset}`;
-    const resp = await fetch(listUrl);
+    const resp = await atsFetch(listUrl);
 
     if (!resp.ok) {
       if (resp.status === 404) return []; // Company not found
@@ -43,14 +44,19 @@ export async function fetchSmartrecruiters(slug) {
     if (content.length === 0 || offset >= (data.totalFound || 0)) break;
   }
 
-  // 2. Fetch detail per posting for the description.
+  // 2. Fetch detail per posting for the description. atsFetch's per-host
+  //    queue keeps this fan-out to 4 requests at a time, so a tenant with
+  //    hundreds of postings takes about N x 0.4s / 4 (a 412-posting tenant
+  //    measured 53s), past the MCP SDK's 60s default at roughly 500.
+  //    Bounding the detail set by the filters and `limit` first, the way
+  //    workday.js does, is #26; the ctx this function ignores carries them.
   const jobs = await Promise.all(postings.map(async (p) => {
     let sections = {};
     let postingUrl = '';
     let salary = null;
 
     try {
-      const detailResp = await fetch(`${BASE_URL}/${slug}/postings/${p.id}`);
+      const detailResp = await atsFetch(`${BASE_URL}/${slug}/postings/${p.id}`);
       if (detailResp.ok) {
         const detail = await detailResp.json();
         sections = detail.jobAd?.sections || {};
@@ -58,7 +64,8 @@ export async function fetchSmartrecruiters(slug) {
         salary = parseCompensation(detail.compensation);
       }
     } catch {
-      // Detail fetch failed: fall back to list-only fields (no description).
+      // Detail fetch failed, retries included: fall back to list-only
+      // fields (no description). Reporting this is #26.
     }
 
     const description = [
@@ -130,20 +137,16 @@ function parseCompensation(comp) {
 }
 
 /**
- * Check if a company exists on SmartRecruiters.
- * (HEAD isn't reliably supported on the postings endpoint, so use a
- * minimal GET.)
+ * Check if a company exists on SmartRecruiters. See probeResult for the
+ * outcomes. (HEAD isn't reliably supported on the postings endpoint, so
+ * use a minimal GET.)
  */
 export async function hasSmartrecruiters(slug) {
-  try {
-    const resp = await fetch(`${BASE_URL}/${slug}/postings?limit=1`);
-    if (!resp.ok) return false;
-    // SmartRecruiters returns 200 with an empty page (not 404) for unknown
-    // companies, so resp.ok alone false-positives on any slug. Confirm at
-    // least one real posting exists before claiming a match.
-    const data = await resp.json();
-    return (data.totalFound || 0) > 0 || (data.content || []).length > 0;
-  } catch {
-    return false;
-  }
+  const resp = await atsFetch(`${BASE_URL}/${slug}/postings?limit=1`);
+  if (!probeResult(resp, `SmartRecruiters probe for ${slug}`)) return false;
+  // SmartRecruiters returns 200 with an empty page (not 404) for unknown
+  // companies, so resp.ok alone false-positives on any slug. Confirm at
+  // least one real posting exists before claiming a match.
+  const data = await resp.json();
+  return (data.totalFound || 0) > 0 || (data.content || []).length > 0;
 }

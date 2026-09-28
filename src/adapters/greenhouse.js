@@ -1,5 +1,6 @@
 import { normalize, decodeEntities } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
+import { atsFetch, probeResult } from '../http.js';
 
 const BASE_URL = 'https://boards-api.greenhouse.io/v1/boards';
 
@@ -13,7 +14,7 @@ const BASE_URL = 'https://boards-api.greenhouse.io/v1/boards';
  */
 export async function fetchGreenhouse(slug) {
   const url = `${BASE_URL}/${slug}/jobs?content=true`;
-  const resp = await fetch(url);
+  const resp = await atsFetch(url);
 
   if (!resp.ok) {
     if (resp.status === 404) return []; // Company not found or no jobs
@@ -66,13 +67,9 @@ function parseGreenhouseWorkplace(metadata) {
 }
 
 /**
- * Check if a company has a Greenhouse board.
+ * Check if a company has a Greenhouse board. See probeResult for the outcomes.
  */
 export async function hasGreenhouse(slug) {
-  try {
-    const resp = await fetch(`${BASE_URL}/${slug}`, { method: 'HEAD' });
-    return resp.ok;
-  } catch {
-    return false;
-  }
+  const resp = await atsFetch(`${BASE_URL}/${slug}`, { method: 'HEAD' });
+  return probeResult(resp, `Greenhouse probe for ${slug}`);
 }

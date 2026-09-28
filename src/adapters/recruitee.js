@@ -1,5 +1,6 @@
 import { normalize } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
+import { atsFetch, probeResult } from '../http.js';
 
 /**
  * Fetch jobs from a Recruitee career site.
@@ -22,7 +23,7 @@ import { atsErrorFromStatus } from '../errors.js';
  */
 export async function fetchRecruitee(slug) {
   const url = `https://${slug}.recruitee.com/api/offers/`;
-  const resp = await fetch(url);
+  const resp = await atsFetch(url);
 
   if (!resp.ok) {
     if (resp.status === 404) return []; // No Recruitee site for this slug
@@ -111,13 +112,9 @@ function toAmount(value) {
 }
 
 /**
- * Check if a company has a Recruitee career site.
+ * Check if a company has a Recruitee career site. See probeResult for the outcomes.
  */
 export async function hasRecruitee(slug) {
-  try {
-    const resp = await fetch(`https://${slug}.recruitee.com/api/offers/`);
-    return resp.ok;
-  } catch {
-    return false;
-  }
+  const resp = await atsFetch(`https://${slug}.recruitee.com/api/offers/`);
+  return probeResult(resp, `Recruitee probe for ${slug}`);
 }

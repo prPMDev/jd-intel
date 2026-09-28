@@ -1,5 +1,6 @@
 import { normalize, decodeEntities } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
+import { atsFetch } from '../http.js';
 
 /**
  * Fetch jobs from a TeamTailor career site via its public RSS feed.
@@ -26,23 +27,28 @@ import { atsErrorFromStatus } from '../errors.js';
  * @returns {Promise<Array>} Normalized job objects
  */
 // Most sites are {slug}.teamtailor.com, but some sit on a regional
-// segment, e.g. crunchbase.na.teamtailor.com. '' is the base host.
-const TT_REGIONS = ['', 'na', 'eu'];
+// segment, e.g. crunchbase.na.teamtailor.com. '' is the base host. There
+// is no reachable eu segment: {slug}.eu.teamtailor.com fails TLS for every
+// slug, known or not, because the wildcard certificate covers one label
+// only (live check 2026-09-27). Probing it was a guaranteed failure that
+// the has() contract would now report as an outage.
+const TT_REGIONS = ['', 'na'];
 
 // Feeds send `none`, `hybrid`, `fully` or `onsite`. `none` is no signal.
 const REMOTE_STATUS = { hybrid: 'hybrid', fully: 'remote', onsite: 'onsite' };
 
 /**
  * Resolve which TeamTailor host actually serves this slug's feed.
- * Returns the first 200 Response, throws on a non-404 error, or
- * returns null if no region has a feed.
+ * Returns the first 200 Response, throws on a non-404 error (atsFetch
+ * throws the 429, 5xx and network cases itself), or returns null if no
+ * region has a feed.
  */
 async function resolveFeed(slug, method = 'GET') {
   for (const region of TT_REGIONS) {
     const host = region
       ? `${slug}.${region}.teamtailor.com`
       : `${slug}.teamtailor.com`;
-    const resp = await fetch(`https://${host}/jobs.rss`, {
+    const resp = await atsFetch(`https://${host}/jobs.rss`, {
       method,
       redirect: 'follow',
     });
@@ -120,12 +126,10 @@ export async function fetchTeamtailor(slug) {
 }
 
 /**
- * Check if a company has a TeamTailor career site.
+ * Check if a company has a TeamTailor career site: true when a regional
+ * host serves the feed, false when every host answers 404, and the
+ * AtsError from resolveFeed for anything else.
  */
 export async function hasTeamtailor(slug) {
-  try {
-    return (await resolveFeed(slug, 'HEAD')) !== null;
-  } catch {
-    return false;
-  }
+  return (await resolveFeed(slug, 'HEAD')) !== null;
 }

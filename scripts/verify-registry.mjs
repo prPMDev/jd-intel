@@ -18,10 +18,16 @@
  * up. A small limit keeps huge tenants (e.g. CVS ~16k) cheap; we only
  * need jobCount > 0.
  *
+ * The library retries transient failures itself (src/http.js: 429, 5xx and
+ * network errors, with backoff and Retry-After), so an adapter call that
+ * rejects here has already outlasted that. The script keeps one more pass
+ * of its own (--retries, default 1) as a longer breather for a host that
+ * is rate-limiting a whole run.
+ *
  * Usage:
  *   node scripts/verify-registry.mjs                 # verify live registry
  *   node scripts/verify-registry.mjs --candidates tmp/candidates.json
- *   node scripts/verify-registry.mjs --concurrency 4 --limit 1
+ *   node scripts/verify-registry.mjs --concurrency 4 --limit 1 --retries 2
  *
  * Candidates file shape: { "<ats>": [ {slug, name, sector, config?}, ... ], ... }
  * Report written to tmp/verify-report.json.
@@ -57,17 +63,19 @@ async function loadEntries() {
 // Transient-failure detector. ATS APIs rate-limit under load (Workday and
 // SmartRecruiters both do at modest volume), and a 429 says nothing about
 // whether a board is real. Treating one as a failure produced a 27% false
-// drop rate on a 118-entry run, so these retry with backoff instead.
+// drop rate on a 118-entry run, so these retry with backoff instead. The
+// library's own retries run first; this pass is the second line.
 //
 // The decision is structural, never a message regex: Workday error messages
 // embed the pod name next to the status ("(ufp/wd503/Careers): 404"), so a
 // /5\d\d/ match on the text reads that terminal 404 as a retryable 5xx.
-const RETRIES = Number(getArg('--retries', '3'));
+const RETRIES = Number(getArg('--retries', '1'));
 const NETWORK_ERR = /fetch failed|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket hang up/i;
 
 function isTransient(err) {
   if (err?.code === ERROR_CODES.RATE_LIMITED) return true;      // 429
   if (typeof err?.status === 'number') return err.status >= 500; // 5xx retry, 4xx terminal
+  if (err?.code === ERROR_CODES.ATS_UNREACHABLE) return true;   // no status: network error or timeout
   return NETWORK_ERR.test(err?.message || '');                   // DNS/socket, not an AtsError
 }
 
@@ -95,7 +103,7 @@ async function verifyOne(ats, entry, attempt = 0) {
     return { ats, slug: entry.slug, name: entry.name, status: jobCount > 0 ? 'ok' : 'empty', jobCount };
   } catch (err) {
     if (attempt < RETRIES && isTransient(err)) {
-      // Exponential backoff with jitter: 2s, 4s, 8s.
+      // Exponential backoff with jitter: 2s, then 4s, 8s when --retries is raised.
       const wait = 2000 * 2 ** attempt + Math.floor(Math.random() * 500);
       await new Promise((r) => setTimeout(r, wait));
       return verifyOne(ats, entry, attempt + 1);

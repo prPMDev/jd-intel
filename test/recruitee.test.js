@@ -1,7 +1,10 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchRecruitee } from '../src/adapters/recruitee.js';
+import { fetchRecruitee, hasRecruitee } from '../src/adapters/recruitee.js';
 import { applyFilters } from '../src/filters.js';
+import { disableRetries, isAtsError, probeFailureTests } from './helpers.js';
+
+disableRetries();
 
 /**
  * Recruitee is a single-call JSON adapter. Mock returns json().
@@ -97,12 +100,9 @@ describe('fetchRecruitee', () => {
     assert.deepEqual(jobs, []);
   });
 
-  test('throws on non-404 error', async (t) => {
+  test('a 5xx throws ats_unreachable carrying the status', async (t) => {
     mockFetch(t, { status: 500, body: {} });
-    await assert.rejects(
-      () => fetchRecruitee('channable'),
-      /Recruitee API error for channable: 500/
-    );
+    await assert.rejects(() => fetchRecruitee('channable'), isAtsError('ats_unreachable', 500));
   });
 
   test('maps an offer to the unified schema', async (t) => {
@@ -293,4 +293,23 @@ describe('fetchRecruitee', () => {
     const jobs = await fetchRecruitee('emptyco');
     assert.deepEqual(jobs, []);
   });
+});
+
+describe('hasRecruitee', () => {
+  test('true on a 2xx from the offers endpoint', async (t) => {
+    const calls = [];
+    t.mock.method(global, 'fetch', async (url) => {
+      calls.push(url);
+      return { ok: true, status: 200, json: async () => FIXTURE };
+    });
+    assert.equal(await hasRecruitee('channable'), true);
+    assert.deepEqual(calls, ['https://channable.recruitee.com/api/offers/']);
+  });
+
+  test('false on a 404', async (t) => {
+    mockFetch(t, { status: 404, body: {} });
+    assert.equal(await hasRecruitee('nonexistent'), false);
+  });
+
+  probeFailureTests(hasRecruitee, 'channable');
 });

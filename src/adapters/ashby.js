@@ -1,7 +1,7 @@
 import { normalize, extractSalaryFromText } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
+import { atsFetch, probeResult } from '../http.js';
 
-const API_URL = 'https://jobs.ashbyhq.com/api/non-user-graphql';
 const BOARD_URL = 'https://api.ashbyhq.com/posting-api/job-board';
 
 /**
@@ -9,23 +9,16 @@ const BOARD_URL = 'https://api.ashbyhq.com/posting-api/job-board';
  * Public API, no auth required.
  * Docs: https://developers.ashbyhq.com/docs/public-job-posting-api
  *
+ * REST only. The GraphQL fallback this adapter once carried never named a
+ * board, so it never returned a job, and it turned every REST 429 or 5xx
+ * into a silent empty result (issue #55).
+ *
  * @param {string} slug - Company slug (e.g., 'notion', 'linear')
  * @returns {Promise<Array>} Normalized job objects
  */
 export async function fetchAshby(slug) {
-  // Try the REST API first (simpler, includes compensation)
-  try {
-    const restJobs = await fetchAshbyRest(slug);
-    if (restJobs.length > 0) return restJobs;
-  } catch { /* fall through to GraphQL */ }
-
-  // Fallback: GraphQL API
-  return fetchAshbyGraphQL(slug);
-}
-
-async function fetchAshbyRest(slug) {
   const url = `${BOARD_URL}/${slug}?includeCompensation=true`;
-  const resp = await fetch(url);
+  const resp = await atsFetch(url);
 
   if (!resp.ok) {
     if (resp.status === 404) return [];
@@ -66,58 +59,6 @@ async function fetchAshbyRest(slug) {
       },
     }, 'ashby');
   });
-}
-
-async function fetchAshbyGraphQL(slug) {
-  const query = `{
-    jobBoard {
-      title
-      jobPostings {
-        id
-        title
-        locationName
-        employmentType
-        descriptionHtml
-        publishedDate
-        compensationTierSummary
-      }
-    }
-  }`;
-
-  const resp = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      operationName: 'ApiJobBoardWithTeams',
-      variables: { organizationHostedJobsPageName: slug },
-      query,
-    }),
-  });
-
-  if (!resp.ok) return [];
-
-  const data = await resp.json();
-  const board = data.data?.jobBoard;
-  if (!board) return [];
-
-  const postings = board.jobPostings || [];
-
-  return postings.map(job => normalize({
-    companySlug: slug,
-    company: board.title || slug,
-    title: job.title || '',
-    department: '',
-    location: job.locationName || '',
-    description: job.descriptionHtml || '',
-    url: `https://jobs.ashbyhq.com/${slug}/${job.id}`,
-    postedAt: job.publishedDate || null,
-    salary: null,
-    metadata: {
-      ashbyId: job.id,
-      employmentType: job.employmentType || '',
-      compensationSummary: job.compensationTierSummary || '',
-    },
-  }, 'ashby'));
 }
 
 const WORKPLACE_TYPES = { remote: 'remote', hybrid: 'hybrid', onsite: 'onsite' };
@@ -163,11 +104,10 @@ function parseAshbyCompensation(comp) {
   return parsed ? { ...parsed, source: 'ats' } : null;
 }
 
+/**
+ * Check if a company has an Ashby board. See probeResult for the outcomes.
+ */
 export async function hasAshby(slug) {
-  try {
-    const resp = await fetch(`${BOARD_URL}/${slug}`, { method: 'HEAD' });
-    return resp.ok;
-  } catch {
-    return false;
-  }
+  const resp = await atsFetch(`${BOARD_URL}/${slug}`, { method: 'HEAD' });
+  return probeResult(resp, `Ashby probe for ${slug}`);
 }

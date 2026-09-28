@@ -1,5 +1,6 @@
 import { normalize, extractSalaryFromText } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
+import { atsFetch, probeResult } from '../http.js';
 
 const BASE_URL = 'https://api.lever.co/v0/postings';
 
@@ -17,7 +18,7 @@ const WORKPLACE_TYPES = new Set(['remote', 'hybrid', 'onsite']);
  */
 export async function fetchLever(slug) {
   const url = `${BASE_URL}/${slug}?mode=json`;
-  const resp = await fetch(url);
+  const resp = await atsFetch(url);
 
   if (!resp.ok) {
     if (resp.status === 404) return [];
@@ -102,11 +103,10 @@ function titleCaseSlug(slug) {
   return slug.charAt(0).toUpperCase() + slug.slice(1);
 }
 
+/**
+ * Check if a company has a Lever board. See probeResult for the outcomes.
+ */
 export async function hasLever(slug) {
-  try {
-    const resp = await fetch(`${BASE_URL}/${slug}?mode=json`, { method: 'HEAD' });
-    return resp.ok;
-  } catch {
-    return false;
-  }
+  const resp = await atsFetch(`${BASE_URL}/${slug}?mode=json`, { method: 'HEAD' });
+  return probeResult(resp, `Lever probe for ${slug}`);
 }
