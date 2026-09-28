@@ -1,5 +1,6 @@
 import { normalize } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
+import { makeLocationMatcher } from '../filters.js';
 
 const MAX_DETAIL_FETCHES = 100;
 const LIST_PAGE_SIZE = 20;
@@ -83,21 +84,23 @@ export async function fetchWorkday(slug, ctx = {}) {
     const re = new RegExp(fc.titleFilter, 'i');
     candidates = candidates.filter(p => re.test(p.title || ''));
   }
+  // Location rows go through the applyFilters matcher, so the pre-filter
+  // keeps exactly the rows the pass after hydration would (issue #61).
+  // "2 Locations" says nothing about where: the row stays a candidate
+  // through both filters and that later pass decides on the detail's
+  // location list.
   if (Array.isArray(fc.locationIncludes) && fc.locationIncludes.length > 0) {
-    const inc = fc.locationIncludes.map(s => String(s).toLowerCase());
+    const inc = fc.locationIncludes.map(makeLocationMatcher);
     candidates = candidates.filter(p => {
       const loc = (p.locationsText || '').toLowerCase();
-      // "2 Locations" says nothing about where. The row stays a candidate
-      // and the pass after hydration decides on the detail's location list.
-      if (MULTI_LOCATION.test(loc)) return true;
-      return inc.some(s => loc.includes(s));
+      return MULTI_LOCATION.test(loc) || inc.some(m => m(loc));
     });
   }
   if (Array.isArray(fc.locationExcludes) && fc.locationExcludes.length > 0) {
-    const exc = fc.locationExcludes.map(s => String(s).toLowerCase());
+    const exc = fc.locationExcludes.map(makeLocationMatcher);
     candidates = candidates.filter(p => {
       const loc = (p.locationsText || '').toLowerCase();
-      return !exc.some(s => loc.includes(s));
+      return MULTI_LOCATION.test(loc) || !exc.some(m => m(loc));
     });
   }
   if (typeof fc.postedWithinDays === 'number') {

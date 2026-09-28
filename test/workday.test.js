@@ -451,6 +451,102 @@ describe('fetchWorkday workplace and locations (issue #68)', () => {
   });
 });
 
+// List rows whose text carries a short code only as a substring: "us" inside
+// Australia and Brussels, "uk" inside Ukraine. Same shape as a live tenant's
+// rows (2026-09-27: "North Sydney, Australia", "Diegem, Belgium", "2 Locations").
+const COLLISION_LIST_FIXTURE = {
+  total: 6,
+  jobPostings: [
+    { title: 'Account Executive', externalPath: '/job/Sydney-Australia/Account-Executive_2025384', locationsText: 'Sydney, Australia', postedOn: 'Posted Today', bulletFields: ['2025384'] },
+    { title: 'Solutions Engineer', externalPath: '/job/Brussels-Belgium/Solutions-Engineer_2020019', locationsText: 'Brussels, Belgium', postedOn: 'Posted Today', bulletFields: ['2020019'] },
+    { title: 'Software Engineer', externalPath: '/job/Kyiv-Ukraine/Software-Engineer_2024454', locationsText: 'Kyiv, Ukraine', postedOn: 'Posted 4 Days Ago', bulletFields: ['2024454'] },
+    { title: 'Product Manager', externalPath: '/job/San-Francisco-California-US/Product-Manager_2023289', locationsText: 'San Francisco, California, US', postedOn: 'Posted 6 Days Ago', bulletFields: ['2023289'] },
+    { title: 'Account Manager', externalPath: '/job/London-UK/Account-Manager_2023243', locationsText: 'London, UK', postedOn: 'Posted 6 Days Ago', bulletFields: ['2023243'] },
+    { title: 'Renewals Manager', externalPath: '/job/Amsterdam-Netherlands/Renewals-Manager_2024946', locationsText: '2 Locations', postedOn: 'Posted 3 Days Ago', bulletFields: ['2024946'] },
+  ],
+};
+
+const detailAt = (location, additionalLocations = []) => ({
+  jobPostingInfo: { jobDescription: '<p>Build.</p>', startDate: '2026-09-20', location, additionalLocations },
+});
+
+const COLLISION_DETAILS = {
+  '/job/Sydney-Australia/Account-Executive_2025384': detailAt('Sydney, Australia'),
+  '/job/Brussels-Belgium/Solutions-Engineer_2020019': detailAt('Brussels, Belgium'),
+  '/job/Kyiv-Ukraine/Software-Engineer_2024454': detailAt('Kyiv, Ukraine'),
+  '/job/San-Francisco-California-US/Product-Manager_2023289': detailAt('San Francisco, California, US'),
+  '/job/London-UK/Account-Manager_2023243': detailAt('London, UK'),
+  '/job/Amsterdam-Netherlands/Renewals-Manager_2024946': detailAt('Amsterdam, Netherlands', ['Austin, Texas, US']),
+};
+
+describe('fetchWorkday location pre-filter shares the applyFilters matcher (issue #61)', () => {
+  const collisionMock = (t) => routedMock(t, { list: COLLISION_LIST_FIXTURE, details: COLLISION_DETAILS });
+  const titles = (jobs) => jobs.map(j => j.title).sort();
+  const hydrated = (calls) => calls.urls.filter(u => u.includes('/job/')).map(u => u.slice(u.indexOf('/job/'))).sort();
+
+  test('locationExcludes ["US"] keeps Sydney, Australia and Brussels, Belgium', async (t) => {
+    const calls = collisionMock(t);
+    const jobs = await fetchWorkday('cisco', { ...CTX, filterContext: { locationExcludes: ['US'], limit: 100 } });
+    assert.equal(calls.detail, 5, 'every row but San Francisco is hydrated');
+    assert.deepEqual(titles(jobs), ['Account Executive', 'Account Manager', 'Renewals Manager', 'Software Engineer', 'Solutions Engineer']);
+    assert.deepEqual(titles(applyFilters(jobs, { locationExcludes: ['US'] })), titles(jobs), 'the post-detail pass keeps the same set');
+  });
+
+  test('locationIncludes ["US"] fetches no detail for a row that matches only as a substring', async (t) => {
+    const calls = collisionMock(t);
+    const jobs = await fetchWorkday('cisco', { ...CTX, filterContext: { locationIncludes: ['US'], limit: 100 } });
+    assert.equal(calls.detail, 2);
+    assert.deepEqual(hydrated(calls), [
+      '/job/Amsterdam-Netherlands/Renewals-Manager_2024946',
+      '/job/San-Francisco-California-US/Product-Manager_2023289',
+    ]);
+    assert.deepEqual(titles(jobs), ['Product Manager', 'Renewals Manager']);
+  });
+
+  test('locationIncludes ["UK"] fetches London, not Kyiv, Ukraine', async (t) => {
+    const calls = collisionMock(t);
+    await fetchWorkday('cisco', { ...CTX, filterContext: { locationIncludes: ['UK'], limit: 100 } });
+    assert.deepEqual(hydrated(calls), [
+      '/job/Amsterdam-Netherlands/Renewals-Manager_2024946',
+      '/job/London-UK/Account-Manager_2023243',
+    ]);
+  });
+
+  test('empty and whitespace-only exclude keywords change nothing', async (t) => {
+    for (const locationExcludes of [[''], [' ']]) {
+      const calls = collisionMock(t);
+      const jobs = await fetchWorkday('cisco', { ...CTX, filterContext: { locationExcludes, limit: 100 } });
+      assert.equal(calls.detail, 6, JSON.stringify(locationExcludes));
+      assert.equal(jobs.length, 6, JSON.stringify(locationExcludes));
+    }
+  });
+
+  test('keywords are trimmed before the word-boundary check', async (t) => {
+    const calls = collisionMock(t);
+    await fetchWorkday('cisco', { ...CTX, filterContext: { locationIncludes: [' us '], limit: 100 } });
+    assert.equal(calls.detail, 2, 'the same two rows as ["US"]');
+  });
+
+  test('an "N Locations" row survives both pre-filters and the post-detail pass decides', async (t) => {
+    const inc = collisionMock(t);
+    const included = await fetchWorkday('cisco', { ...CTX, filterContext: { locationIncludes: ['Ukraine'], limit: 100 } });
+    assert.deepEqual(hydrated(inc), [
+      '/job/Amsterdam-Netherlands/Renewals-Manager_2024946',
+      '/job/Kyiv-Ukraine/Software-Engineer_2024454',
+    ]);
+    assert.deepEqual(applyFilters(included, { locationIncludes: ['Ukraine'] }).map(j => j.title), ['Software Engineer']);
+
+    // Even a keyword that matches the placeholder text itself does not drop the row.
+    const exc = collisionMock(t);
+    const excluded = await fetchWorkday('cisco', { ...CTX, filterContext: { locationExcludes: ['Locations', 'Netherlands'], limit: 100 } });
+    assert.ok(hydrated(exc).includes('/job/Amsterdam-Netherlands/Renewals-Manager_2024946'));
+    const renewals = excluded.find(j => j.title === 'Renewals Manager');
+    assert.deepEqual(renewals.locations, ['Amsterdam, Netherlands', 'Austin, Texas, US']);
+    assert.ok(applyFilters(excluded, { locationExcludes: ['Netherlands'] }).some(j => j.title === 'Renewals Manager'), 'still open in Austin');
+    assert.ok(!applyFilters(excluded, { locationExcludes: ['Netherlands', 'US'] }).some(j => j.title === 'Renewals Manager'), 'dropped once every location matches');
+  });
+});
+
 describe('hasWorkday', () => {
   test('always false (registry-only invariant)', async () => {
     assert.equal(await hasWorkday('cisco'), false);

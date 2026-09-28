@@ -91,7 +91,7 @@ See the main library [docs/filters.md](../docs/filters.md) for the full rational
 - Use `filter` for topic or scope ("integrations", "growth"). Matches across title, department, description.
 - They AND together. Use both for "PM roles about integrations".
 - For US queries: `location_includes: ["United States", "US", "Remote - US"]`. Avoid bare "Remote" (matches Remote-EMEA etc.).
-- Short codes like "US", "UK" are safe. They use word-boundary matching to prevent collisions with "Australia", "Auckland", etc.
+- Short codes like "US", "UK" are safe. They use word-boundary matching to prevent collisions with "Australia", "Ukraine", etc.
 
 ---
 

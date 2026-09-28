@@ -199,3 +199,66 @@ describe('fetchJobs — canonical-cased registry slug routing', () => {
     );
   });
 });
+
+describe('fetchJobs — the same location filters give the same set on a Workday board and a Greenhouse board (issue #61)', () => {
+  // Identical postings on both boards. "us" sits inside Australia, Brussels,
+  // Austin and Houston, "uk" inside Ukraine, "in" inside Berlin and Austin;
+  // only San Francisco and London carry US or UK as a word.
+  const POSTINGS = [
+    ['Account Executive', 'Sydney, Australia'],
+    ['Solutions Engineer', 'Brussels, Belgium'],
+    ['Software Engineer', 'Kyiv, Ukraine'],
+    ['Product Designer', 'Austin, TX'],
+    ['Data Analyst', 'Houston, TX'],
+    ['Product Manager', 'Berlin, Germany'],
+    ['Staff Engineer', 'San Francisco, US'],
+    ['Account Manager', 'London, UK'],
+  ];
+  const WD_ROWS = POSTINGS.map(([title, location], i) => ({
+    title,
+    externalPath: `/job/${location.replace(/[^A-Za-z]+/g, '-')}/${title.replace(/ /g, '-')}_R${i}`,
+    locationsText: location,
+    postedOn: 'Posted Today',
+  }));
+  const GH_BOARD = {
+    jobs: POSTINGS.map(([title, location], i) => ({
+      id: i, title, absolute_url: `https://gh.example/${i}`, content: 'Build.', first_published: '2026-09-20T00:00:00Z', location: { name: location },
+    })),
+  };
+
+  function bothBoards(t) {
+    const calls = { detail: 0 };
+    t.mock.method(global, 'fetch', async (url) => {
+      const u = String(url);
+      if (u.includes('greenhouse.io')) return { ok: true, status: 200, json: async () => GH_BOARD };
+      if (u.endsWith('/jobs')) return { ok: true, status: 200, json: async () => ({ total: WD_ROWS.length, jobPostings: WD_ROWS }) };
+      calls.detail += 1;
+      const row = WD_ROWS.find(p => u.endsWith(p.externalPath));
+      return { ok: true, status: 200, json: async () => ({ jobPostingInfo: { jobDescription: '<p>Build.</p>', startDate: '2026-09-20', location: row.locationsText } }) };
+    });
+    return calls;
+  }
+
+  const ALL = POSTINGS.map(([, location]) => location);
+  const CASES = [
+    [{ locationExcludes: ['US'] }, ALL.filter(l => l !== 'San Francisco, US')],
+    [{ locationIncludes: ['US'] }, ['San Francisco, US']],
+    [{ locationIncludes: ['United States', 'US', 'Remote - US'] }, ['San Francisco, US']],
+    [{ locationExcludes: ['IN'] }, ALL],
+    [{ locationIncludes: ['UK'] }, ['London, UK']],
+    [{ locationIncludes: [' uk '] }, ['London, UK']],
+    [{ locationExcludes: [''] }, ALL],
+    [{ locationExcludes: [' '] }, ALL],
+  ];
+
+  for (const [filters, expected] of CASES) {
+    test(JSON.stringify(filters), async (t) => {
+      const calls = bothBoards(t);
+      const workday = await fetchJobs({ company: 'fixtureco', order: 'board', ...filters });
+      const greenhouse = await fetchJobs({ company: 'fixture-gh', order: 'board', ...filters });
+      assert.deepEqual(workday.map(j => j.location), expected);
+      assert.deepEqual(greenhouse.map(j => j.location), expected);
+      assert.equal(calls.detail, expected.length, 'Workday hydrates exactly the rows the shared matcher keeps');
+    });
+  }
+});
