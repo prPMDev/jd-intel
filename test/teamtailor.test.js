@@ -240,6 +240,54 @@ describe('fetchTeamtailor', () => {
   });
 });
 
+describe('fetchTeamtailor org identity (issue #58)', () => {
+  // The channel title names the company. Item links follow the site's
+  // custom domain when it has one (a live feed served from
+  // tibber.teamtailor.com links its items to jobs.tibber.com, 2026-09-27),
+  // while the channel <link> stays on {slug}.teamtailor.com.
+  const report = (reports) => (r) => reports.push(r);
+
+  test('reports the channel title; a teamtailor.com item link yields org_url null', async (t) => {
+    mockFetch(t);
+    const reports = [];
+    await fetchTeamtailor('testco', { report: report(reports) });
+    assert.deepEqual(reports, [{ ats: 'teamtailor', org_name: 'Test Company', org_url: null }]);
+  });
+
+  test('an item link on the company domain becomes org_url', async (t) => {
+    mockFetch(t, { body: FIXTURE_XML.replace('<link>https://testco.teamtailor.com/jobs/123-staff-pm</link>', '<link>https://jobs.testco.com/jobs/123-staff-pm</link>') });
+    const reports = [];
+    const [job] = await fetchTeamtailor('testco', { report: report(reports) });
+    assert.equal(job.url, 'https://jobs.testco.com/jobs/123-staff-pm');
+    assert.deepEqual(reports, [{ ats: 'teamtailor', org_name: 'Test Company', org_url: 'jobs.testco.com' }]);
+  });
+
+  test('an entity-encoded title is decoded', async (t) => {
+    mockFetch(t, { body: FIXTURE_XML.replace('<title>Test Company</title>', '<title>Test &amp; Co</title>') });
+    const reports = [];
+    await fetchTeamtailor('testco', { report: report(reports) });
+    assert.equal(reports[0].org_name, 'Test & Co');
+  });
+
+  test('a feed with no items falls back to the channel link; no title reports null', async (t) => {
+    mockFetch(t, { body: '<rss><channel><title>Empty Co</title><link>https://emptyco.teamtailor.com/jobs</link></channel></rss>' });
+    const reports = [];
+    await fetchTeamtailor('emptyco', { report: report(reports) });
+    assert.deepEqual(reports, [{ ats: 'teamtailor', org_name: 'Empty Co', org_url: null }]);
+
+    mockFetch(t, { body: '<rss><channel></channel></rss>' });
+    await fetchTeamtailor('emptyco', { report: report(reports) });
+    assert.deepEqual(reports[1], { ats: 'teamtailor', org_name: null, org_url: null });
+  });
+
+  test('a 404 in every region reports nothing', async (t) => {
+    mockFetch(t, { status: 404, body: '' });
+    const reports = [];
+    await fetchTeamtailor('nonexistent', { report: report(reports) });
+    assert.deepEqual(reports, []);
+  });
+});
+
 describe('hasTeamtailor', () => {
   // Routes by host: `byHost` maps a hostname to a status; anything else is a 404.
   function regionalMock(t, byHost) {

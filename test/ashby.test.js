@@ -401,6 +401,29 @@ describe('fetchAshby', () => {
   });
 });
 
+describe('fetchAshby org identity (issue #58)', () => {
+  // The REST response is { jobs, apiVersion }: no organization name, and
+  // every link is on jobs.ashbyhq.com. No GraphQL lookup fills the gap.
+  test('reports null and null, never the slug', async (t) => {
+    const calls = [];
+    t.mock.method(global, 'fetch', async (url) => {
+      calls.push(String(url));
+      return { ok: true, status: 200, json: async () => FIXTURE };
+    });
+    const reports = [];
+    await fetchAshby('ramp', { report: (r) => reports.push(r) });
+    assert.deepEqual(reports, [{ ats: 'ashby', org_name: null, org_url: null }]);
+    assert.equal(calls.length, 1, 'no second request to look the org up');
+  });
+
+  test('a 404 reports nothing', async (t) => {
+    t.mock.method(global, 'fetch', async () => ({ ok: false, status: 404, json: async () => ({}) }));
+    const reports = [];
+    await fetchAshby('nonexistent', { report: (r) => reports.push(r) });
+    assert.deepEqual(reports, []);
+  });
+});
+
 describe('hasAshby', () => {
   test('true on a 2xx, probing the board with HEAD', async (t) => {
     const calls = [];

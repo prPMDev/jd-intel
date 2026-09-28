@@ -2,6 +2,7 @@ import { normalize } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 import { makeLocationMatcher } from '../filters.js';
 import { atsFetch } from '../http.js';
+import { orgHost } from '../boards.js';
 
 const MAX_DETAIL_FETCHES = 100;
 const LIST_PAGE_SIZE = 20;
@@ -33,7 +34,8 @@ const MULTI_LOCATION = /^\s*\d+\s+locations?\s*$/;
  *
  * @param {string} slug - normalized company slug (registry routing key)
  * @param {object} [ctx] - { config:{tenant,env,site}, companyName, filterContext, report };
- *   report(scan) is called once with { ats, listed, prefiltered, hydrated, capped } when given
+ *   report is called once, after hydration, with
+ *   { ats, listed, prefiltered, hydrated, capped, org_name, org_url } when given
  * @returns {Promise<Array>} Normalized job objects
  */
 export async function fetchWorkday(slug, ctx = {}) {
@@ -140,18 +142,13 @@ export async function fetchWorkday(slug, ctx = {}) {
   const cap = fc.filter ? MAX_DETAIL_FETCHES : Math.min(skip + limit, MAX_DETAIL_FETCHES);
   const hydrate = candidates.slice(0, cap);
 
-  if (typeof ctx.report === 'function') {
-    ctx.report({
-      ats: 'workday',
-      listed: postings.length,
-      prefiltered: candidates.length,
-      hydrated: hydrate.length,
-      capped: listCapped || hydrate.length < candidates.length,
-    });
-  }
-
-  // 4. Hydrate descriptions via the per-posting detail endpoint.
-  const jobs = await Promise.all(hydrate.map(async (p) => {
+  // 4. Hydrate descriptions via the per-posting detail endpoint. The detail
+  //    also carries `hiringOrganization: { name, url }` next to
+  //    jobPostingInfo; the list does not. Kept per posting in list order so
+  //    the one reported is the first hydrated posting's, not whichever
+  //    detail answered first (a tenant can post under several entities).
+  const orgs = [];
+  const jobs = await Promise.all(hydrate.map(async (p, i) => {
     const externalPath = p.externalPath || ''; // already begins with '/job/...'
     let info = {};
     try {
@@ -162,6 +159,7 @@ export async function fetchWorkday(slug, ctx = {}) {
       if (dResp.ok) {
         const detail = await dResp.json();
         info = detail.jobPostingInfo || {};
+        orgs[i] = detail.hiringOrganization || null;
       }
     } catch {
       // detail failed, retries included: fall back to list fields, empty description
@@ -187,6 +185,21 @@ export async function fetchWorkday(slug, ctx = {}) {
       },
     }, 'workday');
   }));
+
+  // Nothing hydrated (a filter miss, an empty site) means no detail was
+  // read, so the org is unknown rather than absent: null, null.
+  if (typeof ctx.report === 'function') {
+    const org = orgs.find(Boolean) || {};
+    ctx.report({
+      ats: 'workday',
+      listed: postings.length,
+      prefiltered: candidates.length,
+      hydrated: hydrate.length,
+      capped: listCapped || hydrate.length < candidates.length,
+      org_name: org.name || null,
+      org_url: orgHost(org.url),
+    });
+  }
 
   return jobs;
 }

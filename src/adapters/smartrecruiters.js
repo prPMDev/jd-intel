@@ -25,8 +25,9 @@ const MAX_DETAIL_FETCHES = 100;
  * cap still holds, so a direct call on a 400-posting tenant reads 100.
  *
  * @param {string} slug - SmartRecruiters company identifier (e.g., 'Visa')
- * @param {object} [ctx] - { filterContext, report }; report(scan) is called
- *   once with { ats, listed, prefiltered, hydrated, capped } when given
+ * @param {object} [ctx] - { filterContext, report }; report is called once
+ *   with { ats, listed, prefiltered, hydrated, capped, org_name, org_url }
+ *   when given
  * @returns {Promise<Array>} Normalized job objects
  */
 export async function fetchSmartrecruiters(slug, ctx = {}) {
@@ -101,6 +102,9 @@ export async function fetchSmartrecruiters(slug, ctx = {}) {
   const cap = fc.filter ? MAX_DETAIL_FETCHES : Math.min(skip + limit, MAX_DETAIL_FETCHES);
   const hydrate = candidates.slice(0, cap);
 
+  // Every list row carries company { identifier, name }. Neither the list
+  // nor the detail has a company website, and postingUrl is always on
+  // jobs.smartrecruiters.com, so org_url stays null (issue #58).
   if (typeof ctx.report === 'function') {
     ctx.report({
       ats: 'smartrecruiters',
@@ -108,6 +112,8 @@ export async function fetchSmartrecruiters(slug, ctx = {}) {
       prefiltered: candidates.length,
       hydrated: hydrate.length,
       capped: hydrate.length < candidates.length,
+      org_name: postings.find(p => p.company?.name)?.company.name || null,
+      org_url: null,
     });
   }
 

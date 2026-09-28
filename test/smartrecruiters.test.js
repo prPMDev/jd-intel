@@ -431,21 +431,21 @@ describe('fetchSmartrecruiters detail budget (issue #90)', () => {
     assert.equal(jobs.length, 1);
   });
 
-  test('reports the scan once: listed, prefiltered, hydrated, capped', async (t) => {
+  test('reports the scan once: listed, prefiltered, hydrated, capped, plus the org the list states', async (t) => {
     boardMock(t, 400, { 5: { name: 'Product Designer' }, 250: { name: 'Staff Designer' } });
     const reports = [];
     await fetchSmartrecruiters('testco', {
       filterContext: { titleFilter: 'designer', limit: 100 },
       report: (scan) => reports.push(scan),
     });
-    assert.deepEqual(reports, [{ ats: 'smartrecruiters', listed: 400, prefiltered: 2, hydrated: 2, capped: false }]);
+    assert.deepEqual(reports, [{ ats: 'smartrecruiters', listed: 400, prefiltered: 2, hydrated: 2, capped: false, org_name: 'Test Company', org_url: null }]);
   });
 
   test('the report says capped when the budget cut candidates', async (t) => {
     boardMock(t, 400);
     const reports = [];
     await fetchSmartrecruiters('testco', { filterContext: { limit: 1 }, report: (scan) => reports.push(scan) });
-    assert.deepEqual(reports, [{ ats: 'smartrecruiters', listed: 400, prefiltered: 400, hydrated: 1, capped: true }]);
+    assert.deepEqual(reports, [{ ats: 'smartrecruiters', listed: 400, prefiltered: 400, hydrated: 1, capped: true, org_name: 'Test Company', org_url: null }]);
   });
 
   test('no report call without a report function, and none on a 404', async (t) => {
@@ -457,6 +457,39 @@ describe('fetchSmartrecruiters detail budget (issue #90)', () => {
     const reports = [];
     await fetchSmartrecruiters('nonexistent', { report: (scan) => reports.push(scan) });
     assert.deepEqual(reports, [], 'a 404 is not a scan');
+  });
+});
+
+describe('fetchSmartrecruiters org identity (issue #58)', () => {
+  // Every list row carries `company: { identifier, name }` (live shape,
+  // 2026-09-27). Neither the list nor the detail has a company website,
+  // and postingUrl is on jobs.smartrecruiters.com, so org_url is null.
+  const withCompany = (company) => ({
+    ...LIST_FIXTURE,
+    content: [{ ...LIST_FIXTURE.content[0], company }],
+  });
+  const orgOf = (reports) => ({ org_name: reports[0].org_name, org_url: reports[0].org_url });
+
+  test('org_name is the list row company name; org_url stays null', async (t) => {
+    mockFetch(t, { list: withCompany({ identifier: 'Wise', name: 'Wise' }) });
+    const reports = [];
+    await fetchSmartrecruiters('Wise', { report: (r) => reports.push(r) });
+    assert.equal(reports.length, 1);
+    assert.deepEqual(orgOf(reports), { org_name: 'Wise', org_url: null });
+  });
+
+  test('a list without a company object reports null, not the slug', async (t) => {
+    mockFetch(t, { list: withCompany(undefined) });
+    const reports = [];
+    await fetchSmartrecruiters('testco', { report: (r) => reports.push(r) });
+    assert.deepEqual(orgOf(reports), { org_name: null, org_url: null });
+  });
+
+  test('an empty board reports null, not the slug', async (t) => {
+    mockFetch(t, { list: { offset: 0, limit: 100, totalFound: 0, content: [] } });
+    const reports = [];
+    await fetchSmartrecruiters('testco', { report: (r) => reports.push(r) });
+    assert.deepEqual(orgOf(reports), { org_name: null, org_url: null });
   });
 });
 

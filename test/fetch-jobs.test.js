@@ -530,11 +530,79 @@ describe("fetchJobsDetailed — ctx.report records a board's scan, and jobs_foun
     assert.equal(ctxSeen.filterContext.offset, 5);
   });
 
-  test('a board that never reports has scan null and jobs_found from its rows', async (t) => {
+  test('a board that reports no counts has scan null and jobs_found from its rows', async (t) => {
     mockFetchByHost(t, { 'greenhouse.io': okResponse({ jobs: [{ id: 1, title: 'PM', absolute_url: 'https://x/1', content: 'a', location: { name: 'Remote' } }] }) });
     const result = await fetchJobsDetailed({ company: 'nocorp' });
     assert.equal(result.boards[0].scan, null);
     assert.equal(result.boards[0].jobs_found, 1);
+  });
+});
+
+describe('fetchJobsDetailed — boards[].org_name and org_url come from the board itself (issue #58)', () => {
+  const GH = 'greenhouse.io';
+  const LEVER = 'lever.co';
+  const SR = 'api.smartrecruiters.com';
+  const ghRows = (company_name) => okResponse({
+    jobs: [{ id: 1, title: 'Product Manager', absolute_url: 'https://job-boards.greenhouse.io/nocorp/jobs/1', content: 'Build.', location: { name: 'Remote' }, company_name }],
+  });
+  const leverRows = okResponse([{ id: 'l1', text: 'Designer', hostedUrl: 'https://jobs.lever.co/nocorp/l1', description: 'Design.', categories: { location: 'Remote' } }]);
+  const SR_DETAIL = { jobAd: { sections: { jobDescription: { text: 'Build.' } } }, postingUrl: 'https://jobs.smartrecruiters.com/AcmePay/1' };
+  const srList = okResponse({
+    totalFound: 1,
+    content: [{ id: '1', name: 'Product Manager', company: { identifier: 'AcmePay', name: 'AcmePay Ltd' }, releasedDate: '2026-09-01T00:00:00Z', location: { city: 'Berlin', country: 'Germany' } }],
+  });
+  const orgOf = (b) => [b.ats, b.org_name, b.org_url];
+
+  test('discovery: a Greenhouse board names itself, a Lever board cannot; neither reports counts', async (t) => {
+    mockFetchByHost(t, { [GH]: ghRows('Nocorp Labs'), [LEVER]: leverRows });
+    const { boards } = await fetchJobsDetailed({ company: 'nocorp' });
+    assert.deepEqual(boards.map(orgOf), [['greenhouse', 'Nocorp Labs', null], ['lever', null, null]]);
+    assert.deepEqual(boards.map(b => b.scan), [null, null]);
+    assert.deepEqual(boards.map(b => b.name), [null, null], 'no registry name to borrow from on a probe');
+  });
+
+  test('a registry hit keeps the registry name and the board name apart', async (t) => {
+    mockFetchByHost(t, { [GH]: ghRows('Fixture Greenhouse Co. (Board)') });
+    const { company, boards } = await fetchJobsDetailed({ company: 'fixture-gh' });
+    assert.equal(company.name, 'Fixture Greenhouse Co');
+    assert.equal(boards[0].name, 'Fixture Greenhouse Co');
+    assert.equal(boards[0].org_name, 'Fixture Greenhouse Co. (Board)');
+
+    mockFetchByHost(t, { [GH]: ghRows(undefined) });
+    const silent = await fetchJobsDetailed({ company: 'fixture-gh' });
+    assert.equal(silent.boards[0].name, 'Fixture Greenhouse Co');
+    assert.equal(silent.boards[0].org_name, null, 'a board that says nothing is not filled from the registry');
+  });
+
+  test('a report with counts and org fields splits: scan keeps the four counts, the board keeps the org', async (t) => {
+    mockFetchByHost(t, { [SR]: (u) => (/\/postings\/[^/?]+$/.test(u) ? okResponse(SR_DETAIL) : srList) });
+    const { boards } = await fetchJobsDetailed({ company: 'acmepay' });
+    const [board] = boards;
+    assert.deepEqual(board.scan, { listed: 1, prefiltered: 1, hydrated: 1, capped: false });
+    assert.deepEqual(orgOf(board), ['smartrecruiters', 'AcmePay Ltd', null]);
+    assert.ok(!('ats' in board.scan) && !('org_name' in board.scan) && !('org_url' in board.scan));
+  });
+
+  test('two report calls for one board merge; an org-only report leaves scan null', async (t) => {
+    const rows = (slug, ats) => [normalize({ companySlug: slug, company: slug, title: 'PM', location: 'Remote', description: 'Build.', url: `https://x/${slug}` }, ats)];
+    t.mock.method(ADAPTERS.smartrecruiters, 'fetch', async (slug, ctx) => {
+      ctx.report({ ats: 'smartrecruiters', listed: 3, prefiltered: 1, hydrated: 1, capped: false });
+      ctx.report({ ats: 'smartrecruiters', org_name: 'AcmePay Ltd', org_url: 'careers.acmepay.example' });
+      return rows(slug, 'smartrecruiters');
+    });
+    const merged = await fetchJobsDetailed({ company: 'acmepay' });
+    assert.deepEqual(merged.boards[0].scan, { listed: 3, prefiltered: 1, hydrated: 1, capped: false });
+    assert.equal(merged.boards[0].jobs_found, 3);
+    assert.deepEqual(orgOf(merged.boards[0]), ['smartrecruiters', 'AcmePay Ltd', 'careers.acmepay.example']);
+
+    t.mock.method(ADAPTERS.greenhouse, 'fetch', async (slug, ctx) => {
+      ctx.report({ ats: 'greenhouse', org_name: 'Fixture Board', org_url: null });
+      return rows(slug, 'greenhouse');
+    });
+    const orgOnly = await fetchJobsDetailed({ company: 'fixture-gh' });
+    assert.equal(orgOnly.boards[0].scan, null);
+    assert.equal(orgOnly.boards[0].jobs_found, 1);
+    assert.deepEqual(orgOf(orgOnly.boards[0]), ['greenhouse', 'Fixture Board', null]);
   });
 });
 

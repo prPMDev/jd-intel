@@ -308,6 +308,35 @@ describe('fetchGreenhouse with HTML-escaped content (issue #66)', () => {
   });
 });
 
+describe('fetchGreenhouse org identity (issue #58)', () => {
+  // The list has no top-level name; each row carries company_name. Its
+  // only links are job-boards.greenhouse.io, so org_url is always null.
+  test('reports the row company_name and no host', async (t) => {
+    mockFetch(t);
+    const reports = [];
+    await fetchGreenhouse('vercel', { report: (r) => reports.push(r) });
+    assert.deepEqual(reports, [{ ats: 'greenhouse', org_name: 'Vercel', org_url: null }]);
+  });
+
+  test('rows without company_name report null, not the slug', async (t) => {
+    mockFetch(t, { body: { jobs: FIXTURE.jobs.map(({ company_name, ...job }) => job), meta: { total: 2 } } });
+    const reports = [];
+    await fetchGreenhouse('vercel', { report: (r) => reports.push(r) });
+    assert.deepEqual(reports, [{ ats: 'greenhouse', org_name: null, org_url: null }]);
+  });
+
+  test('an empty board reports null; a 404 reports nothing', async (t) => {
+    mockFetch(t, { body: { jobs: [], meta: { total: 0 } } });
+    const reports = [];
+    await fetchGreenhouse('emptyco', { report: (r) => reports.push(r) });
+    assert.deepEqual(reports, [{ ats: 'greenhouse', org_name: null, org_url: null }]);
+
+    mockFetch(t, { status: 404, body: {} });
+    await fetchGreenhouse('nonexistent', { report: (r) => reports.push(r) });
+    assert.equal(reports.length, 1);
+  });
+});
+
 describe('hasGreenhouse', () => {
   test('true on a 2xx, probing the board root with HEAD', async (t) => {
     const calls = [];

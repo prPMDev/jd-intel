@@ -14,9 +14,11 @@ const BOARD_URL = 'https://api.ashbyhq.com/posting-api/job-board';
  * into a silent empty result (issue #55).
  *
  * @param {string} slug - Company slug (e.g., 'notion', 'linear')
+ * @param {object} [ctx] - { report }; report is called once with
+ *   { ats, org_name, org_url } when given
  * @returns {Promise<Array>} Normalized job objects
  */
-export async function fetchAshby(slug) {
+export async function fetchAshby(slug, ctx = {}) {
   const url = `${BOARD_URL}/${slug}?includeCompensation=true`;
   const resp = await atsFetch(url);
 
@@ -27,6 +29,12 @@ export async function fetchAshby(slug) {
 
   const data = await resp.json();
   const jobs = data.jobs || [];
+
+  // The REST response is { jobs, apiVersion }: no organization name, and
+  // every link is on jobs.ashbyhq.com. Both null (issue #58).
+  if (typeof ctx.report === 'function') {
+    ctx.report({ ats: 'ashby', org_name: null, org_url: null });
+  }
 
   return jobs.map(job => {
     const comp = job.compensation || {};
