@@ -11,8 +11,9 @@
  * partial-failure, and error paths.
  *
  * Only status "error" sets the protocol-level isError flag. "partial" still
- * carries a usable answer (e.g. detect_ats found several boards), so flagging
- * it as a failure would make clients hide or retry a valid result.
+ * carries a usable answer (a board answered while another adapter's check
+ * failed; metadata.failed says which), so flagging it as a failure would make
+ * clients hide or retry a valid result.
  */
 
 import { z } from 'zod';
