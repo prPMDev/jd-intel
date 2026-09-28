@@ -68,6 +68,27 @@
 
         <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;">Added</div>
         <ul style="margin:0 0 22px; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px;">
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Every response says which board answered and how the company was matched, with the board's own organization name where the platform states it.</li>
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">A rate limit or outage comes back as an error your AI can read, not as "not found".</li>
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">A company that is hiring but has nothing matching your filters now reads as exactly that.</li>
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">detect_ats lists every board a company answers on, registry first.</li>
+        </ul>
+
+        <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;">Changed</div>
+        <ul style="margin:0; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px;">
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Requests time out, retry with backoff, honor Retry-After, and run at most four at a time per platform.</li>
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">SmartRecruiters boards read only the postings a call needs: a one-job call on a 400-posting board makes one detail request instead of 400.</li>
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">The response budget has no ceiling; the caller picks it.</li>
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Tool descriptions describe exactly what the server returns, and a test keeps them that way.</li>
+          <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Workday location filters use the same word-boundary rule as every other platform.</li>
+        </ul>
+      </article>
+
+      <article style="border-top:1px solid var(--line); padding:26px 0 30px;">
+        <h2 style="font:600 15px/1 'JetBrains Mono',monospace; letter-spacing:-.01em; color:var(--fg); margin:0 0 22px;">2026-09-27</h2>
+
+        <div style="font:500 11.5px/1 'JetBrains Mono',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--fg-3); margin:0 0 10px;">Added</div>
+        <ul style="margin:0 0 22px; padding:0 0 0 20px; display:flex; flex-direction:column; gap:7px;">
           <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">218 companies. The registry is now 990, up 28%.</li>
           <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Nordic and Dutch coverage grew the most: companies on TeamTailor went from 55 to 90, and on Recruitee from 67 to 97.</li>
           <li style="font:400 16px/1.55 'Schibsted Grotesk',sans-serif; color:var(--fg-2);">Healthcare, energy and industrial, and fintech each grew by about a third.</li>
