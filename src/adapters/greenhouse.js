@@ -10,9 +10,11 @@ const BASE_URL = 'https://boards-api.greenhouse.io/v1/boards';
  * Docs: https://developers.greenhouse.io/job-board.html
  *
  * @param {string} slug - Company slug (e.g., 'stripe', 'notion')
+ * @param {object} [ctx] - { report }; report is called once with
+ *   { ats, org_name, org_url } when given
  * @returns {Promise<Array>} Normalized job objects
  */
-export async function fetchGreenhouse(slug) {
+export async function fetchGreenhouse(slug, ctx = {}) {
   const url = `${BASE_URL}/${slug}/jobs?content=true`;
   const resp = await atsFetch(url);
 
@@ -23,6 +25,17 @@ export async function fetchGreenhouse(slug) {
 
   const data = await resp.json();
   const jobs = data.jobs || [];
+
+  // The list response has no top-level name, but each row carries the
+  // board's company_name. Its only links are job-boards.greenhouse.io, so
+  // there is no company host to report (issue #58).
+  if (typeof ctx.report === 'function') {
+    ctx.report({
+      ats: 'greenhouse',
+      org_name: jobs.find(j => j.company_name)?.company_name || null,
+      org_url: null,
+    });
+  }
 
   return jobs.map(job => normalize({
     companySlug: slug,

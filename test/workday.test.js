@@ -15,6 +15,11 @@ disableRetries();
  * (2026-09-27): a posting open in several places has `locationsText` like
  * "14 Locations" on the list, and its detail carries `location`,
  * `additionalLocations[]` and `remoteType`.
+ *
+ * The detail's top level is { jobPostingInfo, hiringOrganization,
+ * similarJobs, userAuthenticated }. `hiringOrganization` is { name, url }
+ * with a legal-entity name and, on the tenant checked, an empty url; the
+ * list carries neither. DETAIL_FIXTURE keeps that pair as returned.
  */
 
 const CTX = {
@@ -36,6 +41,7 @@ const DETAIL_FIXTURE = {
     startDate: '2026-05-01',
     location: 'San Jose, CA, United States',
   },
+  hiringOrganization: { name: '020 Cisco Systems, Inc.', url: '' },
 };
 
 const MULTI_LIST_FIXTURE = {
@@ -581,32 +587,35 @@ describe('fetchWorkday scan report (issue #90)', () => {
     return { reports, report: (scan) => reports.push(scan) };
   };
 
-  test('reports the scan once: listed, prefiltered, hydrated, capped', async (t) => {
+  // The scan counts plus what the hydrated detail said about the org.
+  const ORG = { org_name: '020 Cisco Systems, Inc.', org_url: null };
+
+  test('reports the scan once: listed, prefiltered, hydrated, capped, plus the org from the detail', async (t) => {
     listMock(t);
     const { reports, report } = spy();
     await fetchWorkday('cisco', { ...CTX, report, filterContext: { titleFilter: 'product manager', limit: 100 } });
-    assert.deepEqual(reports, [{ ats: 'workday', listed: 2, prefiltered: 1, hydrated: 1, capped: false }]);
+    assert.deepEqual(reports, [{ ats: 'workday', listed: 2, prefiltered: 1, hydrated: 1, capped: false, ...ORG }]);
   });
 
   test('an unfiltered scan that fits the budget is not capped', async (t) => {
     paginatedMock(t, 25);
     const { reports, report } = spy();
     await fetchWorkday('cisco', { ...CTX, report });
-    assert.deepEqual(reports, [{ ats: 'workday', listed: 25, prefiltered: 25, hydrated: 25, capped: false }]);
+    assert.deepEqual(reports, [{ ats: 'workday', listed: 25, prefiltered: 25, hydrated: 25, capped: false, ...ORG }]);
   });
 
   test('capped when MAX_DETAIL_FETCHES cut the candidates', async (t) => {
     paginatedMock(t, 300);
     const { reports, report } = spy();
     await fetchWorkday('cisco', { ...CTX, report, filterContext: { filter: 'engineer', limit: 100 } });
-    assert.deepEqual(reports, [{ ats: 'workday', listed: 300, prefiltered: 300, hydrated: 100, capped: true }]);
+    assert.deepEqual(reports, [{ ats: 'workday', listed: 300, prefiltered: 300, hydrated: 100, capped: true, ...ORG }]);
   });
 
-  test('capped when the list hard cap stopped the scan, even with nothing to hydrate', async (t) => {
+  test('capped when the list hard cap stopped the scan, even with nothing to hydrate; no detail means no org', async (t) => {
     paginatedMock(t, 5000);
     const { reports, report } = spy();
     await fetchWorkday('cisco', { ...CTX, report, filterContext: { titleFilter: 'no such role', limit: 100 } });
-    assert.deepEqual(reports, [{ ats: 'workday', listed: 2000, prefiltered: 0, hydrated: 0, capped: true }]);
+    assert.deepEqual(reports, [{ ats: 'workday', listed: 2000, prefiltered: 0, hydrated: 0, capped: true, org_name: null, org_url: null }]);
   });
 
   test('no report on the registry-only bail or a 404', async (t) => {
@@ -616,6 +625,62 @@ describe('fetchWorkday scan report (issue #90)', () => {
     listMock(t, { status: 404, list: {} });
     await fetchWorkday('cisco', { ...CTX, report });
     assert.deepEqual(reports, []);
+  });
+});
+
+describe('fetchWorkday org identity (issue #58)', () => {
+  const spy = () => {
+    const reports = [];
+    return { reports, report: (r) => reports.push(r) };
+  };
+  const withOrg = (hiringOrganization) => ({ ...DETAIL_FIXTURE, hiringOrganization });
+  const orgOf = (reports) => ({ org_name: reports[0].org_name, org_url: reports[0].org_url });
+
+  test('org_name is hiringOrganization.name as the tenant states it; an empty url is null', async (t) => {
+    listMock(t);
+    const { reports, report } = spy();
+    await fetchWorkday('cisco', { ...CTX, report });
+    assert.deepEqual(orgOf(reports), { org_name: '020 Cisco Systems, Inc.', org_url: null });
+  });
+
+  test('a company url becomes its bare host', async (t) => {
+    listMock(t, { detail: withOrg({ name: 'Cisco Systems, Inc.', url: 'https://www.cisco.com/c/en/us/about/careers.html' }) });
+    const { reports, report } = spy();
+    await fetchWorkday('cisco', { ...CTX, report });
+    assert.deepEqual(orgOf(reports), { org_name: 'Cisco Systems, Inc.', org_url: 'www.cisco.com' });
+  });
+
+  test('a url on myworkdayjobs.com is the ATS host and yields null', async (t) => {
+    listMock(t, { detail: withOrg({ name: 'Cisco Systems, Inc.', url: 'https://cisco.wd5.myworkdayjobs.com/Cisco_Careers' }) });
+    const { reports, report } = spy();
+    await fetchWorkday('cisco', { ...CTX, report });
+    assert.deepEqual(orgOf(reports), { org_name: 'Cisco Systems, Inc.', org_url: null });
+  });
+
+  test('a detail without hiringOrganization reports null, never companyName or the slug', async (t) => {
+    listMock(t, { detail: { jobPostingInfo: DETAIL_FIXTURE.jobPostingInfo } });
+    const { reports, report } = spy();
+    await fetchWorkday('cisco', { ...CTX, report });
+    assert.deepEqual(orgOf(reports), { org_name: null, org_url: null });
+  });
+
+  test('the first hydrated posting in list order decides, whichever detail answers first', async (t) => {
+    // Two postings under two legal entities. The second detail resolves
+    // first; the report still carries the first row's entity.
+    const gate = {};
+    gate.first = new Promise(resolve => { gate.release = resolve; });
+    t.mock.method(global, 'fetch', async (url) => {
+      if (url.endsWith('/jobs')) return { ok: true, status: 200, json: async () => LIST_FIXTURE };
+      if (url.endsWith('/job/USA/Staff-PM_R123')) {
+        await gate.first;
+        return { ok: true, status: 200, json: async () => withOrg({ name: 'Entity One, Inc.', url: '' }) };
+      }
+      gate.release();
+      return { ok: true, status: 200, json: async () => withOrg({ name: 'Entity Two GmbH', url: '' }) };
+    });
+    const { reports, report } = spy();
+    await fetchWorkday('cisco', { ...CTX, report });
+    assert.equal(reports[0].org_name, 'Entity One, Inc.');
   });
 });
 

@@ -12,6 +12,11 @@ import { filterJobs, pageJobs, compileFilterPatterns } from './filters.js';
 import { AtsError, ArgumentError, ERROR_CODES } from './errors.js';
 import { describeBoard } from './boards.js';
 
+// The counts an adapter reports about its scan. boards[].scan carries these
+// and nothing else; org_name and org_url from the same report go on the
+// board itself.
+const SCAN_KEYS = ['listed', 'prefiltered', 'hydrated', 'capped'];
+
 /**
  * Fetch jobs from a company's ATS board.
  *
@@ -63,8 +68,10 @@ export async function fetchJobs(options = {}) {
  *   match: how the company was resolved. company: the registry row's name
  *   and its key (normalized name); null unless match is 'registry'.
  *   boards: one entry per board that answered (see src/boards.js), with
- *   jobs_found and matched counted per board. failed: adapters that threw
- *   an AtsError during discovery; on a registry hit the error propagates.
+ *   jobs_found and matched counted per board, and org_name and org_url as
+ *   the board states them (null where its ATS exposes nothing). failed:
+ *   adapters that threw an AtsError during discovery; on a registry hit
+ *   the error propagates.
  * @throws {ArgumentError} No company, unknown ats, or a filter regex that does not compile.
  * @throws {AtsError} The board's ATS failed on a registry hit, an explicit ats, or a Workday override.
  */
@@ -125,15 +132,17 @@ export async function fetchJobsDetailed({
 
   // Adapters get the filters and the page so filter-aware ones (Workday,
   // SmartRecruiters) hydrate only what the page needs, plus `report`, which
-  // records the scan counts an adapter chooses to send for its own board.
-  const scans = {};
+  // records what an adapter chooses to say about its own board: the scan
+  // counts, and the org name and host the board states. Every call for one
+  // adapter merges into one record, so the two can arrive together or apart.
+  const reports = {};
   const outcomes = await Promise.allSettled(targets.map(t =>
     ADAPTERS[t.ats].fetch(t.slug, {
       config: t.config,
       companyName: t.name ?? undefined,
       filterContext: { ...filters, offset, limit },
-      report: ({ listed, prefiltered, hydrated, capped }) => {
-        scans[t.ats] = { listed, prefiltered, hydrated, capped };
+      report: (fields) => {
+        reports[t.ats] = { ...reports[t.ats], ...fields };
       },
     })
   ));
@@ -154,14 +163,23 @@ export async function fetchJobsDetailed({
     // they listed; counting their rows instead would make a filter miss on
     // a hiring company read as an empty board (issue #60). Every other
     // adapter returns its whole list.
-    const scan = scans[t.ats] ?? null;
+    const report = reports[t.ats] ?? {};
+    const scan = SCAN_KEYS.some(k => report[k] !== undefined)
+      ? Object.fromEntries(SCAN_KEYS.map(k => [k, report[k]]))
+      : null;
     const listed = scan?.listed ?? outcome.value.length;
     // A probed board exists when it listed rows: a 404 and an empty board
     // both come back as []. A registry hit or an override is a board
     // whatever it returned.
     if (match === 'probe' && listed === 0) return;
     rows.push(...outcome.value);
-    boards.push(describeBoard({ ...t, jobs_found: listed, scan }));
+    boards.push(describeBoard({
+      ...t,
+      org_name: report.org_name ?? null,
+      org_url: report.org_url ?? null,
+      jobs_found: listed,
+      scan,
+    }));
   });
 
   const matched = filterJobs(rows, filters);

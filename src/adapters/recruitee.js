@@ -1,6 +1,7 @@
 import { normalize } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 import { atsFetch, probeResult } from '../http.js';
+import { orgHost } from '../boards.js';
 
 /**
  * Fetch jobs from a Recruitee career site.
@@ -19,9 +20,11 @@ import { atsFetch, probeResult } from '../http.js';
  * both are joined before normalize() strips them (issue #65).
  *
  * @param {string} slug - Recruitee company subdomain (e.g., 'vandebron')
+ * @param {object} [ctx] - { report }; report is called once with
+ *   { ats, org_name, org_url } when given
  * @returns {Promise<Array>} Normalized job objects
  */
-export async function fetchRecruitee(slug) {
+export async function fetchRecruitee(slug, ctx = {}) {
   const url = `https://${slug}.recruitee.com/api/offers/`;
   const resp = await atsFetch(url);
 
@@ -32,6 +35,17 @@ export async function fetchRecruitee(slug) {
 
   const data = await resp.json();
   const offers = data.offers || [];
+
+  // The response is { offers } only, so the identity lives on the rows:
+  // company_name, and careers_url, which sits on the company's own careers
+  // domain when the site has one and on {slug}.recruitee.com otherwise.
+  if (typeof ctx.report === 'function') {
+    ctx.report({
+      ats: 'recruitee',
+      org_name: offers.find(o => o.company_name)?.company_name || null,
+      org_url: orgHost(offers.find(o => o.careers_url)?.careers_url),
+    });
+  }
 
   return offers.map(offer => {
     const place = [offer.city, offer.country].filter(Boolean).join(', ');

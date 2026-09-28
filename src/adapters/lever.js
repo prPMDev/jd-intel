@@ -14,9 +14,11 @@ const WORKPLACE_TYPES = new Set(['remote', 'hybrid', 'onsite']);
  * Docs: https://github.com/lever/postings-api
  *
  * @param {string} slug - Company slug (e.g., 'stripe', 'figma')
+ * @param {object} [ctx] - { report }; report is called once with
+ *   { ats, org_name, org_url } when given
  * @returns {Promise<Array>} Normalized job objects
  */
-export async function fetchLever(slug) {
+export async function fetchLever(slug, ctx = {}) {
   const url = `${BASE_URL}/${slug}?mode=json`;
   const resp = await atsFetch(url);
 
@@ -27,6 +29,12 @@ export async function fetchLever(slug) {
 
   const jobs = await resp.json();
   if (!Array.isArray(jobs)) return [];
+
+  // The postings response is a bare array of jobs: no organization name
+  // anywhere, and every link is on jobs.lever.co. Both null (issue #58).
+  if (typeof ctx.report === 'function') {
+    ctx.report({ ats: 'lever', org_name: null, org_url: null });
+  }
 
   return jobs.map(job => normalize({
     companySlug: slug,

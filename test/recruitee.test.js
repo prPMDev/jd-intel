@@ -295,6 +295,40 @@ describe('fetchRecruitee', () => {
   });
 });
 
+describe('fetchRecruitee org identity (issue #58)', () => {
+  // The response is { offers } only. Each offer carries company_name and a
+  // careers_url on the site's own careers domain when it has one.
+  const report = (reports) => (r) => reports.push(r);
+
+  test('reports company_name and the careers_url host', async (t) => {
+    mockFetch(t);
+    const reports = [];
+    await fetchRecruitee('channable', { report: report(reports) });
+    assert.deepEqual(reports, [{ ats: 'recruitee', org_name: 'Channable', org_url: 'jobs.channable.com' }]);
+  });
+
+  test('a careers_url on the recruitee.com host yields org_url null', async (t) => {
+    mockFetch(t, { body: withOffer({ careers_url: 'https://channable.recruitee.com/o/python-software-engineer-product-team-1' }) });
+    const reports = [];
+    await fetchRecruitee('channable', { report: report(reports) });
+    assert.deepEqual(reports, [{ ats: 'recruitee', org_name: 'Channable', org_url: null }]);
+  });
+
+  test('an empty board reports null and null, not the slug', async (t) => {
+    mockFetch(t, { body: { offers: [] } });
+    const reports = [];
+    await fetchRecruitee('emptyco', { report: report(reports) });
+    assert.deepEqual(reports, [{ ats: 'recruitee', org_name: null, org_url: null }]);
+  });
+
+  test('a 404 reports nothing', async (t) => {
+    mockFetch(t, { status: 404, body: {} });
+    const reports = [];
+    await fetchRecruitee('nonexistent', { report: report(reports) });
+    assert.deepEqual(reports, []);
+  });
+});
+
 describe('hasRecruitee', () => {
   test('true on a 2xx from the offers endpoint', async (t) => {
     const calls = [];

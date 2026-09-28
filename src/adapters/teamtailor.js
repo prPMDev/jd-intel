@@ -1,6 +1,7 @@
 import { normalize, decodeEntities } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 import { atsFetch } from '../http.js';
+import { orgHost } from '../boards.js';
 
 /**
  * Fetch jobs from a TeamTailor career site via its public RSS feed.
@@ -24,6 +25,8 @@ import { atsFetch } from '../http.js';
  * collapse by one layer per pass.
  *
  * @param {string} slug - TeamTailor career-site slug (e.g., 'tibber')
+ * @param {object} [ctx] - { report }; report is called once with
+ *   { ats, org_name, org_url } when given
  * @returns {Promise<Array>} Normalized job objects
  */
 // Most sites are {slug}.teamtailor.com, but some sit on a regional
@@ -61,17 +64,32 @@ async function resolveFeed(slug, method = 'GET') {
   return null;
 }
 
-export async function fetchTeamtailor(slug) {
+export async function fetchTeamtailor(slug, ctx = {}) {
   const resp = await resolveFeed(slug, 'GET');
   if (!resp) return []; // No TeamTailor site in any known region
 
   const xml = await resp.text();
 
-  const company = (
-    xml.match(/<channel>[\s\S]*?<title>([\s\S]*?)<\/title>/)?.[1] || slug
-  ).trim();
+  const channelTitle = (xml.match(/<channel>[\s\S]*?<title>([\s\S]*?)<\/title>/)?.[1] || '').trim();
+  const company = channelTitle || slug;
 
   const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => m[1]);
+
+  // The channel title is the company as the site names itself. The channel
+  // <link> always sits on {slug}.teamtailor.com, but item links follow the
+  // site's custom domain when it has one (jobs.tibber.com on a feed served
+  // from tibber.teamtailor.com), so the first item's link is the host that
+  // can say something; the channel link is the fallback for an empty feed.
+  if (typeof ctx.report === 'function') {
+    const link = items[0]?.match(/<link>([\s\S]*?)<\/link>/)?.[1]
+      || xml.match(/<channel>[\s\S]*?<link>([\s\S]*?)<\/link>/)?.[1]
+      || '';
+    ctx.report({
+      ats: 'teamtailor',
+      org_name: decodeEntities(channelTitle) || null,
+      org_url: orgHost(link.trim()),
+    });
+  }
 
   return items.map(item => {
     const pick = (tag, src = item) => {
