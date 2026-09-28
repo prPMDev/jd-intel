@@ -1,10 +1,14 @@
 import { readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { AtsError } from './errors.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REGISTRY_DIR = join(__dirname, '..', 'registry');
 
+// The one order the registry is ever walked in. Lookups, detectAts and the
+// loaded object all follow it, so which file answers for a slug does not
+// depend on which file's load finished first (issue #87).
 const PLATFORMS = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'teamtailor', 'recruitee', 'workday'];
 
 // Network-first registry. A hosted copy lets installed bundles AND npx users
@@ -68,11 +72,8 @@ async function loadPlatform(platform) {
  */
 export async function loadRegistry(ats) {
   if (ats) return loadPlatform(ats);
-  const all = {};
-  await Promise.all(PLATFORMS.map(async (platform) => {
-    all[platform] = await loadPlatform(platform);
-  }));
-  return all;
+  const lists = await Promise.all(PLATFORMS.map(loadPlatform));
+  return Object.fromEntries(PLATFORMS.map((platform, i) => [platform, lists[i]]));
 }
 
 /**
@@ -117,34 +118,43 @@ export async function searchRegistry(query) {
 // in each ATS's canonical form (SmartRecruiters uses PascalCase, e.g.
 // "Visa"), but callers pass a lowercased/alnum-stripped slug. Comparing
 // normalized forms keeps registry-first routing working for those.
-const normSlug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+export const normSlug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// The loaded registry as [ats, companies] pairs in PLATFORMS order, whatever
+// order the object's keys are in.
+function platformEntries(all) {
+  return PLATFORMS.map(ats => [ats, all[ats] || []]);
+}
+
+function platformIndex(ats) {
+  const i = PLATFORMS.indexOf(ats);
+  return i === -1 ? PLATFORMS.length : i;
+}
+
+const byPlatform = (a, b) => platformIndex(a.ats) - platformIndex(b.ats);
 
 /**
  * Look up which ATS a slug belongs to in the registry.
  * Returns the ATS name (e.g., "greenhouse") or null if not in registry.
  */
 export async function findAtsBySlug(slug) {
-  const all = await loadRegistry();
-  const key = normSlug(slug);
-  for (const [ats, companies] of Object.entries(all)) {
-    if (companies.some(c => normSlug(c.slug) === key)) return ats;
-  }
-  return null;
+  const hit = await findEntryBySlug(slug);
+  return hit ? hit.ats : null;
 }
 
 /**
  * Look up the full registry entry for a slug, with its ATS.
  * Unlike findAtsBySlug (returns just the ats name), this returns the
  * whole entry so callers can read adapter-specific config (e.g. the
- * Workday {tenant, env, site} triple). Additive — does not change
- * findAtsBySlug, which has other callers.
+ * Workday {tenant, env, site} triple). The files are searched in
+ * PLATFORMS order, so the first match is the same on every call.
  *
  * @returns {Promise<{ats: string, entry: object}|null>}
  */
 export async function findEntryBySlug(slug) {
   const all = await loadRegistry();
   const key = normSlug(slug);
-  for (const [ats, companies] of Object.entries(all)) {
+  for (const [ats, companies] of platformEntries(all)) {
     const entry = companies.find(c => normSlug(c.slug) === key);
     if (entry) return { ats, entry };
   }
@@ -152,21 +162,62 @@ export async function findEntryBySlug(slug) {
 }
 
 /**
- * Auto-detect which ATS a company uses.
+ * Where a company answers: the registry first, then a live probe of every
+ * adapter the registry did not already answer for.
+ *
+ * A slug the registry knows is listed with source 'registry' and not probed
+ * (Workday included, whose boards cannot be probed at all). Every remaining
+ * adapter's has() then runs: true adds a board with source 'probe', false
+ * adds nothing, and an AtsError (429, 5xx, 401, network) goes to `failed`
+ * with its code, so a board the probe could not check never reads as
+ * absent (issue #55). Any other error is a bug and is rethrown. Both lists
+ * come back in PLATFORMS order, never in completion order.
+ *
+ * @returns {Promise<{
+ *   boards: Array<{ ats: string, slug: string, source: 'registry'|'probe' }>,
+ *   failed: Array<{ ats: string, slug: string, code: string, message: string }>,
+ * }>}
+ */
+export async function detectAtsDetailed(companyName) {
+  const { ADAPTERS } = await import('./adapters/index.js');
+  const slug = normSlug(companyName);
+  const all = await loadRegistry();
+
+  const boards = [];
+  const failed = [];
+  const known = new Set();
+  for (const [ats, companies] of platformEntries(all)) {
+    const entry = companies.find(c => normSlug(c.slug) === slug);
+    if (entry) {
+      boards.push({ ats, slug: entry.slug, source: 'registry' });
+      known.add(ats);
+    }
+  }
+
+  const probes = Object.entries(ADAPTERS).filter(([ats]) => !known.has(ats));
+  const outcomes = await Promise.all(probes.map(async ([ats, adapter]) => {
+    try {
+      return { ats, found: await adapter.has(slug) };
+    } catch (err) {
+      if (!(err instanceof AtsError)) throw err;
+      return { ats, error: err };
+    }
+  }));
+  for (const { ats, found, error } of outcomes) {
+    if (error) failed.push({ ats, slug, code: error.code, message: error.message });
+    else if (found) boards.push({ ats, slug, source: 'probe' });
+  }
+
+  return { boards: boards.sort(byPlatform), failed: failed.sort(byPlatform) };
+}
+
+/**
+ * Auto-detect which ATS a company uses: the boards from detectAtsDetailed
+ * as [{ ats, slug }]. A failed probe never rejects this; the detailed
+ * variant is where those are reported. An adapter throwing anything but an
+ * AtsError is a bug and propagates, as it does through fetchJobs.
  */
 export async function detectAts(companyName) {
-  const { ADAPTERS } = await import('./adapters/index.js');
-  const slug = companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-  const results = [];
-  const checks = Object.entries(ADAPTERS).map(async ([ats, adapter]) => {
-    const found = await adapter.has(slug);
-    if (found) results.push({ ats, slug });
-  });
-
-  // A probe that throws (429, 5xx, network error) is dropped here: this
-  // returns what was found and never rejects. Reporting failed probes is
-  // the detailed variant tracked in #55.
-  await Promise.allSettled(checks);
-  return results;
+  const { boards } = await detectAtsDetailed(companyName);
+  return boards.map(({ ats, slug }) => ({ ats, slug }));
 }

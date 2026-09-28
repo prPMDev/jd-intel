@@ -1,3 +1,5 @@
+import { ArgumentError } from './errors.js';
+
 /**
  * Apply filters to a list of normalized jobs.
  *
@@ -23,30 +25,32 @@ export function applyFilters(jobs, options = {}) {
  * @returns {{ jobs: Array, total_matched: number }}
  */
 export function applyFiltersDetailed(jobs, options = {}) {
-  const {
-    titleFilter,
-    filter,
-    postedWithinDays,
-    locationIncludes,
-    locationExcludes,
-    order = 'newest',
-    offset = 0,
-    limit = 100,
-  } = options;
+  const { order = 'newest', offset = 0, limit = 100 } = options;
+  const matched = filterJobs(jobs, options);
+  return { jobs: pageJobs(matched, { order, offset, limit }), total_matched: matched.length };
+}
+
+/**
+ * The filter step on its own: every job that passes titleFilter, filter,
+ * postedWithinDays and the location filters, in the order given. No sort
+ * and no paging, so fetchJobsDetailed can count the matches per board
+ * before the page cut removes them.
+ */
+export function filterJobs(jobs, options = {}) {
+  const { titleFilter, filter, postedWithinDays, locationIncludes, locationExcludes } = options;
+  const { title, topic } = compileFilterPatterns({ titleFilter, filter });
 
   let result = jobs;
 
-  if (titleFilter) {
-    const pattern = new RegExp(titleFilter, 'i');
-    result = result.filter(j => pattern.test(j.title || ''));
+  if (title) {
+    result = result.filter(j => title.test(j.title || ''));
   }
 
-  if (filter) {
-    const pattern = new RegExp(filter, 'i');
+  if (topic) {
     result = result.filter(j =>
-      pattern.test(j.title || '') ||
-      pattern.test(j.department || '') ||
-      pattern.test(j.description || '')
+      topic.test(j.title || '') ||
+      topic.test(j.department || '') ||
+      topic.test(j.description || '')
     );
   }
 
@@ -69,7 +73,14 @@ export function applyFiltersDetailed(jobs, options = {}) {
     result = result.filter(j => !jobLocations(j).every(loc => matchers.some(m => m(loc))));
   }
 
-  const total_matched = result.length;
+  return result;
+}
+
+/**
+ * Sort, then cut the page (see applyFiltersDetailed for the order rules).
+ */
+export function pageJobs(jobs, { order = 'newest', offset = 0, limit = 100 } = {}) {
+  let result = jobs;
 
   if (order !== 'board') {
     result = [...result].sort(byNewest);
@@ -81,7 +92,30 @@ export function applyFiltersDetailed(jobs, options = {}) {
     result = result.slice(start, end);
   }
 
-  return { jobs: result, total_matched };
+  return result;
+}
+
+/**
+ * Compile the two regex arguments, or throw ArgumentError naming the one
+ * that does not compile. Both are case-insensitive. fetchJobsDetailed calls
+ * this before its first request, so a bad pattern is reported as a bad
+ * argument and costs no upstream traffic.
+ *
+ * @returns {{ title: RegExp|null, topic: RegExp|null }}
+ */
+export function compileFilterPatterns({ titleFilter, filter } = {}) {
+  return {
+    title: titleFilter ? compilePattern(titleFilter, 'titleFilter') : null,
+    topic: filter ? compilePattern(filter, 'filter') : null,
+  };
+}
+
+function compilePattern(source, name) {
+  try {
+    return new RegExp(source, 'i');
+  } catch (err) {
+    throw new ArgumentError(`${name}: ${err.message}`);
+  }
 }
 
 /**

@@ -1,7 +1,10 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
-import { fetchJobs, fetchJobsDetailed } from '../src/index.js';
+import { fetchJobs, fetchJobsDetailed, ArgumentError } from '../src/index.js';
+import { ADAPTERS } from '../src/adapters/index.js';
+import { normalize } from '../src/normalizer.js';
+import { disableRetries, isAtsError, mockFetchByHost, okResponse, statusResponse } from './helpers.js';
 
 // Force the on-disk registry so the global fetch mocks below only intercept
 // adapter calls, never the (now network-first) registry load. Route the disk
@@ -9,6 +12,8 @@ import { fetchJobs, fetchJobsDetailed } from '../src/index.js';
 // live registry content (companies migrate ATS; tests must not care).
 process.env.JD_INTEL_REGISTRY_URL = '';
 process.env.JD_INTEL_REGISTRY_DIR = fileURLToPath(new URL('./fixtures/registry', import.meta.url));
+
+disableRetries();
 
 /**
  * fetchJobs routing: explicit-ATS config passthrough (Workday reachable
@@ -261,4 +266,303 @@ describe('fetchJobs — the same location filters give the same set on a Workday
       assert.equal(calls.detail, expected.length, 'Workday hydrates exactly the rows the shared matcher keeps');
     });
   }
+});
+
+describe('fetchJobsDetailed — match, company, boards and failed (issues #55, #58, #60)', () => {
+  const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
+  const ghBoard = (titles, age = 2) => ({
+    jobs: titles.map((title, i) => ({
+      id: i + 1, title, absolute_url: `https://gh.example/${i + 1}`, content: 'Build.', first_published: daysAgo(age), location: { name: 'Remote' },
+    })),
+  });
+  const ashbyBoard = (titles, age = 30) => ({
+    jobs: titles.map((title, i) => ({ id: `a${i + 1}`, title, location: 'Remote', publishedAt: daysAgo(age), descriptionHtml: '<p>Build.</p>' })),
+  });
+  const GH = 'greenhouse.io';
+  const LEVER = 'lever.co';
+  const ASHBY = 'ashbyhq.com';
+
+  test('registry hit: one board with jobs_found and matched, company from the row, nothing failed', async (t) => {
+    const calls = mockFetchByHost(t, { [GH]: okResponse(ghBoard(['Product Manager', 'Staff Engineer'])) });
+    const result = await fetchJobsDetailed({ company: 'fixture-gh', titleFilter: 'manager' });
+    assert.equal(result.match, 'registry');
+    assert.deepEqual(result.company, { key: 'fixturegreenhouseco', name: 'Fixture Greenhouse Co' });
+    assert.deepEqual(result.boards, [{
+      ats: 'greenhouse',
+      slug: 'fixture-gh',
+      name: 'Fixture Greenhouse Co',
+      site: null,
+      board_url: 'https://boards.greenhouse.io/fixture-gh',
+      org_name: null,
+      org_url: null,
+      jobs_found: 2,
+      matched: 1,
+      selected: true,
+      scan: null,
+    }]);
+    assert.deepEqual(result.failed, []);
+    assert.equal(result.total_before_filters, 2);
+    assert.equal(result.total_matched, 1);
+    assert.deepEqual(result.jobs.map(j => j.title), ['Product Manager']);
+    assert.equal(calls.length, 1, 'a registry hit costs one adapter call');
+  });
+
+  test('registry hit: the adapter AtsError still propagates', async (t) => {
+    mockFetchByHost(t, { [GH]: statusResponse(503) });
+    await assert.rejects(fetchJobsDetailed({ company: 'fixture-gh' }), isAtsError('ats_unreachable', 503));
+  });
+
+  test('explicit ats with the company in the registry on that ATS is a registry match with the row config', async (t) => {
+    workdayMock(t);
+    const result = await fetchJobsDetailed({ company: 'fixtureco', ats: 'workday' });
+    assert.equal(result.match, 'registry');
+    assert.deepEqual(result.company, { key: 'fixtureworkdayco', name: 'Fixture Workday Co' });
+    assert.equal(result.boards[0].site, 'FixtureCareers');
+    assert.equal(result.boards[0].board_url, 'https://fixtureco.wd0.myworkdayjobs.com/FixtureCareers');
+  });
+
+  test('explicit ats without a registry row is a probe: listed when it answers, absent when it 404s', async (t) => {
+    mockFetchByHost(t, { [GH]: okResponse(ghBoard(['Designer'])) });
+    const hit = await fetchJobsDetailed({ company: 'nocorp', ats: 'greenhouse' });
+    assert.equal(hit.match, 'probe');
+    assert.equal(hit.company, null);
+    assert.deepEqual(hit.boards.map(b => [b.ats, b.slug, b.name, b.jobs_found]), [['greenhouse', 'nocorp', null, 1]]);
+
+    mockFetchByHost(t, {});
+    const miss = await fetchJobsDetailed({ company: 'nocorp', ats: 'greenhouse' });
+    assert.deepEqual(miss.boards, []);
+    assert.deepEqual(miss.failed, []);
+  });
+
+  test('discovery: one adapter answers, another is rate limited; both are reported', async (t) => {
+    mockFetchByHost(t, { [GH]: okResponse(ghBoard(['Product Manager'])), [LEVER]: statusResponse(429) });
+    const result = await fetchJobsDetailed({ company: 'nocorp' });
+    assert.equal(result.match, 'probe');
+    assert.equal(result.company, null);
+    assert.deepEqual(result.boards.map(b => [b.ats, b.slug, b.name, b.jobs_found, b.matched]), [['greenhouse', 'nocorp', null, 1, 1]]);
+    assert.equal(result.failed.length, 1);
+    const [failure] = result.failed;
+    assert.equal(failure.ats, 'lever');
+    assert.equal(failure.slug, 'nocorp');
+    assert.equal(failure.name, null);
+    assert.equal(failure.code, 'rate_limited');
+    assert.match(failure.message, /429/);
+    assert.deepEqual(Object.keys(failure).sort(), ['ats', 'code', 'message', 'name', 'slug'], 'the shape #87 fixes, nothing extra');
+    // A board answered, so the array form still returns the page.
+    assert.deepEqual((await fetchJobs({ company: 'nocorp' })).map(j => j.title), ['Product Manager']);
+  });
+
+  test('discovery: every adapter 404 is the true not-found: no boards, no failures', async (t) => {
+    mockFetchByHost(t, {});
+    const result = await fetchJobsDetailed({ company: 'nocorp' });
+    assert.equal(result.match, 'probe');
+    assert.deepEqual(result.boards, []);
+    assert.deepEqual(result.failed, []);
+    assert.equal(result.total_before_filters, 0);
+    assert.equal(result.total_matched, 0);
+    assert.deepEqual(await fetchJobs({ company: 'nocorp' }), []);
+  });
+
+  test('discovery: a live board whose rows all miss the title filter still shows up, with total_before_filters above zero', async (t) => {
+    mockFetchByHost(t, { [GH]: okResponse(ghBoard(['Account Executive', 'Sales Lead', 'Recruiter'])) });
+    const result = await fetchJobsDetailed({ company: 'nocorp', titleFilter: 'product designer' });
+    assert.deepEqual(result.jobs, []);
+    assert.equal(result.total_matched, 0);
+    assert.equal(result.total_before_filters, 3);
+    assert.deepEqual(result.boards.map(b => [b.ats, b.jobs_found, b.matched]), [['greenhouse', 3, 0]]);
+  });
+
+  test('discovery: zero boards and one 429: the detailed call returns the object, the array call throws rate_limited', async (t) => {
+    mockFetchByHost(t, { [LEVER]: statusResponse(429) });
+    const result = await fetchJobsDetailed({ company: 'nocorp' });
+    assert.deepEqual(result.jobs, []);
+    assert.deepEqual(result.boards, []);
+    assert.deepEqual(result.failed.map(f => [f.ats, f.code]), [['lever', 'rate_limited']]);
+
+    await assert.rejects(fetchJobs({ company: 'nocorp' }), (err) => {
+      isAtsError('rate_limited', 429)(err);
+      assert.match(err.message, /lever/);
+      assert.match(err.message, /nocorp/);
+      return true;
+    });
+  });
+
+  test('discovery: zero boards and only a 503 throws ats_unreachable from the array call', async (t) => {
+    mockFetchByHost(t, { [ASHBY]: statusResponse(503) });
+    await assert.rejects(fetchJobs({ company: 'nocorp' }), (err) => {
+      isAtsError('ats_unreachable', undefined)(err);
+      assert.match(err.message, /ashby/);
+      return true;
+    });
+  });
+
+  test('Workday override: one board from the config, listed even when it returns no rows', async (t) => {
+    workdayMock(t);
+    const config = { tenant: 'expedia', env: 'wd108', site: 'search' };
+    const result = await fetchJobsDetailed({ company: 'expedia', ats: 'workday', config });
+    assert.equal(result.match, 'workday_override');
+    assert.equal(result.company, null);
+    assert.deepEqual(result.boards.map(b => [b.ats, b.slug, b.name, b.site, b.board_url, b.jobs_found, b.matched]), [
+      ['workday', 'expedia', null, 'search', 'https://expedia.wd108.myworkdayjobs.com/search', 1, 1],
+    ]);
+
+    t.mock.method(global, 'fetch', async () => okResponse({ total: 0, jobPostings: [] }));
+    const empty = await fetchJobsDetailed({ company: 'expedia', ats: 'workday', config });
+    assert.equal(empty.boards.length, 1);
+    assert.equal(empty.boards[0].jobs_found, 0);
+    assert.equal(empty.total_before_filters, 0);
+  });
+
+  test('matched is counted per board before the page cut, so a board the limit removed entirely still reports its count', async (t) => {
+    mockFetchByHost(t, {
+      [GH]: okResponse(ghBoard(['New Role A', 'New Role B'], 1)),
+      [ASHBY]: okResponse(ashbyBoard(['Old Role C', 'Old Role D'], 30)),
+    });
+    const result = await fetchJobsDetailed({ company: 'nocorp', limit: 2 });
+    assert.deepEqual(result.jobs.map(j => j.ats), ['greenhouse', 'greenhouse']);
+    assert.equal(result.total_matched, 4);
+    assert.equal(result.total_before_filters, 4);
+    assert.deepEqual(result.boards.map(b => [b.ats, b.jobs_found, b.matched]), [['greenhouse', 2, 2], ['ashby', 2, 2]]);
+  });
+
+  test("a filter that removes one board's rows leaves that board with matched 0 and the other unchanged", async (t) => {
+    mockFetchByHost(t, {
+      [GH]: okResponse(ghBoard(['Product Manager', 'Staff Engineer'])),
+      [ASHBY]: okResponse(ashbyBoard(['Designer'])),
+    });
+    const result = await fetchJobsDetailed({ company: 'nocorp', titleFilter: 'engineer|manager' });
+    assert.deepEqual(result.boards.map(b => [b.ats, b.jobs_found, b.matched]), [['greenhouse', 2, 2], ['ashby', 1, 0]]);
+    assert.equal(result.total_matched, 2);
+    assert.equal(result.total_before_filters, 3);
+  });
+});
+
+describe("fetchJobsDetailed — ctx.report records a board's scan, and jobs_found is the list it reports (issue #60)", () => {
+  // Workday and SmartRecruiters filter their list before hydrating, so the
+  // rows they return are already a filter result. Both report the scan
+  // through ctx.report and jobs_found takes `listed` from it, so a filter
+  // miss on a hiring company reads as hiring on every ATS. Real adapters,
+  // mocked fetch.
+  const WD = 'myworkdayjobs.com';
+  const SR = 'api.smartrecruiters.com';
+  const wdList = (titles) => ({
+    total: titles.length,
+    jobPostings: titles.map((title, i) => ({ title, externalPath: `/job/Remote/R${i}`, locationsText: 'Remote', postedOn: 'Posted Today' })),
+  });
+  const workdayRoutes = (titles) => ({ [WD]: (u) => okResponse(u.endsWith('/jobs') ? wdList(titles) : WD_DETAIL) });
+  const srList = (titles) => ({
+    totalFound: titles.length,
+    content: titles.map((name, i) => ({ id: `${i + 1}`, name, releasedDate: '2026-09-01T00:00:00Z', location: { city: 'Berlin', country: 'Germany' } })),
+  });
+  const SR_DETAIL = { jobAd: { sections: { jobDescription: { text: 'Build.' } } }, postingUrl: 'https://jobs.smartrecruiters.com/x' };
+  const srRoutes = (titles) => ({ [SR]: (u) => okResponse(/\/postings\/[^/?]+$/.test(u) ? SR_DETAIL : srList(titles)) });
+  const MISS = 'product designer';
+  const SALES = ['Account Executive', 'Sales Lead', 'Recruiter'];
+
+  test('Workday registry hit with a title filter that misses: jobs_found is the list, nothing hydrated', async (t) => {
+    const calls = mockFetchByHost(t, workdayRoutes(SALES));
+    const result = await fetchJobsDetailed({ company: 'fixtureco', titleFilter: MISS });
+    assert.equal(result.match, 'registry');
+    assert.deepEqual(result.jobs, []);
+    assert.equal(result.total_matched, 0);
+    assert.equal(result.total_before_filters, 3);
+    assert.deepEqual(result.boards.map(b => [b.ats, b.jobs_found, b.matched, b.scan]), [
+      ['workday', 3, 0, { listed: 3, prefiltered: 0, hydrated: 0, capped: false }],
+    ]);
+    assert.equal(calls.length, 1, 'the list request only; no detail to fetch');
+  });
+
+  test('the same Workday company with an empty list reads jobs_found 0: not hiring is a different answer from a filter miss', async (t) => {
+    mockFetchByHost(t, workdayRoutes([]));
+    const result = await fetchJobsDetailed({ company: 'fixtureco', titleFilter: MISS });
+    assert.deepEqual(result.boards.map(b => [b.jobs_found, b.matched, b.scan.listed]), [[0, 0, 0]]);
+    assert.equal(result.total_before_filters, 0);
+  });
+
+  test('Workday: limit cuts the hydrate budget, not jobs_found', async (t) => {
+    mockFetchByHost(t, workdayRoutes(['Role 1', 'Role 2', 'Role 3', 'Role 4', 'Role 5']));
+    const result = await fetchJobsDetailed({ company: 'fixtureco', limit: 2 });
+    assert.equal(result.jobs.length, 2);
+    assert.equal(result.total_before_filters, 5);
+    assert.deepEqual(result.boards.map(b => [b.jobs_found, b.matched, b.scan]), [
+      [5, 2, { listed: 5, prefiltered: 5, hydrated: 2, capped: true }],
+    ]);
+  });
+
+  test('SmartRecruiters registry hit with a title filter that misses reads the same way, on the canonical slug', async (t) => {
+    const calls = mockFetchByHost(t, srRoutes(SALES));
+    const result = await fetchJobsDetailed({ company: 'acmepay', titleFilter: MISS });
+    assert.equal(result.match, 'registry');
+    assert.equal(result.total_matched, 0);
+    assert.equal(result.total_before_filters, 3);
+    assert.deepEqual(result.boards.map(b => [b.ats, b.slug, b.jobs_found, b.matched, b.scan]), [
+      ['smartrecruiters', 'AcmePay', 3, 0, { listed: 3, prefiltered: 0, hydrated: 0, capped: false }],
+    ]);
+    assert.equal(calls.length, 1, 'the list request only');
+  });
+
+  test('in discovery, a SmartRecruiters board whose pre-filter dropped every row is still a board, counted from its list', async (t) => {
+    mockFetchByHost(t, srRoutes(['Account Executive', 'Recruiter']));
+    const result = await fetchJobsDetailed({ company: 'nocorp', titleFilter: 'zzz' });
+    assert.equal(result.match, 'probe');
+    assert.deepEqual(result.boards.map(b => [b.ats, b.jobs_found, b.matched, b.scan.listed]), [['smartrecruiters', 2, 0, 2]]);
+    assert.equal(result.total_before_filters, 2);
+    assert.deepEqual(result.failed, []);
+  });
+
+  test('the adapter receives companyName, filterContext and report; a report without listed falls back to the rows', async (t) => {
+    // A stub through the ADAPTERS map, restored after the test: the one way
+    // to see the ctx object itself.
+    let ctxSeen;
+    t.mock.method(ADAPTERS.smartrecruiters, 'fetch', async (slug, ctx) => {
+      ctxSeen = ctx;
+      ctx.report({ ats: 'smartrecruiters', prefiltered: 6, hydrated: 6, capped: false });
+      return ['Product Manager', 'Group PM'].map(title =>
+        normalize({ companySlug: slug, company: slug, title, location: 'Remote', description: 'Build.', url: `https://x/${title}` }, 'smartrecruiters'));
+    });
+    const result = await fetchJobsDetailed({ company: 'acmepay', titleFilter: 'product', limit: 20, offset: 5 });
+    assert.deepEqual(result.boards[0].scan, { listed: undefined, prefiltered: 6, hydrated: 6, capped: false });
+    assert.equal(result.boards[0].jobs_found, 2);
+    assert.equal(result.boards[0].matched, 1);
+    assert.equal(ctxSeen.companyName, 'AcmePay');
+    assert.equal(ctxSeen.filterContext.titleFilter, 'product');
+    assert.equal(ctxSeen.filterContext.limit, 20);
+    assert.equal(ctxSeen.filterContext.offset, 5);
+  });
+
+  test('a board that never reports has scan null and jobs_found from its rows', async (t) => {
+    mockFetchByHost(t, { 'greenhouse.io': okResponse({ jobs: [{ id: 1, title: 'PM', absolute_url: 'https://x/1', content: 'a', location: { name: 'Remote' } }] }) });
+    const result = await fetchJobsDetailed({ company: 'nocorp' });
+    assert.equal(result.boards[0].scan, null);
+    assert.equal(result.boards[0].jobs_found, 1);
+  });
+});
+
+describe('fetchJobsDetailed — ArgumentError before any request', () => {
+  const isArgumentError = (pattern) => (err) => {
+    assert.ok(err instanceof ArgumentError, `expected ArgumentError, got ${err?.name}: ${err?.message}`);
+    assert.equal(err.code, 'invalid_args');
+    assert.match(err.message, pattern);
+    return true;
+  };
+
+  test('a missing company', async (t) => {
+    const calls = mockFetchByHost(t, {});
+    await assert.rejects(fetchJobsDetailed({}), isArgumentError(/company/));
+    await assert.rejects(fetchJobs(), isArgumentError(/company/));
+    assert.equal(calls.length, 0);
+  });
+
+  test('an unknown ats', async (t) => {
+    const calls = mockFetchByHost(t, {});
+    await assert.rejects(fetchJobsDetailed({ company: 'fixture-gh', ats: 'taleo' }), isArgumentError(/Unknown ATS: taleo/));
+    assert.equal(calls.length, 0);
+  });
+
+  test('a titleFilter or filter that does not compile, named in the message', async (t) => {
+    const calls = mockFetchByHost(t, {});
+    await assert.rejects(fetchJobsDetailed({ company: 'fixture-gh', titleFilter: '(' }), isArgumentError(/^titleFilter:/));
+    await assert.rejects(fetchJobsDetailed({ company: 'fixture-gh', filter: '[' }), isArgumentError(/^filter:/));
+    assert.equal(calls.length, 0, 'a bad pattern costs no upstream request');
+  });
 });

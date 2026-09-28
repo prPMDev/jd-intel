@@ -12,7 +12,7 @@
 import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { fetchJobs } from './index.js';
-import { detectAts, searchRegistry } from './registry.js';
+import { detectAtsDetailed, searchRegistry } from './registry.js';
 
 const [,, command, ...args] = process.argv;
 
@@ -113,13 +113,17 @@ async function main() {
       const company = args[0];
       if (!company) { console.error('Usage: jd-intel detect <company>'); process.exit(1); }
       console.log(`Detecting ATS for ${company}...`);
-      const results = await detectAts(company);
-      if (results.length === 0) {
-        console.log('No ATS board found for this company.');
-      } else {
-        for (const r of results) {
-          console.log(`  Found: ${r.ats} (slug: ${r.slug})`);
-        }
+      const { boards, failed } = await detectAtsDetailed(company);
+      for (const b of boards) {
+        console.log(`  Found: ${b.ats} (slug: ${b.slug}, ${b.source === 'registry' ? 'in the registry' : 'live probe'})`);
+      }
+      for (const f of failed) {
+        console.log(`  Could not check ${f.ats}: ${f.message}`);
+      }
+      if (boards.length === 0) {
+        console.log(failed.length > 0
+          ? 'No ATS board confirmed. At least one check failed, so this is not a definite miss. Retry in a moment.'
+          : 'No ATS board found for this company.');
       }
       break;
     }
