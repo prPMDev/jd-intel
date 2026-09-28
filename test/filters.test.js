@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { applyFilters, applyFiltersDetailed } from '../src/filters.js';
+import { ArgumentError } from '../src/errors.js';
 
 const now = Date.now();
 const daysAgo = (n) => new Date(now - n * 86400000).toISOString();
@@ -453,5 +454,22 @@ describe('applyFiltersDetailed — total_matched and offset', () => {
   test('applyFilters returns the same page as an array', () => {
     const opts = { titleFilter: 'Engineer|PM|Manager', offset: 1, limit: 2 };
     assert.deepEqual(applyFilters(JOBS, opts), applyFiltersDetailed(JOBS, opts).jobs);
+  });
+});
+
+describe('a regex argument that does not compile', () => {
+  const isArgumentError = (pattern) => (err) => {
+    assert.ok(err instanceof ArgumentError, `expected ArgumentError, got ${err?.name}: ${err?.message}`);
+    assert.equal(err.code, 'invalid_args');
+    assert.match(err.message, pattern);
+    return true;
+  };
+
+  test('titleFilter throws ArgumentError naming the argument', () => {
+    assert.throws(() => applyFilters(JOBS, { titleFilter: '(' }), isArgumentError(/^titleFilter:/));
+  });
+
+  test('filter throws ArgumentError naming the argument', () => {
+    assert.throws(() => applyFiltersDetailed(JOBS, { filter: '[' }), isArgumentError(/^filter:/));
   });
 });

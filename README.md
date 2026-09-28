@@ -144,6 +144,18 @@ const { jobs, total_matched } = await fetchJobsDetailed({
 });
 ```
 
+The same result says how the company was resolved and which boards answered:
+
+- `match`: `registry` (a known company, one adapter call), `probe` (not in the registry, every adapter asked) or `workday_override` (an explicit Workday config).
+- `company`: `{ key, name }` from the registry row on a registry match, null otherwise.
+- `boards`: one entry per board that answered, `{ ats, slug, name, site, board_url, org_name, org_url, jobs_found, matched, selected, scan }`. `jobs_found` counts the rows the board listed before any filter. Workday and SmartRecruiters filter their list before fetching details, so for them it is the list count, not the rows that came back (a lower bound when the list scan caps). `matched` is the rows left after filters and before `offset` and `limit`, so a board whose rows were all cut from the page still shows up. `board_url` is built from the slug. `org_name` and `org_url` are null until the adapters read them from the board itself; nothing is filled in from the slug. A `probe` match is a slug match, not a confirmed identity: open `board_url` before treating the jobs as that company's.
+- `failed`: adapters that threw during discovery, `{ ats, slug, name, code, message }`, with `code` either `rate_limited` or `ats_unreachable`. When no board answered and a check failed, `fetchJobs` throws that error instead of returning `[]`, so an outage never reads as "not found".
+- `total_before_filters`: the sum of `jobs_found`. Zero matches with a positive `total_before_filters` means the company is hiring and nothing passed the filters, on every ATS.
+
+`detectAtsDetailed(company)` returns `{ boards, failed }`: registry rows first (`source: 'registry'`, never probed), then every live probe that answered (`source: 'probe'`), in platform order; `failed` lists the probes that could not be checked, with the same codes. `detectAts` keeps returning `[{ ats, slug }]`.
+
+A call the library cannot make throws `ArgumentError` (`code: 'invalid_args'`): no company, an unknown `ats`, or a `titleFilter` or `filter` that does not compile as a regex. It is thrown before any request goes out.
+
 CLI usage: `npx jd-intel fetch <company-slug> --title-filter "engineer" --posted-within-days 14`. Full filter reference [below](#filters-quick-reference).
 
 Each ATS request gives the server 10 seconds to start responding. A 429, a 5xx or a network error is retried up to three attempts with backoff (1s, 2s), honoring `Retry-After` when the ATS sends one, and at most 4 requests run at a time per host. A failure that outlasts the retries throws an `AtsError` whose `code` is `rate_limited` or `ats_unreachable`.

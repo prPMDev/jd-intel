@@ -35,6 +35,20 @@ export class AtsError extends Error {
 }
 
 /**
+ * Thrown when a call cannot proceed because of its arguments: a missing
+ * company, an unknown ATS name, a regex that does not compile. Carries
+ * `code: 'invalid_args'` so callers tell a bad request from a failed fetch
+ * (AtsError) without reading the message.
+ */
+export class ArgumentError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ArgumentError';
+    this.code = ERROR_CODES.INVALID_ARGS;
+  }
+}
+
+/**
  * Helper for adapters: build an AtsError from an HTTP status (429 => rate
  * limited, anything else => unreachable) with the given message.
  */

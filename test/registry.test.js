@@ -1,7 +1,10 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
-import { loadRegistry, searchRegistry, findAtsBySlug, findEntryBySlug } from '../src/registry.js';
+import { loadRegistry, searchRegistry, findAtsBySlug, findEntryBySlug, detectAts, detectAtsDetailed } from '../src/registry.js';
+import { disableRetries, mockFetchByHost, okResponse, statusResponse } from './helpers.js';
+
+disableRetries();
 
 // Registry lookup semantics are asserted against the fixture registry in
 // test/fixtures/registry/, not live data, so company additions, removals,
@@ -126,5 +129,59 @@ describe('findEntryBySlug', () => {
   test('returns null for unknown slug', async () => {
     const hit = await findEntryBySlug('zzzz-nonexistent-slug-zzzz');
     assert.equal(hit, null);
+  });
+});
+
+describe('detectAtsDetailed (issues #55, #87)', () => {
+  const delayed = (ms, resp) => async () => { await new Promise(r => setTimeout(r, ms)); return resp; };
+
+  test('a registry-known Workday company is listed from the registry and never probed there', async (t) => {
+    const calls = mockFetchByHost(t, {});
+    const { boards, failed } = await detectAtsDetailed('fixtureco');
+    assert.deepEqual(boards, [{ ats: 'workday', slug: 'fixtureco', source: 'registry' }]);
+    assert.deepEqual(failed, []);
+    assert.ok(calls.length > 0, 'the other adapters are still probed');
+    assert.ok(calls.every(u => !u.includes('myworkdayjobs.com')), `no Workday request expected, got: ${calls.join(', ')}`);
+  });
+
+  test('a registry-known company is not probed on its own ATS, and a live probe elsewhere is listed after it', async (t) => {
+    const calls = mockFetchByHost(t, { 'recruitee.com': okResponse({ offers: [] }) });
+    const { boards } = await detectAtsDetailed('fixture-gh');
+    assert.deepEqual(boards, [
+      { ats: 'greenhouse', slug: 'fixture-gh', source: 'registry' },
+      { ats: 'recruitee', slug: 'fixturegh', source: 'probe' },
+    ]);
+    assert.ok(calls.every(u => !u.includes('greenhouse.io')), 'the registry answered for Greenhouse');
+    assert.deepEqual(await detectAts('fixture-gh'), [{ ats: 'greenhouse', slug: 'fixture-gh' }, { ats: 'recruitee', slug: 'fixturegh' }]);
+  });
+
+  test('a probe 429 is recorded in failed with its code; detectAts still resolves', async (t) => {
+    mockFetchByHost(t, { 'lever.co': statusResponse(429) });
+    const { boards, failed } = await detectAtsDetailed('nocorp');
+    assert.deepEqual(boards, []);
+    assert.equal(failed.length, 1);
+    assert.equal(failed[0].ats, 'lever');
+    assert.equal(failed[0].slug, 'nocorp');
+    assert.equal(failed[0].code, 'rate_limited');
+    assert.match(failed[0].message, /429/);
+    assert.deepEqual(Object.keys(failed[0]).sort(), ['ats', 'code', 'message', 'slug']);
+    assert.deepEqual(await detectAts('nocorp'), []);
+  });
+
+  test('every probe 404 is the true not-found: empty boards, empty failed', async (t) => {
+    mockFetchByHost(t, {});
+    assert.deepEqual(await detectAtsDetailed('nocorp'), { boards: [], failed: [] });
+  });
+
+  test('boards and failed come back in platform order regardless of response timing', async (t) => {
+    mockFetchByHost(t, {
+      'greenhouse.io': delayed(40, okResponse()),
+      'recruitee.com': okResponse({ offers: [] }),
+      'lever.co': delayed(30, statusResponse(429)),
+      'ashbyhq.com': statusResponse(503),
+    });
+    const { boards, failed } = await detectAtsDetailed('nocorp');
+    assert.deepEqual(boards.map(b => b.ats), ['greenhouse', 'recruitee']);
+    assert.deepEqual(failed.map(f => [f.ats, f.code]), [['lever', 'rate_limited'], ['ashby', 'ats_unreachable']]);
   });
 });

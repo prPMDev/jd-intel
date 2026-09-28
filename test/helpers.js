@@ -26,6 +26,28 @@ export function networkError(code = 'ECONNRESET') {
   return Object.assign(new TypeError('fetch failed'), { cause: { code } });
 }
 
+export const okResponse = (body = {}) => ({ ok: true, status: 200, json: async () => body, text: async () => '' });
+export const statusResponse = (status) => ({ ok: false, status, json: async () => ({}), text: async () => '' });
+
+/**
+ * Mock the global fetch by host. `routes` maps a URL substring to a
+ * response, or to a function of the URL that returns one; any URL that
+ * matches nothing answers 404, the definite miss every adapter turns into
+ * []. Returns the URLs requested, in order, so a test can assert what was
+ * and was not called.
+ */
+export function mockFetchByHost(t, routes = {}) {
+  const calls = [];
+  t.mock.method(global, 'fetch', async (url) => {
+    const u = String(url);
+    calls.push(u);
+    const hit = Object.entries(routes).find(([needle]) => u.includes(needle));
+    const resp = hit ? hit[1] : statusResponse(404);
+    return typeof resp === 'function' ? resp(u) : resp;
+  });
+  return calls;
+}
+
 /**
  * Validator for assert.rejects: the rejection is an AtsError with this
  * code and status (status undefined for a network error or timeout).

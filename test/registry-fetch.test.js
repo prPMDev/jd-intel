@@ -40,6 +40,31 @@ describe('registry network-first loading', () => {
     assert.equal(reg.getRegistrySource(), 'disk-fallback');
   });
 
+  test('lookups answer in platform order on the first call, whatever order the files arrive in (issue #87)', async (t) => {
+    process.env.JD_INTEL_REGISTRY_URL = 'https://example.test/registry';
+    // The same slug in the greenhouse and lever files, with the greenhouse
+    // file arriving last. Before the fix the first call in a process walked
+    // the files in arrival order and answered lever; every later call,
+    // served from the cache, answered greenhouse.
+    const rows = {
+      greenhouse: [{ slug: 'dup', name: 'Dup on Greenhouse' }],
+      lever: [{ slug: 'dup', name: 'Dup on Lever' }],
+    };
+    t.mock.method(global, 'fetch', async (url) => {
+      const platform = String(url).split('/').pop().replace('.json', '');
+      if (platform === 'greenhouse') await new Promise((r) => setTimeout(r, 40));
+      return { ok: true, status: 200, json: async () => rows[platform] || [] };
+    });
+    const reg = await import('../src/registry.js?case=order');
+    assert.equal(await reg.findAtsBySlug('dup'), 'greenhouse', 'first call');
+    assert.equal(await reg.findAtsBySlug('dup'), 'greenhouse', 'second call');
+    assert.equal((await reg.findEntryBySlug('dup')).entry.name, 'Dup on Greenhouse');
+    assert.deepEqual(
+      Object.keys(await reg.loadRegistry()),
+      ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'teamtailor', 'recruitee', 'workday']
+    );
+  });
+
   test('disk-only when JD_INTEL_REGISTRY_URL is empty (no fetch attempted)', async (t) => {
     process.env.JD_INTEL_REGISTRY_URL = '';
     let fetchCalled = false;
