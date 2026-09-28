@@ -118,14 +118,19 @@ function byNewest(a, b) {
 }
 
 /**
- * Build a matcher for a single location keyword.
+ * Build a matcher for a single location keyword. The matcher takes a
+ * lowercased location string.
  *
  * Short tokens (≤4 chars) use word-boundary matching to prevent substring
  * collisions like "US" matching "Australia", "Brussels", "Belarus", or "UK"
- * matching "Auckland". Longer tokens use substring matching so phrases like
+ * matching "Ukraine". Longer tokens use substring matching so phrases like
  * "United States" can match "United States of America".
+ *
+ * Exported for the Workday list pre-filter, so one rule (trim, empty
+ * keywords never match, word boundaries for short tokens) applies before
+ * and after detail hydration (issue #61).
  */
-function makeLocationMatcher(needle) {
+export function makeLocationMatcher(needle) {
   const lower = (needle || '').toLowerCase().trim();
   if (!lower) return () => false;
   if (lower.length <= 4) {

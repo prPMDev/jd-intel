@@ -190,8 +190,9 @@ describe('applyFilters — postedWithinDays', () => {
 
 describe('applyFilters — word boundary matching for short location tokens', () => {
   // Tester found a real bug: substring match of "US" matches "Australia",
-  // "Brussels", "Belarus", "Lausanne", "Sydney, AUS". Short tokens (≤4 chars)
-  // must use word-boundary matching to avoid silent false positives.
+  // "Brussels", "Belarus", "Lausanne", "Sydney, AUS", and "UK" matches
+  // "Ukraine". Short tokens (≤4 chars) must use word-boundary matching to
+  // avoid silent false positives.
   const globalJobs = [
     { id: 'us1', title: 'PM', department: 'Eng', location: 'San Francisco, US', postedAt: daysAgo(1) },
     { id: 'us2', title: 'PM', department: 'Eng', location: 'Remote - US', postedAt: daysAgo(1) },
@@ -202,7 +203,7 @@ describe('applyFilters — word boundary matching for short location tokens', ()
     { id: 'by1', title: 'PM', department: 'Eng', location: 'Minsk, Belarus', postedAt: daysAgo(1) },
     { id: 'ch1', title: 'PM', department: 'Eng', location: 'Lausanne, Switzerland', postedAt: daysAgo(1) },
     { id: 'uk1', title: 'PM', department: 'Eng', location: 'London, UK', postedAt: daysAgo(1) },
-    { id: 'nz1', title: 'PM', department: 'Eng', location: 'Auckland, New Zealand', postedAt: daysAgo(1) },
+    { id: 'ua1', title: 'PM', department: 'Eng', location: 'Kyiv, Ukraine', postedAt: daysAgo(1) },
   ];
 
   test('"US" does NOT match Australia, Brussels, Belarus, Lausanne', () => {
@@ -218,11 +219,11 @@ describe('applyFilters — word boundary matching for short location tokens', ()
     assert.ok(result.find(j => j.id === 'us2'));
   });
 
-  test('"UK" does NOT match Auckland', () => {
+  test('"UK" does NOT match Ukraine', () => {
     const result = applyFilters(globalJobs, { locationIncludes: ['UK'] });
     const ids = result.map(j => j.id);
     assert.deepEqual(ids, ['uk1']);
-    assert.ok(!ids.includes('nz1'));
+    assert.ok(!ids.includes('ua1'));
   });
 
   test('"United States" still uses substring match (no regression)', () => {
@@ -239,11 +240,11 @@ describe('applyFilters — word boundary matching for short location tokens', ()
   });
 
   test('locationExcludes applies word boundaries too (the symmetric case)', () => {
-    // Exclude "UK" should drop London but keep Auckland
+    // Exclude "UK" should drop London but keep Kyiv, Ukraine
     const result = applyFilters(globalJobs, { locationExcludes: ['UK'] });
     const ids = result.map(j => j.id);
     assert.ok(!ids.includes('uk1'), 'UK job should be excluded');
-    assert.ok(ids.includes('nz1'), 'Auckland should NOT be excluded by UK filter');
+    assert.ok(ids.includes('ua1'), 'Ukraine should NOT be excluded by UK filter');
   });
 
   test('Mix: include "United States" + exclude "UK" handles cleanly', () => {

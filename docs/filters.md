@@ -110,11 +110,13 @@ This prevents silent false positives on short country codes:
 | `US` | `Australia` | No | "us" inside "australia" isn't a word |
 | `US` | `Brussels`, `Belarus`, `Lausanne` | No | Same reason |
 | `UK` | `London, UK` | Yes | UK is a standalone word |
-| `UK` | `Auckland, New Zealand` | No | "uk" is inside "auckland" |
+| `UK` | `Kyiv, Ukraine` | No | "uk" is inside "ukraine" |
 | `United States` | `United States of America` | Yes | Substring match for longer keywords |
 | `EMEA` | `Remote - EMEA` | Yes | 4-char boundary, still matches cleanly |
 
-So `US` and `UK` are safe to pass as-is. The implementation prevents the substring collisions that would otherwise silently return Australian or New Zealand jobs to a US query.
+So `US` and `UK` are safe to pass as-is. The implementation prevents the substring collisions that would otherwise silently return Australian or Belgian jobs to a US query, or Ukrainian jobs to a UK query.
+
+The Workday adapter filters list rows by location before it fetches job details, and it uses this same matcher. So a Workday board returns the same set as any other ATS for the same keywords, and no detail fetch is spent on a row that matches only as a substring.
 
 ### Jobs open in several locations
 

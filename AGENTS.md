@@ -118,7 +118,7 @@ jd-intel/
 - `titleFilter` matches title only (role identity: PM, engineer, designer)
 - `filter` matches title + department + description (topic / scope)
 - They AND together. Use both for "PM roles about integrations".
-- Location keywords ≤ 4 chars use word-boundary matching (US, UK safe; no Australia / Auckland collisions)
+- Location keywords ≤ 4 chars use word-boundary matching (US, UK safe; no Australia / Ukraine collisions)
 - Prefer include over exclude; avoid bare "Remote" (matches Remote-EMEA etc.)
 - Full rationale: `docs/filters.md`
 
