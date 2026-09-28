@@ -4,15 +4,23 @@
  * Each handler:
  *   1. Validates args (Zod handles most of this)
  *   2. Calls the jd-intel library
- *   3. Wraps the result in the uniform envelope
+ *   3. Maps the library's result or error onto the envelope: one status,
+ *      one code, and metadata that says how the answer was reached
  *
  * Handlers stay thin — library does the work, MCP layer shapes the response.
  */
 
 import { z } from 'zod';
-import { fetchJobsDetailed, detectAts as libDetectAts, registry, ATS_NAMES, AtsError } from 'jd-intel';
+import {
+  fetchJobsDetailed,
+  detectAtsDetailed as libDetectAtsDetailed,
+  registry,
+  ATS_NAMES,
+  AtsError,
+  ArgumentError,
+} from 'jd-intel';
 
-const { search: searchRegistry, findAtsBySlug } = registry;
+const { search: searchRegistry } = registry;
 // Tolerate an older jd-intel that predates getSource. The bundle always
 // vendors a matching version; this only guards a skewed local/global install.
 const getRegistrySource = registry.getSource || (() => 'unknown');
@@ -31,8 +39,13 @@ const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: 
 
 const DEFAULT_LIMIT = 100;
 const DEFAULT_MAX_TOKENS = 12000;
-const MIN_MAX_TOKENS = 2000;
-const MAX_MAX_TOKENS = 40000;
+
+// detectAtsDetailed asks every adapter the registry did not answer for, but
+// hasWorkday() answers false without a request: a Workday board is a
+// (tenant, env, site) triple the slug does not reveal. metadata.attempted
+// lists the live probes only, so Workday appears there never and in boards
+// only from the registry.
+const PROBEABLE = ATS_NAMES.filter((ats) => ats !== 'workday');
 
 // est_tokens is chars/4 of the text block, so it is only known once the
 // envelope holding it has been serialized. A few passes settle it: the digit
@@ -41,26 +54,28 @@ function estTokens(result) {
   return Math.ceil(result.content[0].text.length / 4);
 }
 
-function successWithEstTokens(jobs, metadata) {
-  let result = success(jobs, { ...metadata, est_tokens: 0 });
+function withEstTokens(wrap, jobs, metadata) {
+  let result = wrap(jobs, { ...metadata, est_tokens: 0 });
   for (let pass = 0; pass < 3; pass++) {
     const est = estTokens(result);
     if (est === result.structuredContent.metadata.est_tokens) break;
-    result = success(jobs, { ...metadata, est_tokens: est });
+    result = wrap(jobs, { ...metadata, est_tokens: est });
   }
   return result;
 }
 
 // Adds whole jobs in order until the next one would pass the budget. The
 // candidate envelope is measured with the largest metadata this response
-// could carry (a "limit" cut, every count at its maximum), so the final
-// envelope, whose metadata is the same size or smaller, stays within budget.
+// could carry (the longest truncated reason, every count at its maximum), so
+// the final envelope, whose metadata is the same size or smaller, stays
+// within budget. "success" is also the longest status.
 function fitToBudget(page, maxTokens, meta, total) {
+  const longer = (a, b) => (JSON.stringify(a).length >= JSON.stringify(b).length ? a : b);
   const upper = {
     ...meta,
-    truncated: { reason: 'limit', not_returned: total },
+    truncated: { reason: 'scan_cap', not_returned: longer(total, null) },
     est_tokens: 999999,
-    next_offset: total,
+    next_offset: longer(total, null),
   };
   let selected = [];
   for (const job of page) {
@@ -70,6 +85,27 @@ function fitToBudget(page, maxTokens, meta, total) {
     selected = candidate;
   }
   return selected;
+}
+
+// One ATS when every board shares it, else null: a slug that answers on two
+// platforms has no single ats, and boards says which.
+function sharedAts(boards) {
+  if (boards.length === 0) return null;
+  const [first] = boards;
+  return boards.every((b) => b.ats === first.ats) ? first.ats : null;
+}
+
+// No board answered and at least one check failed: rate_limited when any
+// failure was a 429, else ats_unreachable. The same rule fetchJobs applies
+// when it throws for a discovery that found nothing.
+function outageCode(failed) {
+  const limited = failed.some((f) => f.code === ERROR_CODES.RATE_LIMITED);
+  return limited ? ERROR_CODES.RATE_LIMITED : ERROR_CODES.ATS_UNREACHABLE;
+}
+
+function outageMessage(company, failed) {
+  const checks = failed.map((f) => `${f.ats} (${f.message})`).join('; ');
+  return `No board answered for "${company}" and the check failed on ${checks}`;
 }
 
 const JOB = z
@@ -93,7 +129,7 @@ const REGISTRY_ENTRY = z
 
 // An exception that escapes a handler would otherwise reach the model as the
 // SDK's plain-text isError, with no envelope and no error.code. fetch_jobs maps
-// AtsError and library argument errors itself; this catches everything else.
+// AtsError and ArgumentError itself; this catches everything else.
 function withEnvelope(handler) {
   return async (args, extra) => {
     try {
@@ -106,9 +142,8 @@ function withEnvelope(handler) {
 
 export function registerTools(server, deps = {}) {
   const _fetchJobsDetailed = deps.fetchJobsDetailed || fetchJobsDetailed;
-  const _findAtsBySlug = deps.findAtsBySlug || findAtsBySlug;
   const _searchRegistry = deps.searchRegistry || searchRegistry;
-  const _detectAts = deps.detectAts || libDetectAts;
+  const _detectAtsDetailed = deps.detectAtsDetailed || libDetectAtsDetailed;
 
   server.registerTool(
     'fetch_jobs',
@@ -119,15 +154,15 @@ export function registerTools(server, deps = {}) {
       outputSchema: envelopeSchema(z.array(JOB).nullable()),
       inputSchema: z.object({
         company: z.string().describe('Company slug or name (e.g. "stripe")'),
-        title_filter: z.string().optional().describe('Regex matched against title only — role identity'),
-        filter: z.string().optional().describe('Regex matched across title, department, description — topic/scope'),
+        title_filter: z.string().optional().describe('Regex matched against title only: role identity'),
+        filter: z.string().optional().describe('Regex matched across title, department, description: topic/scope'),
         posted_within_days: z.number().int().positive().optional().describe('Only jobs posted within N days'),
         location_includes: z.array(z.string()).optional().describe('Keep jobs where any listed location contains any keyword'),
         location_excludes: z.array(z.string()).optional().describe('Drop jobs only when every listed location contains a keyword'),
         limit: z.number().int().positive().optional().describe('Max jobs per page (default 100). max_tokens usually stops output first.'),
         offset: z.number().int().min(0).optional().describe('Matches to skip after sorting (default 0). Pass next_offset from the previous response to get the next page.'),
         order: z.enum(['newest', 'board']).optional().describe('"newest" (default): by postedAt, undated last. "board": the ATS\'s own order.'),
-        max_tokens: z.number().int().min(MIN_MAX_TOKENS).max(MAX_MAX_TOKENS).optional().describe(`Response budget in tokens, chars/4 of the text block (default ${DEFAULT_MAX_TOKENS}, ${MIN_MAX_TOKENS} to ${MAX_MAX_TOKENS}). Whole jobs only; at least one is always returned.`),
+        max_tokens: z.number().int().min(1).optional().describe(`Response budget in tokens, chars/4 of the text block (default ${DEFAULT_MAX_TOKENS}, any integer from 1). Whole jobs only; at least one is always returned. Larger returns more complete postings per call; smaller is a quick scan.`),
         workday: z
           .object({
             tenant: z.string().trim().min(1).describe('Workday tenant, the first URL label, e.g. "expedia"'),
@@ -140,29 +175,18 @@ export function registerTools(server, deps = {}) {
       }).strict(),
     },
     withEnvelope(async (args) => {
-      let ats;
-      let config;
-      if (args.workday) {
-        const { tenant, env, site } = args.workday;
-        if (!tenant?.trim() || !env?.trim() || !site?.trim()) {
-          return error(
-            ERROR_CODES.INVALID_ARGS,
-            'workday requires all three of {tenant, env, site}. Read them from the careers URL https://{tenant}.{env}.myworkdayjobs.com/{site}.'
-          );
-        }
-        ats = 'workday';
-        config = { tenant, env, site };
-      }
-
+      // The schema already guarantees a complete, non-blank triple.
+      const config = args.workday ? { ...args.workday } : undefined;
       const limit = args.limit ?? DEFAULT_LIMIT;
       const offset = args.offset ?? 0;
       const order = args.order ?? 'newest';
       const maxTokens = args.max_tokens ?? DEFAULT_MAX_TOKENS;
 
+      let result;
       try {
-        const { jobs: page, total_matched } = await _fetchJobsDetailed({
+        result = await _fetchJobsDetailed({
           company: args.company,
-          ats,
+          ats: config ? 'workday' : undefined,
           config,
           titleFilter: args.title_filter,
           filter: args.filter,
@@ -173,63 +197,86 @@ export function registerTools(server, deps = {}) {
           offset,
           limit,
         });
-
-        const normalizedSlug = args.company.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const registryAts = await _findAtsBySlug(normalizedSlug);
-
-        // Discovery miss: not in the registry and no board returned anything.
-        // Guard on !config so a valid Workday override that returns 0 jobs is not
-        // mislabeled; a registry hit with 0 open roles stays a success([]).
-        if (!config && registryAts === null && total_matched === 0) {
-          return error(
-            ERROR_CODES.COMPANY_NOT_FOUND,
-            `No board found for "${args.company}" on any supported ATS. Check the slug, or pass an explicit workday {tenant,env,site} for a Workday board.`
-          );
-        }
-
-        const meta = {
-          count: 0,
-          registry_hit: registryAts !== null,
-          ats: config ? 'workday' : registryAts,
-          workday_override: Boolean(config),
-          version: VERSION,
-          registry_source: getRegistrySource(),
-          total_matched,
-          truncated: null,
-          offset,
-          next_offset: null,
-          order,
-        };
-
-        const jobs = fitToBudget(page, maxTokens, meta, total_matched);
-        const notReturned = Math.max(0, total_matched - offset - jobs.length);
-        let truncated = null;
-        if (jobs.length < page.length) truncated = { reason: 'size', not_returned: notReturned };
-        else if (notReturned > 0) truncated = { reason: 'limit', not_returned: notReturned };
-
-        return successWithEstTokens(jobs, {
-          ...meta,
-          count: jobs.length,
-          truncated,
-          next_offset: notReturned > 0 ? offset + jobs.length : null,
-        });
       } catch (err) {
-        const msg = err.message || 'Unknown error';
-        // AtsError carries a stable .code from the adapter (ats_unreachable /
-        // rate_limited), so we map by code, not by parsing the message.
+        // AtsError and ArgumentError carry a stable .code, so the mapping
+        // reads the code and never the message. Anything else is a bug, and
+        // withEnvelope reports it as internal_error.
         if (err instanceof AtsError) {
           if (config && err.code === ERROR_CODES.ATS_UNREACHABLE) {
             // Keep the Workday triple-repair hint.
             return error(
               ERROR_CODES.ATS_UNREACHABLE,
-              `Workday rejected ${config.tenant}/${config.env}/${config.site}: ${msg}. Verify the triple against the careers URL https://{tenant}.{env}.myworkdayjobs.com/{site}.`
+              `Workday rejected ${config.tenant}/${config.env}/${config.site}: ${err.message}. Verify the triple against the careers URL https://{tenant}.{env}.myworkdayjobs.com/{site}.`
             );
           }
-          return error(err.code, msg);
+          return error(err.code, err.message);
         }
-        // Anything else is an arg-validation error from the library.
-        return error(ERROR_CODES.INVALID_ARGS, msg);
+        if (err instanceof ArgumentError || err?.code === ERROR_CODES.INVALID_ARGS) {
+          return error(ERROR_CODES.INVALID_ARGS, err.message);
+        }
+        throw err;
       }
+
+      const { jobs: page, total_matched, total_before_filters, match, company, boards, failed } = result;
+
+      // No board answered. With a failed check it is an outage, reported with
+      // the failures; with every check complete and no registry row, the slug
+      // is not there. A board whose rows all miss the filters is still a
+      // board (issue #60), so that case never reaches here.
+      if (boards.length === 0 && failed.length > 0) {
+        return error(outageCode(failed), outageMessage(args.company, failed), { failed });
+      }
+      if (match === 'probe' && boards.length === 0) {
+        return error(
+          ERROR_CODES.COMPANY_NOT_FOUND,
+          `No board answered for "${args.company}" on any probeable ATS and every check completed. Workday boards are registry-only; the workday argument reaches one the registry does not list.`
+        );
+      }
+
+      // Workday and SmartRecruiters read at most their cap. With a capped
+      // scan every count is a floor and not_returned cannot be stated.
+      const countsExact = !boards.some((b) => b.scan?.capped === true);
+      const meta = {
+        count: 0,
+        registry_hit: match === 'registry',
+        ats: sharedAts(boards),
+        workday_override: match === 'workday_override',
+        version: VERSION,
+        registry_source: getRegistrySource(),
+        total_matched,
+        total_before_filters,
+        match,
+        company,
+        boards,
+        failed,
+        counts_exact: countsExact,
+        truncated: null,
+        offset,
+        next_offset: null,
+        order,
+      };
+
+      const jobs = fitToBudget(page, maxTokens, meta, total_matched);
+      const notReturned = Math.max(0, total_matched - offset - jobs.length);
+      let truncated = null;
+      if (jobs.length < page.length) truncated = { reason: 'size', not_returned: countsExact ? notReturned : null };
+      else if (notReturned > 0) truncated = { reason: 'limit', not_returned: countsExact ? notReturned : null };
+      else if (!countsExact) truncated = { reason: 'scan_cap', not_returned: null };
+
+      // A capped adapter hydrates only the rows the page needs (offset +
+      // limit), so on a capped board total_matched equals offset + count
+      // whenever the page fills and "matches remain" never fires while
+      // most of the board is unread. A filled page on a capped board
+      // therefore pages on; the page it names is empty once the cap itself
+      // is the bound.
+      const pagesOn = notReturned > 0 || (!countsExact && jobs.length === limit);
+
+      return withEstTokens(failed.length > 0 ? partial : success, jobs, {
+        ...meta,
+        count: jobs.length,
+        truncated,
+        next_offset: pagesOn ? offset + jobs.length : null,
+      });
     })
   );
 
@@ -241,8 +288,8 @@ export function registerTools(server, deps = {}) {
       annotations: { ...READ_ONLY, openWorldHint: false },
       outputSchema: envelopeSchema(z.array(REGISTRY_ENTRY).nullable()),
       inputSchema: z.object({
-        query: z.string().optional().describe('Substring match against company name'),
-        sector: z.string().optional().describe('Match against sector (e.g. "fintech", "developer tools")'),
+        query: z.string().optional().describe('Case-insensitive substring match against company name or sector'),
+        sector: z.string().optional().describe('Case-insensitive substring match against sector only (e.g. "fintech", "developer tools"). With query, both must match.'),
       }).strict(),
     },
     withEnvelope(async (args) => {
@@ -250,12 +297,11 @@ export function registerTools(server, deps = {}) {
         return error(ERROR_CODES.INVALID_ARGS, 'Provide query or sector');
       }
 
-      // searchRegistry searches both name and sector via a single query string.
-      // We combine args into a single search string, preferring query if both given.
+      // searchRegistry matches one term against name or sector. With both
+      // arguments, query is the term and sector then narrows the hits.
       const searchTerm = args.query || args.sector;
       const results = await _searchRegistry(searchTerm);
 
-      // If sector was specified, further filter by sector match
       const filtered = args.sector
         ? results.filter((r) => (r.sector || '').toLowerCase().includes(args.sector.toLowerCase()))
         : results;
@@ -273,7 +319,7 @@ export function registerTools(server, deps = {}) {
   server.registerTool(
     'detect_ats',
     {
-      title: 'Detect which ATS a company uses',
+      title: 'Detect which ATS a company answers on',
       description: DETECT_ATS,
       annotations: { ...READ_ONLY, openWorldHint: true },
       outputSchema: envelopeSchema(z.string().nullable()),
@@ -282,28 +328,29 @@ export function registerTools(server, deps = {}) {
       }).strict(),
     },
     withEnvelope(async (args) => {
-      const results = await _detectAts(args.company);
+      const { boards, failed } = await _detectAtsDetailed(args.company);
+      const registered = new Set(boards.filter((b) => b.source === 'registry').map((b) => b.ats));
+      const meta = {
+        attempted: PROBEABLE.filter((ats) => !registered.has(ats)),
+        succeeded: boards.map((b) => b.ats),
+        boards,
+        failed,
+      };
 
-      if (results.length === 0) {
-        return success(null, { attempted: ATS_NAMES, succeeded: [] });
+      if (boards.length === 0) {
+        if (failed.length > 0) return error(outageCode(failed), outageMessage(args.company, failed), meta);
+        return success(null, meta);
       }
 
-      if (results.length === 1) {
-        return success(results[0].ats, {
-          attempted: ATS_NAMES,
-          succeeded: [results[0].ats],
-        });
+      // Several boards: data is the first in platform order, which the
+      // library guarantees, and the note says so. data as the whole list is
+      // the next major (issue #87).
+      if (boards.length > 1) {
+        meta.notes = [
+          `Boards on ${boards.length} platforms (${meta.succeeded.join(', ')}). data is the first in platform order, not a ranking; every board is in metadata.boards.`,
+        ];
       }
-
-      // Multiple matches — rare but possible if a company is registered on more than one ATS
-      return partial(
-        results[0].ats,
-        {
-          attempted: ATS_NAMES,
-          succeeded: results.map((r) => r.ats),
-          notes: [`Company found on multiple platforms: ${results.map((r) => r.ats).join(', ')}. Returning first match.`],
-        }
-      );
+      return (failed.length > 0 ? partial : success)(boards[0].ats, meta);
     })
   );
 }
