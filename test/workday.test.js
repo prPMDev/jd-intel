@@ -2,6 +2,9 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { fetchWorkday, hasWorkday } from '../src/adapters/workday.js';
 import { applyFilters } from '../src/filters.js';
+import { disableRetries, isAtsError, networkError } from './helpers.js';
+
+disableRetries();
 
 /**
  * Workday is registry-only, two-call (list POST + per-job detail GET).
@@ -296,12 +299,27 @@ describe('fetchWorkday', () => {
     assert.equal(jobs.length, 25);
   });
 
-  test('500 at offset 40 keeps the 40 postings already read', async (t) => {
+  test('500 at offset 40 (thrown once the retries are used up) keeps the 40 postings already read', async (t) => {
     const calls = paginatedMock(t, 127, { totalOnFirstPageOnly: true, failAt: { offset: 40, status: 500 } });
     const jobs = await fetchWorkday('cisco', { ...CTX });
     assert.equal(calls.list, 3);
     assert.equal(jobs.length, 40);
     assert.equal(jobs[39].title, 'Job 39');
+  });
+
+  test('a network error at offset 40 keeps the 40 postings already read', async (t) => {
+    let listCalls = 0;
+    t.mock.method(global, 'fetch', async (url, opts) => {
+      if (!url.endsWith('/jobs')) return { ok: true, status: 200, json: async () => DETAIL_FIXTURE };
+      listCalls += 1;
+      const { offset } = JSON.parse(opts.body);
+      if (offset === 40) throw networkError();
+      const page = Array.from({ length: 20 }, (_, i) => ({ title: `Job ${offset + i}`, externalPath: `/job/x/R${offset + i}`, locationsText: 'Remote', postedOn: 'Posted Today' }));
+      return { ok: true, status: 200, json: async () => ({ total: 127, jobPostings: page }) };
+    });
+    const jobs = await fetchWorkday('cisco', { ...CTX });
+    assert.equal(listCalls, 3);
+    assert.equal(jobs.length, 40);
   });
 
   test('404 at offset 40 keeps the 40 postings already read', async (t) => {
@@ -349,12 +367,22 @@ describe('fetchWorkday', () => {
     assert.deepEqual(jobs, []);
   });
 
-  test('throws on list 500 at offset 0, with the triple in the message', async (t) => {
-    listMock(t, { status: 500, list: {} });
+  test('throws on list 422 at offset 0 (a wrong site), with the triple in the message', async (t) => {
+    listMock(t, { status: 422, list: {} });
     await assert.rejects(
       () => fetchWorkday('cisco', { ...CTX }),
-      /Workday API error for cisco \(cisco\/wd5\/Cisco_Careers\): 500/
+      /Workday API error for cisco \(cisco\/wd5\/Cisco_Careers\): 422/
     );
+  });
+
+  test('throws ats_unreachable carrying the status on list 500 at offset 0', async (t) => {
+    listMock(t, { status: 500, list: {} });
+    await assert.rejects(() => fetchWorkday('cisco', { ...CTX }), isAtsError('ats_unreachable', 500));
+  });
+
+  test('throws rate_limited on list 429 at offset 0', async (t) => {
+    listMock(t, { status: 429, list: {} });
+    await assert.rejects(() => fetchWorkday('cisco', { ...CTX }), isAtsError('rate_limited', 429));
   });
 
   test('detail failure keeps the job with empty description', async (t) => {

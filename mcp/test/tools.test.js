@@ -360,6 +360,33 @@ describe('mcp server — end to end over an in-memory transport', async () => {
     }
   });
 
+  test('fetch_jobs on a registry company whose ATS is unreachable returns ats_unreachable, not invalid_args', async (t) => {
+    // The real library, a real registry hit (whichever Greenhouse company is
+    // listed first), and a network that fails every request. The adapter's
+    // atsFetch wraps the TypeError as AtsError('ats_unreachable'), so the
+    // handler maps it by code instead of falling through to invalid_args.
+    const { configureHttp, registry } = await import('jd-intel');
+    configureHttp({ retries: 1, sleep: async () => {} });
+    t.after(() => configureHttp());
+    t.mock.method(global, 'fetch', async () => {
+      throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNRESET' } });
+    });
+    const prev = process.env.JD_INTEL_REGISTRY_URL;
+    process.env.JD_INTEL_REGISTRY_URL = ''; // bundled registry, no network
+    try {
+      const [company] = await registry.load('greenhouse');
+      const client = await connect({});
+      const result = await client.callTool({ name: 'fetch_jobs', arguments: { company: company.slug } });
+      assert.equal(result.isError, true);
+      assert.equal(result.structuredContent.status, 'error');
+      assert.equal(result.structuredContent.error.code, 'ats_unreachable');
+      assert.match(result.structuredContent.error.message, /greenhouse\.io: fetch failed \(ECONNRESET\)/);
+    } finally {
+      if (prev === undefined) delete process.env.JD_INTEL_REGISTRY_URL;
+      else process.env.JD_INTEL_REGISTRY_URL = prev;
+    }
+  });
+
   test('fetch_jobs error envelope passes client-side validation and sets isError', async () => {
     const client = await connect({ fetchJobsDetailed: async () => ({ jobs: [], total_matched: 0 }), findAtsBySlug: async () => null });
     const result = await client.callTool({ name: 'fetch_jobs', arguments: { company: 'zzzz' } });

@@ -146,6 +146,8 @@ const { jobs, total_matched } = await fetchJobsDetailed({
 
 CLI usage: `npx jd-intel fetch <company-slug> --title-filter "engineer" --posted-within-days 14`. Full filter reference [below](#filters-quick-reference).
 
+Each ATS request gives the server 10 seconds to start responding. A 429, a 5xx or a network error is retried up to three attempts with backoff (1s, 2s), honoring `Retry-After` when the ATS sends one, and at most 4 requests run at a time per host. A failure that outlasts the retries throws an `AtsError` whose `code` is `rate_limited` or `ats_unreachable`.
+
 Node.js 18+. No API keys. No configuration.
 
 ### Manual install (fallback)

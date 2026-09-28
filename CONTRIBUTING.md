@@ -79,7 +79,7 @@ A few things that catch people out:
 
 - **Ashby slugs are case-sensitive** and can contain spaces, which appear as `%20` in the URL.
 - **SmartRecruiters returns HTTP 200 with zero results for companies that do not exist**, so a 200 alone proves nothing. Require `totalFound > 0`.
-- **TeamTailor has regional subdomains.** If the plain slug does not answer, try `<slug>.na.teamtailor.com` and `<slug>.eu.teamtailor.com`.
+- **TeamTailor has a regional subdomain.** If the plain slug does not answer, try `<slug>.na.teamtailor.com`. There is no working `eu` segment: `<slug>.eu.teamtailor.com` fails TLS for every slug, so the adapter does not probe it.
 
 ### Workday
 

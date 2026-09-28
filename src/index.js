@@ -160,3 +160,7 @@ export { ATS_NAMES };
 // (ats_unreachable / rate_limited) so the MCP layer maps failures without
 // parsing messages. ERROR_CODES is the single source of truth for both.
 export { ERROR_CODES, AtsError } from './errors.js';
+
+// HTTP settings for every adapter request: timeout, retries, per-host cap.
+// For tests and scripts; the defaults are right for normal use.
+export { configureHttp } from './http.js';

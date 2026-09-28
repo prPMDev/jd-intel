@@ -1,12 +1,17 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchAshby } from '../src/adapters/ashby.js';
+import { fetchAshby, hasAshby } from '../src/adapters/ashby.js';
 import { applyFilters } from '../src/filters.js';
+import { disableRetries, isAtsError, probeFailureTests } from './helpers.js';
+
+disableRetries();
 
 /**
- * Ashby has two APIs: REST (primary, has compensation) and GraphQL (fallback).
- * These tests cover the REST path. The adapter falls through to GraphQL if REST
- * returns 0 results or errors; that path is untested here.
+ * Ashby is REST only. The adapter once fell back to a GraphQL endpoint when
+ * REST returned nothing or failed; that query never named a board and never
+ * returned a job, and it turned a REST 429 or 5xx into an empty success
+ * (issue #55). Now a 404 is [] after one request and every other failure
+ * is the AtsError from atsFetch. Nothing here may reach the GraphQL host.
  *
  * FIXTURE is trimmed from a real /posting-api/job-board response with
  * includeCompensation=true (2026-09-27). Top-level keys are `jobs` and
@@ -194,29 +199,53 @@ function mockFetch(t, { status = 200, body = FIXTURE } = {}) {
 
 const withJobs = (...jobs) => ({ ...FIXTURE, jobs });
 
+const GRAPHQL_HOST = /jobs\.ashbyhq\.com\/api\/non-user-graphql/;
+
+// Records every request URL and answers each with `response`.
+function recordingMock(t, response) {
+  const calls = [];
+  t.mock.method(global, 'fetch', async (url) => {
+    calls.push(url);
+    return response;
+  });
+  return calls;
+}
+
 describe('fetchAshby', () => {
-  test('hits the REST URL with includeCompensation', async (t) => {
-    const calls = [];
-    t.mock.method(global, 'fetch', async (url) => {
-      calls.push(url);
-      return { ok: true, status: 200, json: async () => FIXTURE };
-    });
+  test('hits the REST URL with includeCompensation, once', async (t) => {
+    const calls = recordingMock(t, { ok: true, status: 200, json: async () => FIXTURE });
 
     await fetchAshby('ramp');
 
-    assert.ok(calls.length >= 1);
+    assert.equal(calls.length, 1);
     assert.match(calls[0], /api\.ashbyhq\.com\/posting-api\/job-board\/ramp\?includeCompensation=true/);
   });
 
-  test('returns [] on REST 404 (falls through to GraphQL, which also fails here)', async (t) => {
-    // Both REST and GraphQL fail, so the final result is []
-    t.mock.method(global, 'fetch', async () => ({
-      ok: false,
-      status: 404,
-      json: async () => ({}),
-    }));
+  test('returns [] on a REST 404 after exactly one request', async (t) => {
+    const calls = recordingMock(t, { ok: false, status: 404, json: async () => ({}) });
     const jobs = await fetchAshby('nonexistent');
     assert.deepEqual(jobs, []);
+    assert.equal(calls.length, 1);
+    assert.ok(calls.every(u => !GRAPHQL_HOST.test(u)), 'no GraphQL fallback request');
+  });
+
+  test('returns [] on a REST 200 with no jobs after exactly one request', async (t) => {
+    const calls = recordingMock(t, { ok: true, status: 200, json: async () => withJobs() });
+    assert.deepEqual(await fetchAshby('emptyco'), []);
+    assert.equal(calls.length, 1);
+  });
+
+  test('a REST 429 throws rate_limited and sends nothing to the GraphQL endpoint', async (t) => {
+    const calls = recordingMock(t, { ok: false, status: 429, json: async () => ({}) });
+    await assert.rejects(() => fetchAshby('ramp'), isAtsError('rate_limited', 429));
+    assert.equal(calls.length, 1);
+    assert.ok(calls.every(u => !GRAPHQL_HOST.test(u)), 'no GraphQL fallback request');
+  });
+
+  test('a REST 5xx throws ats_unreachable carrying the status', async (t) => {
+    const calls = recordingMock(t, { ok: false, status: 503, json: async () => ({}) });
+    await assert.rejects(() => fetchAshby('ramp'), isAtsError('ats_unreachable', 503));
+    assert.equal(calls.length, 1);
   });
 
   test('maps a REST job to the unified schema', async (t) => {
@@ -370,4 +399,23 @@ describe('fetchAshby', () => {
     assert.match(job.metadata.compensationTiers[0].summary, /OTE/);
     assert.equal(job.metadata.compensationTiers[0].additionalInformation, '60/40 split');
   });
+});
+
+describe('hasAshby', () => {
+  test('true on a 2xx, probing the board with HEAD', async (t) => {
+    const calls = [];
+    t.mock.method(global, 'fetch', async (url, init) => {
+      calls.push({ url, method: init.method });
+      return { ok: true, status: 200 };
+    });
+    assert.equal(await hasAshby('ramp'), true);
+    assert.deepEqual(calls, [{ url: 'https://api.ashbyhq.com/posting-api/job-board/ramp', method: 'HEAD' }]);
+  });
+
+  test('false on a 404', async (t) => {
+    mockFetch(t, { status: 404, body: {} });
+    assert.equal(await hasAshby('nonexistent'), false);
+  });
+
+  probeFailureTests(hasAshby, 'ramp');
 });

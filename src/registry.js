@@ -164,6 +164,9 @@ export async function detectAts(companyName) {
     if (found) results.push({ ats, slug });
   });
 
+  // A probe that throws (429, 5xx, network error) is dropped here: this
+  // returns what was found and never rejects. Reporting failed probes is
+  // the detailed variant tracked in #55.
   await Promise.allSettled(checks);
   return results;
 }

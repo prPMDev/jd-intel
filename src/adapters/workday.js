@@ -1,6 +1,7 @@
 import { normalize } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 import { makeLocationMatcher } from '../filters.js';
+import { atsFetch } from '../http.js';
 
 const MAX_DETAIL_FETCHES = 100;
 const LIST_PAGE_SIZE = 20;
@@ -48,11 +49,19 @@ export async function fetchWorkday(slug, ctx = {}) {
   let pages = 0;
   let firstTotal = 0;
   while (pages < LIST_PAGE_HARD_CAP) {
-    const resp = await fetch(`${base}/jobs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ appliedFacets: {}, limit: LIST_PAGE_SIZE, offset, searchText: '' }),
-    });
+    let resp;
+    try {
+      resp = await atsFetch(`${base}/jobs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appliedFacets: {}, limit: LIST_PAGE_SIZE, offset, searchText: '' }),
+      });
+    } catch (err) {
+      // A 429 or 5xx that outlasted the retries, or a network failure.
+      // After the first page, keep the postings already read.
+      if (offset === 0) throw err;
+      break;
+    }
 
     if (!resp.ok) {
       if (offset === 0) {
@@ -133,13 +142,13 @@ export async function fetchWorkday(slug, ctx = {}) {
       // externalPath already carries the '/job/...' segment, so it is
       // concatenated directly onto the CXS base. Inserting another
       // '/job' here yields '/job/job/...' which Workday rejects (422).
-      const dResp = await fetch(`${base}${externalPath}`);
+      const dResp = await atsFetch(`${base}${externalPath}`);
       if (dResp.ok) {
         const detail = await dResp.json();
         info = detail.jobPostingInfo || {};
       }
     } catch {
-      // detail failed: fall back to list fields, empty description
+      // detail failed, retries included: fall back to list fields, empty description
     }
 
     return normalize({
