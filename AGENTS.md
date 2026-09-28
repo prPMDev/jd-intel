@@ -224,8 +224,8 @@ A scheduled cloud agent expands the registry weekly, staging everything as a PR 
 - The gate retries 429/5xx/network with backoff (`--retries N`, default 3). A 429 is rate limiting, not a dead board: entries that fail the gate are silently dropped, so treating transient errors as failures quietly discards good companies
 - The contributor-facing version of this pipeline lives in `CONTRIBUTING.md`. Keep the two in step
 - Never add an entry that didn't pass the live gate in the same run
-- Additions by default. The only permitted change to an existing entry is a migration: it failed on its recorded ATS AND live-verified on another ATS in the same run. Deletions never.
-- One company, one ATS — skip candidates whose normalized slug or name (lowercase, alphanumerics only) already exists in any registry file
+- One row, one board. A board is unique by (ats, slug). A second board for a company already in the registry (regional arm, subsidiary, hourly site, another Workday career site) is wanted, not a duplicate. A shared slug or name is not evidence of a shared company either: only a human links two rows, in a reviewed PR, after reading both boards. The agent never edits an existing row; migrations and links are never applied by the agent. A board that still answers is not a migration: empty is not gone. Additions by default, deletions never.
+- Collisions, until #87 phase 1 lands: `append-registry.mjs` still silently drops any survivor whose normalized slug or name (lowercase, alphanumerics only) exists in any registry file. So the agent computes that check itself before append, sets every colliding candidate aside, never passes it to append, and lists each one in the PR body under a "Review" section labelled migration (the existing row errored in this run's live check, not merely came back empty; the candidate is live; same name), second board (both live), same-name stranger (names or postings differ) or unverified, with the live-check evidence. The review file (`tmp/registry-review.json`), `scripts/link-registry.mjs` and the optional `company` field arrive with #87 phase 1; see [#87](https://github.com/prPMDev/jd-intel/issues/87) for the mechanics
 - After appending: `npm run sync:registry-pages` (the Pages copy must move with `registry/`), then `node --test test/*.test.js`
 
 ---
@@ -280,4 +280,5 @@ After publishing: tag the commit (`git tag v0.X.Y && git push origin v0.X.Y`).
 - Treating `notes/` as read-only. When learning happens, append.
 - Inferring an HTTP status by pattern-matching an error message. Workday messages embed the pod name, so a naive `/5\d\d/` reads `"(ufp/wd503/Careers): 404"` as a retryable 5xx. Use `err.status` / `err.code` from `src/errors.js`.
 - Merging parallel agent output without reconciling against every output file. Agents write results in passes; a merge taken mid-run silently drops verified entries.
+- Linking two registry rows as one company by slug or org-name coincidence. About half of the live second boards found while scoping #87 appeared to belong to a different company with the same name. Only a human links boards, in a reviewed PR, after reading both.
 - Stating a volatile count in this file (test totals, registry size). Give the command that produces the truth instead.
