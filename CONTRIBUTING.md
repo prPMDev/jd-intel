@@ -32,6 +32,7 @@ Create `tmp/candidates.json` (`tmp/` is gitignored):
 - `name` is the official public company name.
 - `sector` is lowercase. Check the existing registry files for a term already in use and reuse it rather than inventing a near-duplicate. Use `" / "` for hybrids.
 - `config` is Workday only.
+- A row is a board, not a company, and boards are unique by ATS and slug. If the company you are adding already has a row on another ATS (or another Workday career site), that second board is wanted: list it in your PR description under a "Review" heading, with what each board shows, rather than skipping it. The append script writes it when its slug and name are both new, and drops it when either collides with an existing row (see step 3); either way the maintainer decides whether the two rows are one company. The optional `company` field that links a company's rows arrives with [#87](https://github.com/prPMDev/jd-intel/issues/87) phase 1, and this page will describe it then.
 
 ### 2. Run the live gate
 
@@ -51,7 +52,7 @@ npm run sync:registry-pages
 node --test test/*.test.js
 ```
 
-`append-registry.mjs` reads the survivors from the report and writes them into the right registry files with correct alignment. It refuses anything that did not pass the gate, and it drops any company already registered under a different ATS.
+`append-registry.mjs` reads the survivors from the report and writes them into the right registry files with correct alignment. It refuses anything that did not pass the gate. Today it also drops any survivor whose normalized slug or name (lowercase, alphanumerics only) is already in any registry file, and prints the drop under "Skipped". That is a limit of the current script, not the rule: a second board for a registered company is wanted, and a maintainer decides whether two rows are one company. Until [#87](https://github.com/prPMDev/jd-intel/issues/87) phase 1 replaces the drop with a review file and a link script, list every colliding candidate in your PR under a "Review" heading, with the gate result and what the two boards show, so it is reviewed rather than lost.
 
 `sync:registry-pages` copies `registry/` to `docs/registry/`, which the GitHub Pages copy serves. The two must move together.
 
