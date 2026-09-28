@@ -32,7 +32,8 @@ const MULTI_LOCATION = /^\s*\d+\s+locations?\s*$/;
  * detail set.
  *
  * @param {string} slug - normalized company slug (registry routing key)
- * @param {object} [ctx] - { config:{tenant,env,site}, companyName, filterContext }
+ * @param {object} [ctx] - { config:{tenant,env,site}, companyName, filterContext, report };
+ *   report(scan) is called once with { ats, listed, prefiltered, hydrated, capped } when given
  * @returns {Promise<Array>} Normalized job objects
  */
 export async function fetchWorkday(slug, ctx = {}) {
@@ -48,7 +49,12 @@ export async function fetchWorkday(slug, ctx = {}) {
   let offset = 0;
   let pages = 0;
   let firstTotal = 0;
-  while (pages < LIST_PAGE_HARD_CAP) {
+  let listCapped = false;
+  while (true) {
+    if (pages >= LIST_PAGE_HARD_CAP) {
+      listCapped = true;
+      break;
+    }
     let resp;
     try {
       resp = await atsFetch(`${base}/jobs`, {
@@ -132,10 +138,20 @@ export async function fetchWorkday(slug, ctx = {}) {
   const limit = typeof fc.limit === 'number' && fc.limit > 0 ? fc.limit : 100;
   const skip = typeof fc.offset === 'number' && fc.offset > 0 ? fc.offset : 0;
   const cap = fc.filter ? MAX_DETAIL_FETCHES : Math.min(skip + limit, MAX_DETAIL_FETCHES);
-  candidates = candidates.slice(0, cap);
+  const hydrate = candidates.slice(0, cap);
+
+  if (typeof ctx.report === 'function') {
+    ctx.report({
+      ats: 'workday',
+      listed: postings.length,
+      prefiltered: candidates.length,
+      hydrated: hydrate.length,
+      capped: listCapped || hydrate.length < candidates.length,
+    });
+  }
 
   // 4. Hydrate descriptions via the per-posting detail endpoint.
-  const jobs = await Promise.all(candidates.map(async (p) => {
+  const jobs = await Promise.all(hydrate.map(async (p) => {
     const externalPath = p.externalPath || ''; // already begins with '/job/...'
     let info = {};
     try {

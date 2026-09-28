@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { fetchSmartrecruiters, hasSmartrecruiters } from '../src/adapters/smartrecruiters.js';
+import { applyFilters } from '../src/filters.js';
 import { disableRetries, isAtsError, probeFailureTests } from './helpers.js';
 
 disableRetries();
@@ -297,6 +298,165 @@ describe('fetchSmartrecruiters', () => {
     mockFetch(t, { list: { content: [], totalFound: 0 } });
     const jobs = await fetchSmartrecruiters('emptyco');
     assert.deepEqual(jobs, []);
+  });
+});
+
+// A board of `total` rows, 100 a page, offset read from the list URL. Every
+// row starts as LIST_FIXTURE's posting with its own id and "Job <i>" name;
+// `rows[i]` overrides fields on the row at index i.
+function boardMock(t, total, rows = {}) {
+  const calls = { list: 0, detail: 0, detailIds: [] };
+  t.mock.method(global, 'fetch', async (url) => {
+    if (url.includes('/postings/')) {
+      calls.detail += 1;
+      calls.detailIds.push(url.slice(url.lastIndexOf('/') + 1));
+      return { ok: true, status: 200, json: async () => DETAIL_FIXTURE };
+    }
+    calls.list += 1;
+    const offset = Number(new URL(url).searchParams.get('offset'));
+    const content = [];
+    for (let i = offset; i < Math.min(offset + 100, total); i++) {
+      content.push({ ...LIST_FIXTURE.content[0], id: `id${i}`, name: `Job ${i}`, ...(rows[i] || {}) });
+    }
+    return { ok: true, status: 200, json: async () => ({ offset, limit: 100, totalFound: total, content }) };
+  });
+  return calls;
+}
+
+const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
+
+describe('fetchSmartrecruiters detail budget (issue #90)', () => {
+  test('limit bounds the detail fetches on a 400-row board, in list order', async (t) => {
+    const calls = boardMock(t, 400);
+    const jobs = await fetchSmartrecruiters('testco', { filterContext: { limit: 1 } });
+    assert.equal(calls.list, 4, 'the whole list is still read');
+    assert.equal(calls.detail, 1);
+    assert.deepEqual(calls.detailIds, ['id0']);
+    assert.equal(jobs.length, 1);
+  });
+
+  test('offset extends the detail budget to offset + limit', async (t) => {
+    const calls = boardMock(t, 400);
+    await fetchSmartrecruiters('testco', { filterContext: { limit: 1, offset: 2 } });
+    assert.equal(calls.detail, 3);
+    assert.deepEqual(calls.detailIds.sort(), ['id0', 'id1', 'id2']);
+  });
+
+  test('offset + limit is still capped at 100 detail fetches', async (t) => {
+    const calls = boardMock(t, 400);
+    await fetchSmartrecruiters('testco', { filterContext: { limit: 50, offset: 80 } });
+    assert.equal(calls.detail, 100);
+  });
+
+  test('without a filterContext the cap still holds (100 of 400)', async (t) => {
+    const calls = boardMock(t, 400);
+    const jobs = await fetchSmartrecruiters('testco');
+    assert.equal(calls.list, 4);
+    assert.equal(calls.detail, 100);
+    assert.equal(jobs.length, 100);
+  });
+
+  test('a title filter narrows the candidates before hydration', async (t) => {
+    const calls = boardMock(t, 400, {
+      5: { name: 'Senior Product Manager' },
+      250: { name: 'Product Manager, Payments' },
+      399: { name: 'Group Product Manager' },
+    });
+    const jobs = await fetchSmartrecruiters('testco', { filterContext: { titleFilter: 'product manager', limit: 100 } });
+    assert.equal(calls.detail, 3);
+    assert.deepEqual(calls.detailIds.sort(), ['id250', 'id399', 'id5']);
+    assert.deepEqual(jobs.map(j => j.title), ['Senior Product Manager', 'Product Manager, Payments', 'Group Product Manager']);
+  });
+
+  test('a description filter hydrates up to the cap, not to limit', async (t) => {
+    // The library runs the description regex after this returns, so a
+    // tight cut to `limit` could hydrate 10 non-matches and stop.
+    const calls = boardMock(t, 400);
+    await fetchSmartrecruiters('testco', { filterContext: { filter: 'engineer', limit: 10 } });
+    assert.equal(calls.detail, 100);
+  });
+
+  test('location_includes runs on the string the adapter builds; a row with no location is out', async (t) => {
+    const rows = {
+      1: { location: { city: 'Berlin', country: 'Germany', remote: true } },
+      2: { location: {} },
+      3: { location: { fullLocation: 'Sydney, Australia' } },
+      4: { location: { city: 'Denver', region: 'CO', country: 'US' } },
+    };
+    // Row 0 is the fixture's "Hybrid - Austin, TX, United States". The
+    // detail adds no location, so the blank row 2 could never pass
+    // applyFilters under includes and hydrating it would waste a slot.
+    let calls = boardMock(t, 5, rows);
+    await fetchSmartrecruiters('testco', { filterContext: { locationIncludes: ['Remote'], limit: 100 } });
+    assert.deepEqual(calls.detailIds, ['id1'], 'the Remote prefix counts, the blank row does not');
+
+    calls = boardMock(t, 5, rows);
+    await fetchSmartrecruiters('testco', { filterContext: { locationIncludes: ['United States'], limit: 100 } });
+    assert.deepEqual(calls.detailIds, ['id0']);
+
+    calls = boardMock(t, 5, rows);
+    await fetchSmartrecruiters('testco', { filterContext: { locationIncludes: ['US'], limit: 100 } });
+    assert.deepEqual(calls.detailIds, ['id4'], 'a short token is word-bounded: no Austin or Australia collision');
+  });
+
+  test('a blank-location row does not take the hydration slot from a real match', async (t) => {
+    // Unbounded hydration returned this job. A pre-filter that kept the
+    // blank row would hydrate it alone and hand the library an empty page.
+    const calls = boardMock(t, 2, { 0: { location: {} }, 1: { location: { fullLocation: 'London, UK' } } });
+    const jobs = await fetchSmartrecruiters('testco', { filterContext: { locationIncludes: ['London'], limit: 1 } });
+    assert.deepEqual(calls.detailIds, ['id1']);
+    assert.equal(applyFilters(jobs, { locationIncludes: ['London'], limit: 1 }).length, 1);
+  });
+
+  test('location_excludes drops matching rows; a row with no location passes', async (t) => {
+    const calls = boardMock(t, 4, {
+      1: { location: { city: 'Berlin', country: 'Germany', remote: true } },
+      2: { location: {} },
+      3: { location: { fullLocation: 'Sydney, Australia' } },
+    });
+    await fetchSmartrecruiters('testco', { filterContext: { locationExcludes: ['Berlin', 'Australia'], limit: 100 } });
+    assert.deepEqual(calls.detailIds.sort(), ['id0', 'id2']);
+  });
+
+  test('posted_within_days pre-filters on releasedDate; an undated row is out', async (t) => {
+    // postedAt comes from releasedDate alone, so the library would drop
+    // the undated row after hydration anyway. No detail fetch buys it back.
+    const calls = boardMock(t, 3, {
+      0: { releasedDate: daysAgo(2) },
+      1: { releasedDate: daysAgo(40) },
+      2: { releasedDate: undefined },
+    });
+    const jobs = await fetchSmartrecruiters('testco', { filterContext: { postedWithinDays: 7, limit: 100 } });
+    assert.deepEqual(calls.detailIds, ['id0']);
+    assert.equal(jobs.length, 1);
+  });
+
+  test('reports the scan once: listed, prefiltered, hydrated, capped', async (t) => {
+    boardMock(t, 400, { 5: { name: 'Product Designer' }, 250: { name: 'Staff Designer' } });
+    const reports = [];
+    await fetchSmartrecruiters('testco', {
+      filterContext: { titleFilter: 'designer', limit: 100 },
+      report: (scan) => reports.push(scan),
+    });
+    assert.deepEqual(reports, [{ ats: 'smartrecruiters', listed: 400, prefiltered: 2, hydrated: 2, capped: false }]);
+  });
+
+  test('the report says capped when the budget cut candidates', async (t) => {
+    boardMock(t, 400);
+    const reports = [];
+    await fetchSmartrecruiters('testco', { filterContext: { limit: 1 }, report: (scan) => reports.push(scan) });
+    assert.deepEqual(reports, [{ ats: 'smartrecruiters', listed: 400, prefiltered: 400, hydrated: 1, capped: true }]);
+  });
+
+  test('no report call without a report function, and none on a 404', async (t) => {
+    boardMock(t, 2);
+    const jobs = await fetchSmartrecruiters('testco', { filterContext: { limit: 100 }, report: undefined });
+    assert.equal(jobs.length, 2);
+
+    mockFetch(t, { listStatus: 404, list: {} });
+    const reports = [];
+    await fetchSmartrecruiters('nonexistent', { report: (scan) => reports.push(scan) });
+    assert.deepEqual(reports, [], 'a 404 is not a scan');
   });
 });
 

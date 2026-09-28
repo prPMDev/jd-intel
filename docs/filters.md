@@ -21,7 +21,7 @@ All filters AND together.
 
 ### Order and paging
 
-Matches are sorted before `limit` applies: newest first by `postedAt`, undated jobs last, ties broken by `id`. So a cut drops the oldest matches, which are the ones most likely dead. `order: 'board'` keeps the ATS's own order instead. `offset` skips the first N sorted matches, which is how you page. `fetchJobsDetailed` returns `total_matched` next to the page, so a caller can tell "this company has 12 matching roles" from "12 of 340 came back". On Workday, the adapter picks the postings it hydrates in board order before the sort, at most 100 per call, so `offset` pages there can repeat or skip a posting and `total_matched` can be a lower bound until [#26](https://github.com/prPMDev/jd-intel/issues/26) ships its scan report.
+Matches are sorted before `limit` applies: newest first by `postedAt`, undated jobs last, ties broken by `id`. So a cut drops the oldest matches, which are the ones most likely dead. `order: 'board'` keeps the ATS's own order instead. `offset` skips the first N sorted matches, which is how you page. `fetchJobsDetailed` returns `total_matched` next to the page, so a caller can tell "this company has 12 matching roles" from "12 of 340 came back". On Workday and SmartRecruiters, the adapter picks the postings it hydrates in board order before the sort, at most 100 per call, so `offset` pages there can repeat or skip a posting and `total_matched` can be a lower bound until [#26](https://github.com/prPMDev/jd-intel/issues/26) ships its scan report.
 
 ---
 
@@ -116,7 +116,7 @@ This prevents silent false positives on short country codes:
 
 So `US` and `UK` are safe to pass as-is. The implementation prevents the substring collisions that would otherwise silently return Australian or Belgian jobs to a US query, or Ukrainian jobs to a UK query.
 
-The Workday adapter filters list rows by location before it fetches job details, and it uses this same matcher. So a Workday board returns the same set as any other ATS for the same keywords, and no detail fetch is spent on a row that matches only as a substring.
+The Workday and SmartRecruiters adapters filter list rows by location before they fetch job details, and they use this same matcher. So those boards return the same set as any other ATS for the same keywords, and no detail fetch is spent on a row that matches only as a substring.
 
 ### Jobs open in several locations
 
