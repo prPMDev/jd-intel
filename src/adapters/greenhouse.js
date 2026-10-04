@@ -11,7 +11,7 @@ const BASE_URL = 'https://boards-api.greenhouse.io/v1/boards';
  *
  * @param {string} slug - Company slug (e.g., 'stripe', 'notion')
  * @param {object} [ctx] - { report }; report is called once with
- *   { ats, org_name, org_url } when given
+ *   { org_name, org_url } when given
  * @returns {Promise<Array>} Normalized job objects
  */
 export async function fetchGreenhouse(slug, ctx = {}) {
@@ -31,7 +31,6 @@ export async function fetchGreenhouse(slug, ctx = {}) {
   // there is no company host to report (issue #58).
   if (typeof ctx.report === 'function') {
     ctx.report({
-      ats: 'greenhouse',
       org_name: jobs.find(j => j.company_name)?.company_name || null,
       org_url: null,
     });

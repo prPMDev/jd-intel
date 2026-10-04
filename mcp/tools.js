@@ -14,16 +14,14 @@ import { z } from 'zod';
 import {
   fetchJobsDetailed,
   detectAtsDetailed as libDetectAtsDetailed,
+  discoveryFailure,
   registry,
   ATS_NAMES,
   AtsError,
   ArgumentError,
 } from 'jd-intel';
 
-const { search: searchRegistry } = registry;
-// Tolerate an older jd-intel that predates getSource. The bundle always
-// vendors a matching version; this only guards a skewed local/global install.
-const getRegistrySource = registry.getSource || (() => 'unknown');
+const { search: searchRegistry, getSource: getRegistrySource } = registry;
 import { success, partial, error, envelopeSchema } from './envelope.js';
 import { ERROR_CODES } from './errors.js';
 import { VERSION } from './version.js';
@@ -95,17 +93,11 @@ function sharedAts(boards) {
   return boards.every((b) => b.ats === first.ats) ? first.ats : null;
 }
 
-// No board answered and at least one check failed: rate_limited when any
-// failure was a 429, else ats_unreachable. The same rule fetchJobs applies
-// when it throws for a discovery that found nothing.
-function outageCode(failed) {
-  const limited = failed.some((f) => f.code === ERROR_CODES.RATE_LIMITED);
-  return limited ? ERROR_CODES.RATE_LIMITED : ERROR_CODES.ATS_UNREACHABLE;
-}
-
-function outageMessage(company, failed) {
-  const checks = failed.map((f) => `${f.ats} (${f.message})`).join('; ');
-  return `No board answered for "${company}" and the check failed on ${checks}`;
+// No board answered and at least one check failed. The code and message
+// are the library's, the ones fetchJobs throws for the same case.
+function outage(company, failed, metadata) {
+  const { code, message } = discoveryFailure(company, failed);
+  return error(code, message, metadata);
 }
 
 const JOB = z
@@ -224,7 +216,7 @@ export function registerTools(server, deps = {}) {
       // is not there. A board whose rows all miss the filters is still a
       // board (issue #60), so that case never reaches here.
       if (boards.length === 0 && failed.length > 0) {
-        return error(outageCode(failed), outageMessage(args.company, failed), { failed });
+        return outage(args.company, failed, { failed });
       }
       if (match === 'probe' && boards.length === 0) {
         return error(
@@ -338,7 +330,7 @@ export function registerTools(server, deps = {}) {
       };
 
       if (boards.length === 0) {
-        if (failed.length > 0) return error(outageCode(failed), outageMessage(args.company, failed), meta);
+        if (failed.length > 0) return outage(args.company, failed, meta);
         return success(null, meta);
       }
 

@@ -251,7 +251,7 @@ describe('fetchTeamtailor org identity (issue #58)', () => {
     mockFetch(t);
     const reports = [];
     await fetchTeamtailor('testco', { report: report(reports) });
-    assert.deepEqual(reports, [{ ats: 'teamtailor', org_name: 'Test Company', org_url: null }]);
+    assert.deepEqual(reports, [{ org_name: 'Test Company', org_url: null }]);
   });
 
   test('an item link on the company domain becomes org_url', async (t) => {
@@ -259,7 +259,7 @@ describe('fetchTeamtailor org identity (issue #58)', () => {
     const reports = [];
     const [job] = await fetchTeamtailor('testco', { report: report(reports) });
     assert.equal(job.url, 'https://jobs.testco.com/jobs/123-staff-pm');
-    assert.deepEqual(reports, [{ ats: 'teamtailor', org_name: 'Test Company', org_url: 'jobs.testco.com' }]);
+    assert.deepEqual(reports, [{ org_name: 'Test Company', org_url: 'jobs.testco.com' }]);
   });
 
   test('an entity-encoded title is decoded', async (t) => {
@@ -273,11 +273,11 @@ describe('fetchTeamtailor org identity (issue #58)', () => {
     mockFetch(t, { body: '<rss><channel><title>Empty Co</title><link>https://emptyco.teamtailor.com/jobs</link></channel></rss>' });
     const reports = [];
     await fetchTeamtailor('emptyco', { report: report(reports) });
-    assert.deepEqual(reports, [{ ats: 'teamtailor', org_name: 'Empty Co', org_url: null }]);
+    assert.deepEqual(reports, [{ org_name: 'Empty Co', org_url: null }]);
 
     mockFetch(t, { body: '<rss><channel></channel></rss>' });
     await fetchTeamtailor('emptyco', { report: report(reports) });
-    assert.deepEqual(reports[1], { ats: 'teamtailor', org_name: null, org_url: null });
+    assert.deepEqual(reports[1], { org_name: null, org_url: null });
   });
 
   test('a 404 in every region reports nothing', async (t) => {

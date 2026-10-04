@@ -26,7 +26,7 @@ import { orgHost } from '../boards.js';
  *
  * @param {string} slug - TeamTailor career-site slug (e.g., 'tibber')
  * @param {object} [ctx] - { report }; report is called once with
- *   { ats, org_name, org_url } when given
+ *   { org_name, org_url } when given
  * @returns {Promise<Array>} Normalized job objects
  */
 // Most sites are {slug}.teamtailor.com, but some sit on a regional
@@ -85,7 +85,6 @@ export async function fetchTeamtailor(slug, ctx = {}) {
       || xml.match(/<channel>[\s\S]*?<link>([\s\S]*?)<\/link>/)?.[1]
       || '';
     ctx.report({
-      ats: 'teamtailor',
       org_name: decodeEntities(channelTitle) || null,
       org_url: orgHost(link.trim()),
     });

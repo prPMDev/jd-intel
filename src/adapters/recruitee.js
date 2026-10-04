@@ -21,7 +21,7 @@ import { orgHost } from '../boards.js';
  *
  * @param {string} slug - Recruitee company subdomain (e.g., 'vandebron')
  * @param {object} [ctx] - { report }; report is called once with
- *   { ats, org_name, org_url } when given
+ *   { org_name, org_url } when given
  * @returns {Promise<Array>} Normalized job objects
  */
 export async function fetchRecruitee(slug, ctx = {}) {
@@ -41,7 +41,6 @@ export async function fetchRecruitee(slug, ctx = {}) {
   // domain when the site has one and on {slug}.recruitee.com otherwise.
   if (typeof ctx.report === 'function') {
     ctx.report({
-      ats: 'recruitee',
       org_name: offers.find(o => o.company_name)?.company_name || null,
       org_url: orgHost(offers.find(o => o.careers_url)?.careers_url),
     });

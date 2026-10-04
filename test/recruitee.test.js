@@ -304,21 +304,21 @@ describe('fetchRecruitee org identity (issue #58)', () => {
     mockFetch(t);
     const reports = [];
     await fetchRecruitee('channable', { report: report(reports) });
-    assert.deepEqual(reports, [{ ats: 'recruitee', org_name: 'Channable', org_url: 'jobs.channable.com' }]);
+    assert.deepEqual(reports, [{ org_name: 'Channable', org_url: 'jobs.channable.com' }]);
   });
 
   test('a careers_url on the recruitee.com host yields org_url null', async (t) => {
     mockFetch(t, { body: withOffer({ careers_url: 'https://channable.recruitee.com/o/python-software-engineer-product-team-1' }) });
     const reports = [];
     await fetchRecruitee('channable', { report: report(reports) });
-    assert.deepEqual(reports, [{ ats: 'recruitee', org_name: 'Channable', org_url: null }]);
+    assert.deepEqual(reports, [{ org_name: 'Channable', org_url: null }]);
   });
 
   test('an empty board reports null and null, not the slug', async (t) => {
     mockFetch(t, { body: { offers: [] } });
     const reports = [];
     await fetchRecruitee('emptyco', { report: report(reports) });
-    assert.deepEqual(reports, [{ ats: 'recruitee', org_name: null, org_url: null }]);
+    assert.deepEqual(reports, [{ org_name: null, org_url: null }]);
   });
 
   test('a 404 reports nothing', async (t) => {

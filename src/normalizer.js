@@ -147,7 +147,7 @@ function periodWord(text) {
   return null;
 }
 
-const WORKPLACE_TYPES = new Set(['remote', 'hybrid', 'onsite']);
+export const WORKPLACE_TYPES = new Set(['remote', 'hybrid', 'onsite']);
 
 /**
  * The platform's own value wins. Without one, a keyword in the location

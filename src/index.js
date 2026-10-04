@@ -205,7 +205,13 @@ function registryTarget(hit, config) {
   return { ats: hit.ats, slug: hit.entry.slug, name: hit.entry.name, config: config || hit.entry.config };
 }
 
-function discoveryFailure(company, failed) {
+/**
+ * The AtsError for a lookup where no board answered and at least one check
+ * failed: rate_limited when any failure was a 429, else ats_unreachable,
+ * with a message naming each failed check. `failed` is the list
+ * fetchJobsDetailed and detectAtsDetailed return.
+ */
+export function discoveryFailure(company, failed) {
   const limited = failed.some(f => f.code === ERROR_CODES.RATE_LIMITED);
   const checks = failed.map(f => `${f.ats} (${f.message})`).join('; ');
   return new AtsError(
