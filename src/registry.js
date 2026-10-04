@@ -95,7 +95,10 @@ export function getRegistrySource() {
 }
 
 /**
- * Search registry for companies matching a query.
+ * Search registry for companies matching a query, best match first: an
+ * exact name or slug, then a name that starts with the query, then a name
+ * that contains it, then a sector-only match. Ties keep platform order, so
+ * a caller that cuts the list drops the weakest matches (issue #62).
  */
 export async function searchRegistry(query) {
   const all = await loadRegistry();
@@ -106,13 +109,16 @@ export async function searchRegistry(query) {
     for (const company of companies) {
       const name = (company.name || company.slug || '').toLowerCase();
       const sector = (company.sector || '').toLowerCase();
-      if (name.includes(lower) || sector.includes(lower)) {
-        results.push({ ...company, ats });
-      }
+      const rank = name === lower || String(company.slug).toLowerCase() === lower ? 0
+        : name.startsWith(lower) ? 1
+        : name.includes(lower) ? 2
+        : sector.includes(lower) ? 3
+        : -1;
+      if (rank >= 0) results.push({ rank, row: { ...company, ats } });
     }
   }
 
-  return results;
+  return results.sort((a, b) => a.rank - b.rank).map(r => r.row);
 }
 
 // Slug match is case/punctuation-insensitive: registry slugs are stored
