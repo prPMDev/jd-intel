@@ -391,7 +391,7 @@ describe('fetchWorkday', () => {
     await assert.rejects(() => fetchWorkday('cisco', { ...CTX }), isAtsError('rate_limited', 429));
   });
 
-  test('detail failure keeps the job with empty description', async (t) => {
+  test('detail failure keeps the job, marked content missing with the reason (issue #85)', async (t) => {
     t.mock.method(global, 'fetch', async (url) => {
       if (url.endsWith('/jobs')) return { ok: true, status: 200, json: async () => LIST_FIXTURE };
       return { ok: false, status: 503, json: async () => ({}) };
@@ -400,6 +400,19 @@ describe('fetchWorkday', () => {
     assert.equal(jobs.length, 2);
     assert.equal(jobs[0].description, '');
     assert.equal(jobs[0].title, 'Staff Product Manager');
+    assert.deepEqual(jobs[0].content, { status: 'missing', reason: 'http_503' });
+  });
+
+  test('a detail that throws is missing with network_error; a detail that loads is complete', async (t) => {
+    let details = 0;
+    t.mock.method(global, 'fetch', async (url) => {
+      if (url.endsWith('/jobs')) return { ok: true, status: 200, json: async () => LIST_FIXTURE };
+      if (details++ === 0) throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNRESET' } });
+      return { ok: true, status: 200, json: async () => DETAIL_FIXTURE };
+    });
+    const contents = (await fetchWorkday('cisco', { ...CTX })).map(j => j.content);
+    assert.deepEqual(contents.map(c => c.status).sort(), ['complete', 'missing']);
+    assert.deepEqual(contents.find(c => c.status === 'missing'), { status: 'missing', reason: 'network_error' });
   });
 });
 

@@ -460,6 +460,31 @@ describe('fetchSmartrecruiters detail budget (issue #90)', () => {
   });
 });
 
+describe('fetchSmartrecruiters detail failure (issue #85)', () => {
+  const failingDetail = (t, detail) => t.mock.method(global, 'fetch', async (url) => {
+    if (url.includes('/postings/')) return detail();
+    return { ok: true, status: 200, json: async () => LIST_FIXTURE };
+  });
+
+  test('a detail 429 keeps the job, marked content missing with the reason', async (t) => {
+    failingDetail(t, () => ({ ok: false, status: 429, json: async () => ({}) }));
+    const jobs = await fetchSmartrecruiters('TestCo');
+    assert.ok(jobs.length > 0);
+    for (const job of jobs) {
+      assert.deepEqual(job.content, { status: 'missing', reason: 'http_429' });
+      assert.equal(job.description, '');
+      assert.ok(job.title, 'list fields survive');
+    }
+  });
+
+  test('a detail that throws is network_error; a detail that loads is complete', async (t) => {
+    failingDetail(t, () => { throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNRESET' } }); });
+    assert.deepEqual((await fetchSmartrecruiters('TestCo'))[0].content, { status: 'missing', reason: 'network_error' });
+    mockFetch(t);
+    assert.deepEqual((await fetchSmartrecruiters('TestCo'))[0].content, { status: 'complete', reason: null });
+  });
+});
+
 describe('fetchSmartrecruiters org identity (issue #58)', () => {
   // Every list row carries `company: { identifier, name }` (live shape,
   // 2026-09-27). Neither the list nor the detail has a company website,

@@ -530,6 +530,19 @@ describe("fetchJobsDetailed — ctx.report records a board's scan, and jobs_foun
     assert.equal(ctxSeen.filterContext.offset, 5);
   });
 
+  test('content_missing counts unread postings before the filters drop them (issue #85)', async (t) => {
+    const job = (title, extra) => normalize({ companySlug: 'AcmePay', company: 'AcmePay', title, location: 'Remote', url: `https://x/${title}`, ...extra }, 'smartrecruiters');
+    t.mock.method(ADAPTERS.smartrecruiters, 'fetch', async () => [
+      job('Read PM', { description: 'Build the platform.' }),
+      job('Unread PM', { content: { status: 'missing', reason: 'http_503' } }),
+    ]);
+    const all = await fetchJobsDetailed({ company: 'acmepay' });
+    assert.deepEqual([all.jobs.length, all.content_missing], [2, 1]);
+    const filtered = await fetchJobsDetailed({ company: 'acmepay', filter: 'platform' });
+    assert.deepEqual(filtered.jobs.map(j => j.title), ['Read PM']);
+    assert.equal(filtered.content_missing, 1, 'the unread job is counted though the filter could not match it');
+  });
+
   test('a board that reports no counts has scan null and jobs_found from its rows', async (t) => {
     mockFetchByHost(t, { 'greenhouse.io': okResponse({ jobs: [{ id: 1, title: 'PM', absolute_url: 'https://x/1', content: 'a', location: { name: 'Remote' } }] }) });
     const result = await fetchJobsDetailed({ company: 'nocorp' });

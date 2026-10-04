@@ -97,8 +97,10 @@ async function main() {
         const loc = job.location ? ` | ${job.location}` : '';
         const dept = job.department ? ` [${job.department}]` : '';
         console.log(`  ${job.title}${dept}${loc}${salary}`);
-        console.log(`  ${job.url}`);
-        if (job.description) {
+        console.log(`  ${job.url || '(no URL: posting not read)'}`);
+        if (job.content?.status === 'missing') {
+          console.log(`  posting not read: ${job.content.reason}`);
+        } else if (job.description) {
           const preview = job.description.substring(0, 120).replace(/\n/g, ' ');
           console.log(`  ${preview}...`);
         }

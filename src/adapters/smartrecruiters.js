@@ -1,4 +1,4 @@
-import { normalize } from '../normalizer.js';
+import { normalize, missingContent } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 import { atsFetch, probeResult } from '../http.js';
 import { prefilterRows } from '../filters.js';
@@ -93,6 +93,7 @@ export async function fetchSmartrecruiters(slug, ctx = {}) {
     let sections = {};
     let postingUrl = '';
     let salary = null;
+    let content; // set only when the detail could not be read (issue #85)
 
     try {
       const detailResp = await atsFetch(`${BASE_URL}/${slug}/postings/${p.id}`);
@@ -101,10 +102,13 @@ export async function fetchSmartrecruiters(slug, ctx = {}) {
         sections = detail.jobAd?.sections || {};
         postingUrl = detail.postingUrl || detail.applyUrl || '';
         salary = parseCompensation(detail.compensation);
+      } else {
+        content = missingContent(detailResp);
       }
-    } catch {
-      // Detail fetch failed, retries included: fall back to list-only
-      // fields (no description). Reporting this is #85.
+    } catch (err) {
+      // Detail fetch failed, retries included: list-only fields (no
+      // description, no url), marked missing.
+      content = missingContent(err);
     }
 
     const description = [
@@ -126,6 +130,7 @@ export async function fetchSmartrecruiters(slug, ctx = {}) {
       url: postingUrl,
       postedAt: p.releasedDate || null,
       salary, // null when the detail has no compensation; normalize() then parses text
+      content,
       metadata: {
         smartRecruitersId: p.id,
         refNumber: p.refNumber || '',
