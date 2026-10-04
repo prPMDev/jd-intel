@@ -114,7 +114,7 @@ describe('fetchGreenhouse', () => {
     await fetchGreenhouse('vercel');
 
     assert.equal(calls.length, 1);
-    assert.match(calls[0], /boards-api\.greenhouse\.io\/v1\/boards\/vercel\/jobs\?content=true/);
+    assert.match(calls[0], /boards-api\.greenhouse\.io\/v1\/boards\/vercel\/jobs\?content=true&pay_transparency=true$/);
   });
 
   test('returns [] on 404 (company not found)', async (t) => {
@@ -305,6 +305,63 @@ describe('fetchGreenhouse with HTML-escaped content (issue #66)', () => {
     assert.match(job.description, /^- Own services written in C\+\+ and Python$/m);
     assert.doesNotMatch(job.description, /<(?:p|div|span|a|li|ul|h4|strong)\b/);
     assert.doesNotMatch(job.description, /&(?:mdash|lt|gt|quot|amp|#\d+);/);
+  });
+});
+
+describe('fetchGreenhouse structured pay (issue #86)', () => {
+  const ANNUAL = { min_cents: 16500000, max_cents: 19000000, currency_type: 'USD', title: 'Annual Base Salary Range:', blurb: '<p>...</p>' };
+  const withRanges = (pay_input_ranges, content = '') => ({
+    jobs: [{ id: 1, title: 'Engineer', content, ...(pay_input_ranges ? { pay_input_ranges } : {}) }],
+  });
+  const fetchOne = async (t, body) => {
+    mockFetch(t, { body });
+    return (await fetchGreenhouse('testco'))[0];
+  };
+
+  test('a structured range becomes an ats salary, kept in metadata without the blurb', async (t) => {
+    const job = await fetchOne(t, withRanges([ANNUAL]));
+    assert.deepEqual(job.salary, { min: 165000, max: 190000, currency: 'USD', period: 'year', source: 'ats' });
+    assert.deepEqual(job.metadata.payRanges, [{ title: 'Annual Base Salary Range:', min: 165000, max: 190000, currency: 'USD' }]);
+  });
+
+  test('the period comes from the range title: hourly, and null for a title that states none', async (t) => {
+    const hourly = await fetchOne(t, withRanges([{ min_cents: 4520, max_cents: 8030, currency_type: 'USD', title: 'Hourly Base Pay Range:' }]));
+    assert.deepEqual(hourly.salary, { min: 45.2, max: 80.3, currency: 'USD', period: 'hour', source: 'ats' });
+    const intern = await fetchOne(t, withRanges([{ min_cents: 2900, max_cents: 2900, currency_type: 'USD', title: 'Internship' }]));
+    assert.deepEqual(intern.salary, { min: 29, max: 29, currency: 'USD', period: null, source: 'ats' });
+  });
+
+  test('an empty array or no key falls back to the text parser', async (t) => {
+    const content = '&lt;p&gt;The base pay range is $120,000 - $150,000.&lt;/p&gt;';
+    const expected = { min: 120000, max: 150000, currency: 'USD', period: 'year', source: 'text' };
+    const empty = await fetchOne(t, withRanges([], content));
+    assert.deepEqual(empty.salary, expected);
+    assert.deepEqual(empty.metadata.payRanges, []);
+    assert.deepEqual((await fetchOne(t, withRanges(null, content))).salary, expected);
+  });
+
+  test('a structured range wins over a different range earlier in the description', async (t) => {
+    const job = await fetchOne(t, withRanges([ANNUAL], '&lt;p&gt;Revenue grew, and the bonus pool is EUR 10,000 - 20,000.&lt;/p&gt;'));
+    assert.deepEqual(job.salary, { min: 165000, max: 190000, currency: 'USD', period: 'year', source: 'ats' });
+  });
+
+  test('two identical entries yield one range', async (t) => {
+    const job = await fetchOne(t, withRanges([ANNUAL, { ...ANNUAL }]));
+    assert.equal(job.metadata.payRanges.length, 1);
+  });
+
+  test('distinct ranges in one currency span; every range stays in metadata', async (t) => {
+    const nyc = { min_cents: 18000000, max_cents: 21000000, currency_type: 'USD', title: 'NYC Annual Salary Range' };
+    const job = await fetchOne(t, withRanges([ANNUAL, nyc]));
+    assert.deepEqual(job.salary, { min: 165000, max: 210000, currency: 'USD', period: 'year', source: 'ats' });
+    assert.equal(job.metadata.payRanges.length, 2);
+  });
+
+  test('ranges in mixed currencies: the first stands alone; every range stays in metadata', async (t) => {
+    const london = { min_cents: 9000000, max_cents: 11000000, currency_type: 'GBP', title: 'London Annual Salary Range' };
+    const job = await fetchOne(t, withRanges([ANNUAL, london]));
+    assert.deepEqual(job.salary, { min: 165000, max: 190000, currency: 'USD', period: 'year', source: 'ats' });
+    assert.equal(job.metadata.payRanges.length, 2);
   });
 });
 

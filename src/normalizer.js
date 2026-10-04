@@ -140,7 +140,7 @@ function detectPeriod(before, after, min) {
   return min >= 10000 ? 'year' : null;
 }
 
-function periodWord(text) {
+export function periodWord(text) {
   if (HOUR_RE.test(text)) return 'hour';
   if (MONTH_RE.test(text)) return 'month';
   if (YEAR_RE.test(text)) return 'year';
