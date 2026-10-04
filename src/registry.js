@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { AtsError } from './errors.js';
+import { ADAPTERS, ATS_NAMES } from './adapters/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REGISTRY_DIR = join(__dirname, '..', 'registry');
@@ -9,7 +10,7 @@ const REGISTRY_DIR = join(__dirname, '..', 'registry');
 // The one order the registry is ever walked in. Lookups, detectAts and the
 // loaded object all follow it, so which file answers for a slug does not
 // depend on which file's load finished first (issue #87).
-const PLATFORMS = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'teamtailor', 'recruitee', 'workday'];
+const PLATFORMS = ATS_NAMES;
 
 // Network-first registry. A hosted copy lets installed bundles AND npx users
 // pick up newly-added companies without reinstalling; the on-disk copy that
@@ -120,18 +121,7 @@ export async function searchRegistry(query) {
 // normalized forms keeps registry-first routing working for those.
 export const normSlug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
 
-// The loaded registry as [ats, companies] pairs in PLATFORMS order, whatever
-// order the object's keys are in.
-function platformEntries(all) {
-  return PLATFORMS.map(ats => [ats, all[ats] || []]);
-}
-
-function platformIndex(ats) {
-  const i = PLATFORMS.indexOf(ats);
-  return i === -1 ? PLATFORMS.length : i;
-}
-
-const byPlatform = (a, b) => platformIndex(a.ats) - platformIndex(b.ats);
+const byPlatform = (a, b) => PLATFORMS.indexOf(a.ats) - PLATFORMS.indexOf(b.ats);
 
 /**
  * Look up which ATS a slug belongs to in the registry.
@@ -154,7 +144,7 @@ export async function findAtsBySlug(slug) {
 export async function findEntryBySlug(slug) {
   const all = await loadRegistry();
   const key = normSlug(slug);
-  for (const [ats, companies] of platformEntries(all)) {
+  for (const [ats, companies] of Object.entries(all)) {
     const entry = companies.find(c => normSlug(c.slug) === key);
     if (entry) return { ats, entry };
   }
@@ -179,14 +169,13 @@ export async function findEntryBySlug(slug) {
  * }>}
  */
 export async function detectAtsDetailed(companyName) {
-  const { ADAPTERS } = await import('./adapters/index.js');
   const slug = normSlug(companyName);
   const all = await loadRegistry();
 
   const boards = [];
   const failed = [];
   const known = new Set();
-  for (const [ats, companies] of platformEntries(all)) {
+  for (const [ats, companies] of Object.entries(all)) {
     const entry = companies.find(c => normSlug(c.slug) === slug);
     if (entry) {
       boards.push({ ats, slug: entry.slug, source: 'registry' });

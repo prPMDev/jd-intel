@@ -11,6 +11,7 @@
 
 import { realpathSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 import { fetchJobs } from './index.js';
 import { detectAtsDetailed, searchRegistry } from './registry.js';
 
@@ -19,30 +20,35 @@ const [,, command, ...args] = process.argv;
 async function main() {
   switch (command) {
     case 'fetch': {
-      const company = args[0];
+      const string = { type: 'string' };
+      const { values: flags, positionals } = parseArgs({
+        args,
+        allowPositionals: true,
+        options: {
+          ats: string, 'title-filter': string, filter: string, 'posted-within-days': string,
+          'location-include': string, 'location-exclude': string, limit: string,
+          'workday-tenant': string, 'workday-env': string, 'workday-site': string,
+          json: { type: 'boolean' },
+        },
+      });
+      const company = positionals[0];
       if (!company) { console.error('Usage: jd-intel fetch <company> [--ats <platform>]  (omit --ats to auto-detect; run "jd-intel" for the platform list)'); process.exit(1); }
-      const getArg = (flag) => {
-        const idx = args.indexOf(flag);
-        return idx >= 0 ? args[idx + 1] : undefined;
-      };
-      let ats = getArg('--ats');
-      const titleFilter = getArg('--title-filter');
-      const filter = getArg('--filter');
-      const postedWithinRaw = getArg('--posted-within-days');
-      const postedWithinDays = postedWithinRaw !== undefined ? Number(postedWithinRaw) : undefined;
-      const locIncludeRaw = getArg('--location-include');
-      const locationIncludes = locIncludeRaw ? locIncludeRaw.split(',').map(s => s.trim()).filter(Boolean) : undefined;
-      const locExcludeRaw = getArg('--location-exclude');
-      const locationExcludes = locExcludeRaw ? locExcludeRaw.split(',').map(s => s.trim()).filter(Boolean) : undefined;
-      const limitRaw = getArg('--limit');
-      const limit = limitRaw !== undefined ? Number(limitRaw) : undefined;
+      const number = (v) => (v !== undefined ? Number(v) : undefined);
+      const list = (v) => (v ? v.split(',').map(s => s.trim()).filter(Boolean) : undefined);
+      let ats = flags.ats;
+      const titleFilter = flags['title-filter'];
+      const filter = flags.filter;
+      const postedWithinDays = number(flags['posted-within-days']);
+      const locationIncludes = list(flags['location-include']);
+      const locationExcludes = list(flags['location-exclude']);
+      const limit = number(flags.limit);
 
       // Workday is keyed by a {tenant, env, site} triple, not a slug.
       // Supplying it here makes a Workday board reachable without a
       // registry entry; presence of the flags infers --ats workday.
-      const wdTenant = getArg('--workday-tenant');
-      const wdEnv = getArg('--workday-env');
-      const wdSite = getArg('--workday-site');
+      const wdTenant = flags['workday-tenant'];
+      const wdEnv = flags['workday-env'];
+      const wdSite = flags['workday-site'];
       let config;
       if (wdTenant || wdEnv || wdSite) {
         if (!wdTenant || !wdEnv || !wdSite) {
@@ -103,7 +109,7 @@ async function main() {
         console.log(`  ... and ${jobs.length - 20} more. Use --json for full output.`);
       }
 
-      if (args.includes('--json')) {
+      if (flags.json) {
         console.log(JSON.stringify(jobs, null, 2));
       }
       break;

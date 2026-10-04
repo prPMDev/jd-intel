@@ -438,14 +438,14 @@ describe('fetchSmartrecruiters detail budget (issue #90)', () => {
       filterContext: { titleFilter: 'designer', limit: 100 },
       report: (scan) => reports.push(scan),
     });
-    assert.deepEqual(reports, [{ ats: 'smartrecruiters', listed: 400, prefiltered: 2, hydrated: 2, capped: false, org_name: 'Test Company', org_url: null }]);
+    assert.deepEqual(reports, [{ listed: 400, prefiltered: 2, hydrated: 2, capped: false, org_name: 'Test Company', org_url: null }]);
   });
 
   test('the report says capped when the budget cut candidates', async (t) => {
     boardMock(t, 400);
     const reports = [];
     await fetchSmartrecruiters('testco', { filterContext: { limit: 1 }, report: (scan) => reports.push(scan) });
-    assert.deepEqual(reports, [{ ats: 'smartrecruiters', listed: 400, prefiltered: 400, hydrated: 1, capped: true, org_name: 'Test Company', org_url: null }]);
+    assert.deepEqual(reports, [{ listed: 400, prefiltered: 400, hydrated: 1, capped: true, org_name: 'Test Company', org_url: null }]);
   });
 
   test('no report call without a report function, and none on a 404', async (t) => {

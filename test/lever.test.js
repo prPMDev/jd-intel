@@ -306,12 +306,12 @@ describe('fetchLever', () => {
 describe('fetchLever org identity (issue #58)', () => {
   // The postings response names no organization and links only to
   // jobs.lever.co, so the board states nothing about itself.
-  test('reports null and null, never the title-cased slug', async (t) => {
+  test('reports nothing, never the title-cased slug', async (t) => {
     mockFetch(t);
     const reports = [];
     const jobs = await fetchLever('outreach', { report: (r) => reports.push(r) });
     assert.equal(jobs[0].company, 'Outreach', 'the job label keeps its slug fallback');
-    assert.deepEqual(reports, [{ ats: 'lever', org_name: null, org_url: null }]);
+    assert.deepEqual(reports, []);
   });
 
   test('a 404 reports nothing', async (t) => {

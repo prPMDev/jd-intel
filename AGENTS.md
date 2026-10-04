@@ -1,7 +1,7 @@
 <!--
   Canonical agent-context file for this repo (follows the agents.md cross-tool standard).
-  CLAUDE.md mirrors this file so Claude Code's auto-detection keeps working.
-  Edit both files to keep them in sync.
+  CLAUDE.md is a one-line @AGENTS.md import so Claude Code's auto-detection keeps working.
+  Edit this file only.
 -->
 
 # jd-intel
@@ -107,7 +107,7 @@ jd-intel/
 │   └── linkedin-content-guide.md # Content handoff guide
 ├── CONTRIBUTING.md               # Contributor-facing: candidates format, live gate, per-ATS probes
 ├── README.md                     # Public, dual-audience product page
-└── AGENTS.md / CLAUDE.md         # This file (two copies, keep in sync)
+└── AGENTS.md / CLAUDE.md         # This file; CLAUDE.md just imports it
 ```
 
 ---

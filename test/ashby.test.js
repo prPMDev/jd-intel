@@ -404,7 +404,7 @@ describe('fetchAshby', () => {
 describe('fetchAshby org identity (issue #58)', () => {
   // The REST response is { jobs, apiVersion }: no organization name, and
   // every link is on jobs.ashbyhq.com. No GraphQL lookup fills the gap.
-  test('reports null and null, never the slug', async (t) => {
+  test('reports nothing, never the slug', async (t) => {
     const calls = [];
     t.mock.method(global, 'fetch', async (url) => {
       calls.push(String(url));
@@ -412,7 +412,7 @@ describe('fetchAshby org identity (issue #58)', () => {
     });
     const reports = [];
     await fetchAshby('ramp', { report: (r) => reports.push(r) });
-    assert.deepEqual(reports, [{ ats: 'ashby', org_name: null, org_url: null }]);
+    assert.deepEqual(reports, []);
     assert.equal(calls.length, 1, 'no second request to look the org up');
   });
 

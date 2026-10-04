@@ -1,7 +1,7 @@
 import { normalize } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 import { atsFetch, probeResult } from '../http.js';
-import { makeLocationMatcher } from '../filters.js';
+import { prefilterRows } from '../filters.js';
 
 const BASE_URL = 'https://api.smartrecruiters.com/v1/companies';
 const PAGE_SIZE = 100;
@@ -21,12 +21,12 @@ const MAX_DETAIL_FETCHES = 100;
  * The list does carry name, location and releasedDate, so the same
  * pre-filter and detail budget Workday applies run here: list-evaluable
  * filters narrow the candidates, then at most MAX_DETAIL_FETCHES of them
- * are hydrated (see the budget note below). Without a filterContext the
+ * are hydrated (see prefilterRows). Without a filterContext the
  * cap still holds, so a direct call on a 400-posting tenant reads 100.
  *
  * @param {string} slug - SmartRecruiters company identifier (e.g., 'Visa')
  * @param {object} [ctx] - { filterContext, report }; report is called once
- *   with { ats, listed, prefiltered, hydrated, capped, org_name, org_url }
+ *   with { listed, prefiltered, hydrated, capped, org_name, org_url }
  *   when given
  * @returns {Promise<Array>} Normalized job objects
  */
@@ -54,60 +54,28 @@ export async function fetchSmartrecruiters(slug, ctx = {}) {
     if (content.length === 0 || offset >= (data.totalFound || 0)) break;
   }
 
-  // 2. Filter-aware candidate selection BEFORE the N+1 detail cost.
-  //    The list row carries name, location and releasedDate, and the
-  //    library re-applies every filter after this returns, so a keep here
-  //    is never final. The detail adds no location (unlike Workday's
-  //    additionalLocations), so a row with none follows the library's
-  //    rule now: out under includes, kept under excludes.
-  let candidates = postings;
-
-  if (fc.titleFilter) {
-    const re = new RegExp(fc.titleFilter, 'i');
-    candidates = candidates.filter(p => re.test(p.name || ''));
-  }
-  if (Array.isArray(fc.locationIncludes) && fc.locationIncludes.length > 0) {
-    const matchers = fc.locationIncludes.map(makeLocationMatcher);
-    candidates = candidates.filter(p => {
-      const loc = listLocation(p).location.toLowerCase();
-      return matchers.some(m => m(loc));
-    });
-  }
-  if (Array.isArray(fc.locationExcludes) && fc.locationExcludes.length > 0) {
-    const matchers = fc.locationExcludes.map(makeLocationMatcher);
-    candidates = candidates.filter(p => {
-      const loc = listLocation(p).location.toLowerCase();
-      return !loc || !matchers.some(m => m(loc));
-    });
-  }
-  if (typeof fc.postedWithinDays === 'number') {
-    // postedAt comes from releasedDate alone, so the library's rule can
-    // run here in full: a missing or unparseable date is out either way.
-    const cutoff = Date.now() - fc.postedWithinDays * 86400000;
-    candidates = candidates.filter(p => {
+  // 2. Filter-aware candidate selection BEFORE the N+1 detail cost, then
+  //    the detail budget (see prefilterRows). The list row carries name,
+  //    location and releasedDate. The detail adds no location (unlike
+  //    Workday's additionalLocations), so a row with none follows the
+  //    library's rule now: out under includes, kept under excludes.
+  //    postedAt comes from releasedDate alone, so a missing or unparseable
+  //    date is out, as it is in the library.
+  const { candidates, hydrate } = prefilterRows(postings, fc, {
+    title: p => p.name || '',
+    location: p => listLocation(p).location.toLowerCase(),
+    postedWithin: (p, days) => {
       const released = new Date(p.releasedDate || '').getTime();
-      return Number.isFinite(released) && released >= cutoff;
-    });
-  }
-
-  // 3. Bound the detail-fetch set, Workday's reasoning verbatim: a
-  //    description `filter` is applied by the library AFTER this returns,
-  //    so that case keeps the full backstop instead of truncating to
-  //    `limit` (which could hydrate jobs that all fail the regex while
-  //    better matches go unscanned). The library pages with `offset`
-  //    after this returns, so the budget covers the page plus what
-  //    precedes it. Candidates keep list order.
-  const limit = typeof fc.limit === 'number' && fc.limit > 0 ? fc.limit : 100;
-  const skip = typeof fc.offset === 'number' && fc.offset > 0 ? fc.offset : 0;
-  const cap = fc.filter ? MAX_DETAIL_FETCHES : Math.min(skip + limit, MAX_DETAIL_FETCHES);
-  const hydrate = candidates.slice(0, cap);
+      return Number.isFinite(released) && released >= Date.now() - days * 86400000;
+    },
+    max: MAX_DETAIL_FETCHES,
+  });
 
   // Every list row carries company { identifier, name }. Neither the list
   // nor the detail has a company website, and postingUrl is always on
   // jobs.smartrecruiters.com, so org_url stays null (issue #58).
   if (typeof ctx.report === 'function') {
     ctx.report({
-      ats: 'smartrecruiters',
       listed: postings.length,
       prefiltered: candidates.length,
       hydrated: hydrate.length,

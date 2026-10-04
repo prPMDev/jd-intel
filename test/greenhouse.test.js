@@ -315,21 +315,21 @@ describe('fetchGreenhouse org identity (issue #58)', () => {
     mockFetch(t);
     const reports = [];
     await fetchGreenhouse('vercel', { report: (r) => reports.push(r) });
-    assert.deepEqual(reports, [{ ats: 'greenhouse', org_name: 'Vercel', org_url: null }]);
+    assert.deepEqual(reports, [{ org_name: 'Vercel', org_url: null }]);
   });
 
   test('rows without company_name report null, not the slug', async (t) => {
     mockFetch(t, { body: { jobs: FIXTURE.jobs.map(({ company_name, ...job }) => job), meta: { total: 2 } } });
     const reports = [];
     await fetchGreenhouse('vercel', { report: (r) => reports.push(r) });
-    assert.deepEqual(reports, [{ ats: 'greenhouse', org_name: null, org_url: null }]);
+    assert.deepEqual(reports, [{ org_name: null, org_url: null }]);
   });
 
   test('an empty board reports null; a 404 reports nothing', async (t) => {
     mockFetch(t, { body: { jobs: [], meta: { total: 0 } } });
     const reports = [];
     await fetchGreenhouse('emptyco', { report: (r) => reports.push(r) });
-    assert.deepEqual(reports, [{ ats: 'greenhouse', org_name: null, org_url: null }]);
+    assert.deepEqual(reports, [{ org_name: null, org_url: null }]);
 
     mockFetch(t, { status: 404, body: {} });
     await fetchGreenhouse('nonexistent', { report: (r) => reports.push(r) });

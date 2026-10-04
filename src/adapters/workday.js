@@ -1,6 +1,6 @@
 import { normalize } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
-import { makeLocationMatcher } from '../filters.js';
+import { prefilterRows } from '../filters.js';
 import { atsFetch } from '../http.js';
 import { orgHost } from '../boards.js';
 
@@ -35,7 +35,7 @@ const MULTI_LOCATION = /^\s*\d+\s+locations?\s*$/;
  * @param {string} slug - normalized company slug (registry routing key)
  * @param {object} [ctx] - { config:{tenant,env,site}, companyName, filterContext, report };
  *   report is called once, after hydration, with
- *   { ats, listed, prefiltered, hydrated, capped, org_name, org_url } when given
+ *   { listed, prefiltered, hydrated, capped, org_name, org_url } when given
  * @returns {Promise<Array>} Normalized job objects
  */
 export async function fetchWorkday(slug, ctx = {}) {
@@ -92,55 +92,27 @@ export async function fetchWorkday(slug, ctx = {}) {
     if (firstTotal > 0 && offset >= firstTotal) break;
   }
 
-  // 2. Filter-aware candidate selection BEFORE the N+1 detail cost.
-  //    The list carries title/locationsText/postedOn — enough to apply
-  //    titleFilter, location, and recency without descriptions.
-  let candidates = postings;
-
-  if (fc.titleFilter) {
-    const re = new RegExp(fc.titleFilter, 'i');
-    candidates = candidates.filter(p => re.test(p.title || ''));
-  }
-  // Location rows go through the applyFilters matcher, so the pre-filter
-  // keeps exactly the rows the pass after hydration would (issue #61).
-  // "2 Locations" says nothing about where: the row stays a candidate
-  // through both filters and that later pass decides on the detail's
-  // location list.
-  if (Array.isArray(fc.locationIncludes) && fc.locationIncludes.length > 0) {
-    const inc = fc.locationIncludes.map(makeLocationMatcher);
-    candidates = candidates.filter(p => {
+  // 2. Filter-aware candidate selection BEFORE the N+1 detail cost, then
+  //    the detail budget (see prefilterRows). The list carries
+  //    title/locationsText/postedOn, enough to apply titleFilter, location
+  //    and recency without descriptions. "2 Locations" says nothing about
+  //    where: the row stays a candidate through both location filters and
+  //    the library's pass after hydration decides on the detail's location
+  //    list (issue #61).
+  //    NOTE: huge-tenant coverage is intentionally capped for v1. Two caps
+  //    apply: the list scan above stops at LIST_PAGE_HARD_CAP pages (2000
+  //    postings, enough for Salesforce's ~1398), and the detail set is cut
+  //    to MAX_DETAIL_FETCHES here. Proper fix (smart pagination, surfaced
+  //    truncation) is tracked in #26.
+  const { candidates, hydrate } = prefilterRows(postings, fc, {
+    title: p => p.title || '',
+    location: p => {
       const loc = (p.locationsText || '').toLowerCase();
-      return MULTI_LOCATION.test(loc) || inc.some(m => m(loc));
-    });
-  }
-  if (Array.isArray(fc.locationExcludes) && fc.locationExcludes.length > 0) {
-    const exc = fc.locationExcludes.map(makeLocationMatcher);
-    candidates = candidates.filter(p => {
-      const loc = (p.locationsText || '').toLowerCase();
-      return MULTI_LOCATION.test(loc) || !exc.some(m => m(loc));
-    });
-  }
-  if (typeof fc.postedWithinDays === 'number') {
-    candidates = candidates.filter(p => withinDays(p.postedOn, fc.postedWithinDays));
-  }
-
-  // 3. Bound the detail-fetch set.
-  //    NOTE: huge-tenant coverage is intentionally capped for v1. Two
-  //    caps apply: the list scan above stops at LIST_PAGE_HARD_CAP pages
-  //    (2000 postings, enough for Salesforce's ~1398), and the detail set
-  //    is cut to MAX_DETAIL_FETCHES here. A description `filter` is
-  //    applied by the library AFTER this returns, so for that case we
-  //    keep the full backstop instead of truncating tightly to `limit`
-  //    (which could hydrate jobs that all fail the regex while better
-  //    matches go unscanned). The library pages with `offset` after this
-  //    returns, so the budget covers the page plus what precedes it.
-  //    Proper fix (smart pagination / rate-limited concurrency / surfaced
-  //    truncation) is tracked in #26, to be designed alongside
-  //    retry/rate-limit work (#7).
-  const limit = typeof fc.limit === 'number' && fc.limit > 0 ? fc.limit : 100;
-  const skip = typeof fc.offset === 'number' && fc.offset > 0 ? fc.offset : 0;
-  const cap = fc.filter ? MAX_DETAIL_FETCHES : Math.min(skip + limit, MAX_DETAIL_FETCHES);
-  const hydrate = candidates.slice(0, cap);
+      return MULTI_LOCATION.test(loc) ? null : loc;
+    },
+    postedWithin: (p, days) => withinDays(p.postedOn, days),
+    max: MAX_DETAIL_FETCHES,
+  });
 
   // 4. Hydrate descriptions via the per-posting detail endpoint. The detail
   //    also carries `hiringOrganization: { name, url }` next to
@@ -191,7 +163,6 @@ export async function fetchWorkday(slug, ctx = {}) {
   if (typeof ctx.report === 'function') {
     const org = orgs.find(Boolean) || {};
     ctx.report({
-      ats: 'workday',
       listed: postings.length,
       prefiltered: candidates.length,
       hydrated: hydrate.length,
@@ -220,19 +191,26 @@ function parseWorkdayRemoteType(remoteType) {
 
 /**
  * Workday list `postedOn` is a relative string ("Posted Today",
- * "Posted 5 Days Ago", "Posted 30+ Days Ago"). Decide membership in
- * the last N days WITHOUT a network call. Unparseable -> keep (true);
- * the library re-filters authoritatively on the real postedAt after
- * hydration, so a false-keep here is corrected downstream.
+ * "Posted 5 Days Ago", "Posted 30+ Days Ago"). The days it names, or null
+ * when it names none.
+ */
+function daysAgo(postedOn) {
+  const s = String(postedOn || '').toLowerCase();
+  if (/today/.test(s)) return 0;
+  if (/yesterday/.test(s)) return 1;
+  const m = s.match(/(\d+)\+?\s*days?\s*ago/);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+/**
+ * Decide membership in the last N days WITHOUT a network call.
+ * Unparseable -> keep (true); the library re-filters authoritatively on
+ * the real postedAt after hydration, so a false-keep here is corrected
+ * downstream.
  */
 function withinDays(postedOn, days) {
-  if (!postedOn) return true;
-  const s = String(postedOn).toLowerCase();
-  if (/today/.test(s)) return days >= 0;
-  if (/yesterday/.test(s)) return days >= 1;
-  const m = s.match(/(\d+)\+?\s*days?\s*ago/);
-  if (m) return parseInt(m[1], 10) <= days;
-  return true;
+  const n = daysAgo(postedOn);
+  return n === null || n <= days;
 }
 
 /**
@@ -243,16 +221,8 @@ function normalizePostedOn(v) {
   if (!v) return null;
   const direct = new Date(v);
   if (Number.isFinite(direct.getTime())) return direct.toISOString();
-  const s = String(v).toLowerCase();
-  let daysAgo = null;
-  if (/today/.test(s)) daysAgo = 0;
-  else if (/yesterday/.test(s)) daysAgo = 1;
-  else {
-    const m = s.match(/(\d+)\+?\s*days?\s*ago/);
-    if (m) daysAgo = parseInt(m[1], 10);
-  }
-  if (daysAgo === null) return null;
-  return new Date(Date.now() - daysAgo * 86400000).toISOString();
+  const n = daysAgo(v);
+  return n === null ? null : new Date(Date.now() - n * 86400000).toISOString();
 }
 
 /**

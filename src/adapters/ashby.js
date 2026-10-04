@@ -1,4 +1,4 @@
-import { normalize, extractSalaryFromText } from '../normalizer.js';
+import { normalize, extractSalaryFromText, WORKPLACE_TYPES } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 import { atsFetch, probeResult } from '../http.js';
 
@@ -14,11 +14,9 @@ const BOARD_URL = 'https://api.ashbyhq.com/posting-api/job-board';
  * into a silent empty result (issue #55).
  *
  * @param {string} slug - Company slug (e.g., 'notion', 'linear')
- * @param {object} [ctx] - { report }; report is called once with
- *   { ats, org_name, org_url } when given
  * @returns {Promise<Array>} Normalized job objects
  */
-export async function fetchAshby(slug, ctx = {}) {
+export async function fetchAshby(slug) {
   const url = `${BOARD_URL}/${slug}?includeCompensation=true`;
   const resp = await atsFetch(url);
 
@@ -31,10 +29,8 @@ export async function fetchAshby(slug, ctx = {}) {
   const jobs = data.jobs || [];
 
   // The REST response is { jobs, apiVersion }: no organization name, and
-  // every link is on jobs.ashbyhq.com. Both null (issue #58).
-  if (typeof ctx.report === 'function') {
-    ctx.report({ ats: 'ashby', org_name: null, org_url: null });
-  }
+  // every link is on jobs.ashbyhq.com. Nothing to report, so the board's
+  // org_name and org_url stay null (issue #58).
 
   return jobs.map(job => {
     const comp = job.compensation || {};
@@ -69,16 +65,14 @@ export async function fetchAshby(slug, ctx = {}) {
   });
 }
 
-const WORKPLACE_TYPES = { remote: 'remote', hybrid: 'hybrid', onsite: 'onsite' };
-
 /**
  * `workplaceType` is 'Remote', 'Hybrid' or 'OnSite'. `isRemote` is the
  * older flag and can only say remote, so it is the fallback when the type
  * is absent. false means nothing: the role may be hybrid or onsite.
  */
 function parseAshbyWorkplace(job) {
-  const type = WORKPLACE_TYPES[String(job.workplaceType || '').toLowerCase()];
-  if (type) return type;
+  const type = String(job.workplaceType || '').toLowerCase();
+  if (WORKPLACE_TYPES.has(type)) return type;
   return job.isRemote === true ? 'remote' : null;
 }
 

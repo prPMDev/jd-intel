@@ -5,8 +5,6 @@ import { atsFetch, probeResult } from '../http.js';
 const BASE_URL = 'https://api.lever.co/v0/postings';
 
 const PERIODS = { 'per-year-salary': 'year', 'per-month-salary': 'month', 'per-hour-wage': 'hour' };
-// Lever's workplaceType is one of these or 'unspecified'.
-const WORKPLACE_TYPES = new Set(['remote', 'hybrid', 'onsite']);
 
 /**
  * Fetch all jobs from a Lever job board.
@@ -14,11 +12,9 @@ const WORKPLACE_TYPES = new Set(['remote', 'hybrid', 'onsite']);
  * Docs: https://github.com/lever/postings-api
  *
  * @param {string} slug - Company slug (e.g., 'stripe', 'figma')
- * @param {object} [ctx] - { report }; report is called once with
- *   { ats, org_name, org_url } when given
  * @returns {Promise<Array>} Normalized job objects
  */
-export async function fetchLever(slug, ctx = {}) {
+export async function fetchLever(slug) {
   const url = `${BASE_URL}/${slug}?mode=json`;
   const resp = await atsFetch(url);
 
@@ -31,10 +27,8 @@ export async function fetchLever(slug, ctx = {}) {
   if (!Array.isArray(jobs)) return [];
 
   // The postings response is a bare array of jobs: no organization name
-  // anywhere, and every link is on jobs.lever.co. Both null (issue #58).
-  if (typeof ctx.report === 'function') {
-    ctx.report({ ats: 'lever', org_name: null, org_url: null });
-  }
+  // anywhere, and every link is on jobs.lever.co. Nothing to report, so
+  // the board's org_name and org_url stay null (issue #58).
 
   return jobs.map(job => normalize({
     companySlug: slug,
@@ -46,7 +40,8 @@ export async function fetchLever(slug, ctx = {}) {
     department: job.categories?.department || job.categories?.team || '',
     location: job.categories?.location || '',
     locations: job.categories?.allLocations || [],
-    workplace: WORKPLACE_TYPES.has(job.workplaceType) ? job.workplaceType : null,
+    // 'remote', 'hybrid', 'onsite' or 'unspecified'; normalize() ignores the last.
+    workplace: job.workplaceType,
     description: buildDescription(job),
     url: job.hostedUrl || '',
     postedAt: job.createdAt ? new Date(job.createdAt).toISOString() : null,

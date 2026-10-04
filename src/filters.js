@@ -88,11 +88,7 @@ export function pageJobs(jobs, { order = 'newest', offset = 0, limit = 100 } = {
 
   const start = typeof offset === 'number' && offset > 0 ? offset : 0;
   const end = typeof limit === 'number' ? start + limit : undefined;
-  if (start > 0 || (end !== undefined && result.length > end)) {
-    result = result.slice(start, end);
-  }
-
-  return result;
+  return result.slice(start, end);
 }
 
 /**
@@ -173,4 +169,52 @@ export function makeLocationMatcher(needle) {
     return (loc) => pattern.test(loc);
   }
   return (loc) => loc.includes(lower);
+}
+
+/**
+ * The list pre-filter and detail budget the two-step adapters (Workday,
+ * SmartRecruiters) share: narrow the cheap list rows with the filters a row
+ * can answer, then bound how many get a detail request.
+ *
+ * The library re-applies every filter after hydration, so a keep here is
+ * never final. `location(row)` returns the lowercased location, or null
+ * when the row cannot say where it is (it then stays a candidate through
+ * both location filters). `postedWithin(row, days)` decides recency.
+ *
+ * A description `filter` runs only after hydration, so that case keeps the
+ * full `max` budget instead of truncating to the page (which could hydrate
+ * rows that all fail the regex while better matches go unscanned). Without
+ * one, the budget is the page plus the offset before it. List order is kept.
+ *
+ * @returns {{ candidates: Array, hydrate: Array }}
+ */
+export function prefilterRows(rows, fc, { title, location, postedWithin, max }) {
+  let candidates = rows;
+
+  if (fc.titleFilter) {
+    const re = new RegExp(fc.titleFilter, 'i');
+    candidates = candidates.filter(p => re.test(title(p)));
+  }
+  if (Array.isArray(fc.locationIncludes) && fc.locationIncludes.length > 0) {
+    const inc = fc.locationIncludes.map(makeLocationMatcher);
+    candidates = candidates.filter(p => {
+      const loc = location(p);
+      return loc === null || inc.some(m => m(loc));
+    });
+  }
+  if (Array.isArray(fc.locationExcludes) && fc.locationExcludes.length > 0) {
+    const exc = fc.locationExcludes.map(makeLocationMatcher);
+    candidates = candidates.filter(p => {
+      const loc = location(p);
+      return loc === null || !exc.some(m => m(loc));
+    });
+  }
+  if (typeof fc.postedWithinDays === 'number') {
+    candidates = candidates.filter(p => postedWithin(p, fc.postedWithinDays));
+  }
+
+  const limit = typeof fc.limit === 'number' && fc.limit > 0 ? fc.limit : 100;
+  const skip = typeof fc.offset === 'number' && fc.offset > 0 ? fc.offset : 0;
+  const cap = fc.filter ? max : Math.min(skip + limit, max);
+  return { candidates, hydrate: candidates.slice(0, cap) };
 }
