@@ -139,7 +139,7 @@ Statuses: `success` when every board asked answered (`failed` is empty; `data` m
 
 ### search_registry
 
-`metadata`: `count`, `query`, `sector`, `version`, `registry_source`. `query` matches company name or sector; `sector` matches sector only; passing both narrows (AND). Statuses: `success` (`data` may be `[]`) or `error` with `invalid_args` when both arguments are missing.
+`metadata`: `count`, `total`, `truncated`, `query`, `sector`, `version`, `registry_source`. `query` matches company name or sector; `sector` matches sector only; passing both narrows (AND). Rows are ranked (exact name or slug, name prefix, name substring, sector only) and capped at `limit` (default 50, max 200); `total` counts every match and `truncated` is `{ reason: "limit", not_returned }` when the cap cut the list. Statuses: `success` (`data` may be `[]`) or `error` with `invalid_args` when both arguments are missing.
 
 ### detect_ats
 

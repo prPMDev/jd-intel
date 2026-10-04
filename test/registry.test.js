@@ -67,6 +67,21 @@ describe('searchRegistry', () => {
     }
   });
 
+  test('ranks name matches ahead of sector-only matches, whichever file they are in (issue #62)', async () => {
+    // Every fixture name starts with "Fixture" except AcmePay, which matches
+    // on its sector alone and sits in the fourth file of seven.
+    const slugs = (await searchRegistry('fixture')).map(r => r.slug);
+    assert.equal(slugs.length, 7);
+    assert.equal(slugs.at(-1), 'AcmePay');
+    assert.ok(slugs.indexOf('fixtureco') < slugs.indexOf('AcmePay'), 'the last file\'s name match outranks it');
+    assert.deepEqual(slugs, (await searchRegistry('fixture')).map(r => r.slug), 'same order on every call');
+  });
+
+  test('an exact name or slug ranks first', async () => {
+    assert.equal((await searchRegistry('fixture workday co'))[0].slug, 'fixtureco');
+    assert.equal((await searchRegistry('FIXTURECO'))[0].slug, 'fixtureco');
+  });
+
   test('returns empty array when nothing matches', async () => {
     const results = await searchRegistry('zzzz-no-such-company-zzzz');
     assert.deepEqual(results, []);

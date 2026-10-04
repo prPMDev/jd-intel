@@ -860,7 +860,26 @@ describe('search_registry', () => {
     assert.equal(result.isError, undefined);
     assert.equal(result.structuredContent.status, 'success');
     assert.equal(result.structuredContent.data[0].verified_at, '2026-01-01');
-    assert.deepEqual(Object.keys(result.structuredContent.metadata).sort(), ['count', 'query', 'registry_source', 'sector', 'version']);
+    assert.deepEqual(Object.keys(result.structuredContent.metadata).sort(), ['count', 'query', 'registry_source', 'sector', 'total', 'truncated', 'version']);
+  });
+
+  test('caps at the default limit and says how many were left out (issue #62)', async () => {
+    const rows = Array.from({ length: 60 }, (_, i) => ({ slug: `co${i}`, name: `Co ${i}`, sector: 'fintech', ats: 'lever' }));
+    const client = await connect({ searchRegistry: async () => rows });
+    const capped = (await call(client, 'search_registry', { query: 'co' })).structuredContent;
+    assert.deepEqual(capped.data.map((r) => r.slug), rows.slice(0, 50).map((r) => r.slug), 'the cut keeps the library\'s order');
+    assert.deepEqual([capped.metadata.count, capped.metadata.total], [50, 60]);
+    assert.deepEqual(capped.metadata.truncated, { reason: 'limit', not_returned: 10 });
+    const all = (await call(client, 'search_registry', { query: 'co', limit: 100 })).structuredContent;
+    assert.deepEqual([all.metadata.count, all.metadata.total, all.metadata.truncated], [60, 60, null]);
+  });
+
+  test('leaves the Workday config out of the rows', async () => {
+    const client = await connect({
+      searchRegistry: async () => [{ slug: 'acme', name: 'Acme', sector: 'fintech', ats: 'workday', config: { tenant: 'acme', env: 'wd1', site: 'Careers' } }],
+    });
+    const result = await call(client, 'search_registry', { query: 'acme' });
+    assert.deepEqual(result.structuredContent.data, [{ slug: 'acme', name: 'Acme', sector: 'fintech', ats: 'workday' }]);
   });
 
   test('query alone matches name or sector; with sector too, both must match (AND)', async () => {

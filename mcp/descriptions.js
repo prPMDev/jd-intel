@@ -84,20 +84,21 @@ ERROR CODES:
 
 export const SEARCH_REGISTRY = `Find companies in the indexed registry by name or sector.
 
-USE WHEN: targeted lookups ("Is Stripe in your index?", "Show me fintech companies").
+USE WHEN: a company name or a sector word is in hand ("Is Stripe in your index?", "Show me fintech companies").
 
 DON'T USE WHEN:
-- User wants a broad survey of the catalog → read the registry://jd-intel/all Resource instead (one fetch vs repeated tool calls)
+- User wants the whole catalog, across every sector → read the registry://jd-intel/all Resource instead (one large read)
 - User asks about a specific company's jobs → call fetch_jobs directly
 
 ARGUMENT GUIDE:
 
 query: optional. Case-insensitive substring match against company name or sector.
 sector: optional. Case-insensitive substring match against sector only ("fintech", "developer tools").
+limit: optional. Max rows returned, default 50, max 200.
 
 At least one is required. Passing both narrows: a row must match query (on name or sector) and sector (AND). An argument that fails the input schema (wrong type, unknown key) returns isError with plain text naming the field and no envelope; fix that argument and call again.
 
-RESPONSE: { status, data: [{ slug, name, sector, ats }] | null, metadata: { count, query, sector, version, registry_source } }. Each row is one board; ats is the platform it is on. count is rows in data. query and sector echo the arguments, null when not passed. registry_source is "network", "disk-fallback" (the bundled copy) or "mixed".
+RESPONSE: { status, data: [{ slug, name, sector, ats }] | null, metadata: { count, total, truncated, query, sector, version, registry_source } }. Each row is one board; ats is the platform it is on. Rows are ranked: an exact name or slug, then names starting with the query, then names containing it, then sector-only matches. count is rows in data. total is every row that matched. truncated: null, or { reason: "limit", not_returned } when more matched than limit; narrow the term or combine query with sector before raising limit. query and sector echo the arguments, null when not passed. registry_source is "network", "disk-fallback" (the bundled copy) or "mixed".
 
 STATUSES:
 - success: the registry was searched. data may be [].
@@ -133,6 +134,6 @@ ERROR CODES:
 
 export const REGISTRY_RESOURCE = `The full jd-intel company registry, grouped by ATS platform.
 
-Use for broad surveys ("what fintech companies are indexed?", "tell me about the catalog"). Fetched once per session, then cached. Cheaper than repeated search_registry calls for multi-query reasoning.
+Use for questions that need the whole catalog ("what sectors do you cover?", "tell me about the catalog"). It is a large read, about 1,000 rows and 65,000 characters and growing weekly, so for a company name or one sector call search_registry instead.
 
 Shape: { greenhouse: [{slug, name, sector}], lever: [...], ashby: [...], smartrecruiters: [...], teamtailor: [...], recruitee: [...], workday: [...] }.`;

@@ -31,7 +31,8 @@ export function registerResources(server) {
           {
             uri: uri.href,
             mimeType: 'application/json',
-            text: JSON.stringify(all, null, 2),
+            // Compact and without the Workday config: half the size (issue #62).
+            text: JSON.stringify(all, (key, value) => (key === 'config' ? undefined : value)),
           },
         ],
       };

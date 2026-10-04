@@ -37,6 +37,8 @@ const READ_ONLY = { readOnlyHint: true, destructiveHint: false, idempotentHint: 
 
 const DEFAULT_LIMIT = 100;
 const DEFAULT_MAX_TOKENS = 12000;
+const DEFAULT_SEARCH_LIMIT = 50;
+const MAX_SEARCH_LIMIT = 200;
 
 // detectAtsDetailed asks every adapter the registry did not answer for, but
 // hasWorkday() answers false without a request: a Workday board is a
@@ -282,6 +284,7 @@ export function registerTools(server, deps = {}) {
       inputSchema: z.object({
         query: z.string().optional().describe('Case-insensitive substring match against company name or sector'),
         sector: z.string().optional().describe('Case-insensitive substring match against sector only (e.g. "fintech", "developer tools"). With query, both must match.'),
+        limit: z.number().int().positive().max(MAX_SEARCH_LIMIT).optional().describe(`Max rows returned, best match first (default ${DEFAULT_SEARCH_LIMIT}, max ${MAX_SEARCH_LIMIT}).`),
       }).strict(),
     },
     withEnvelope(async (args) => {
@@ -298,8 +301,16 @@ export function registerTools(server, deps = {}) {
         ? results.filter((r) => (r.sector || '').toLowerCase().includes(args.sector.toLowerCase()))
         : results;
 
-      return success(filtered, {
-        count: filtered.length,
+      // Rows arrive best match first, so the cut drops the weakest. config
+      // (the Workday triple) stays out: fetch_jobs reads it from the
+      // registry by slug, and it was a third of the payload (issue #62).
+      const rows = filtered.slice(0, args.limit ?? DEFAULT_SEARCH_LIMIT).map(({ config, ...row }) => row);
+      const notReturned = filtered.length - rows.length;
+
+      return success(rows, {
+        count: rows.length,
+        total: filtered.length,
+        truncated: notReturned > 0 ? { reason: 'limit', not_returned: notReturned } : null,
         query: args.query || null,
         sector: args.sector || null,
         version: VERSION,
