@@ -1,6 +1,16 @@
 import { createHash } from 'node:crypto';
 
 /**
+ * A date value (string or epoch ms) as an ISO string, or null when it is
+ * missing or does not parse.
+ */
+export function toIso(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/**
  * Generate a stable ID for a job posting.
  */
 export function jobId(company, title, ats, location = '') {

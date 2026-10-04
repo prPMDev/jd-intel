@@ -37,33 +37,35 @@ function configPathFor(os) {
   }
 }
 
+// The config path for this OS and the parsed file, or config: null when
+// there is no file yet. Exits on invalid JSON: a file this could not read
+// is never written over.
+async function readConfig() {
+  const configPath = configPathFor(platform());
+  if (!configPath || !existsSync(configPath)) return { configPath, config: null };
+  try {
+    return { configPath, config: JSON.parse(await readFile(configPath, 'utf-8')) };
+  } catch (err) {
+    console.error('Your existing Claude Desktop config is not valid JSON.');
+    console.error('Fix it manually first, or back it up and run this again. Nothing was changed.');
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
 export async function install() {
-  const os = platform();
-  const configPath = configPathFor(os);
+  const { configPath, config: existing } = await readConfig();
 
   if (!configPath) {
-    console.error(`Unsupported platform: ${os}. Supported: macOS, Windows, Linux.`);
+    console.error(`Unsupported platform: ${platform()}. Supported: macOS, Windows, Linux.`);
     process.exit(1);
   }
 
   console.log(`Installing ${PACKAGE_NAME} in Claude Desktop config.`);
   console.log(`Config file: ${configPath}\n`);
 
-  let config = {};
-  let existed = false;
-
-  if (existsSync(configPath)) {
-    existed = true;
-    const raw = await readFile(configPath, 'utf-8');
-    try {
-      config = JSON.parse(raw);
-    } catch (err) {
-      console.error('Your existing Claude Desktop config is not valid JSON.');
-      console.error(`Fix it manually first, or back it up and run this again.`);
-      console.error(`Error: ${err.message}`);
-      process.exit(1);
-    }
-  } else {
+  const config = existing ?? {};
+  if (!existing) {
     // Make sure the parent directory exists before writing
     await mkdir(dirname(configPath), { recursive: true });
     console.log('Config file did not exist — creating it.\n');
@@ -101,21 +103,11 @@ export async function install() {
 }
 
 export async function uninstall() {
-  const os = platform();
-  const configPath = configPathFor(os);
+  const { configPath, config } = await readConfig();
 
-  if (!configPath || !existsSync(configPath)) {
+  if (!config) {
     console.log('No Claude Desktop config found. Nothing to uninstall.');
     return;
-  }
-
-  const raw = await readFile(configPath, 'utf-8');
-  let config;
-  try {
-    config = JSON.parse(raw);
-  } catch {
-    console.error('Existing config is not valid JSON. Leaving it alone.');
-    process.exit(1);
   }
 
   if (!config.mcpServers || !config.mcpServers[SERVER_KEY]) {

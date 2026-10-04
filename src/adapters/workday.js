@@ -1,4 +1,4 @@
-import { normalize, missingContent } from '../normalizer.js';
+import { normalize, missingContent, toIso } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 import { prefilterRows } from '../filters.js';
 import { atsFetch } from '../http.js';
@@ -151,7 +151,8 @@ export async function fetchWorkday(slug, ctx = {}) {
       workplace: parseWorkdayRemoteType(info.remoteType),
       description: info.jobDescription || '',
       url: `https://${tenant}.${env}.myworkdayjobs.com/${site}${externalPath}`,
-      postedAt: parseWorkdayDate(info.startDate) || normalizePostedOn(p.postedOn),
+      // startDate is "2026-05-01" or "May 1, 2026".
+      postedAt: toIso(info.startDate) || normalizePostedOn(p.postedOn),
       salary: null, // normalizer extracts from description text
       content,
       metadata: {
@@ -223,21 +224,10 @@ function withinDays(postedOn, days) {
  * so the library's postedWithinDays re-filter has a value to compare.
  */
 function normalizePostedOn(v) {
-  if (!v) return null;
-  const direct = new Date(v);
-  if (Number.isFinite(direct.getTime())) return direct.toISOString();
+  const direct = toIso(v);
+  if (direct) return direct;
   const n = daysAgo(v);
   return n === null ? null : new Date(Date.now() - n * 86400000).toISOString();
-}
-
-/**
- * Workday detail `startDate` ("2026-05-01" or "May 1, 2026"). Return
- * ISO, or null if unparseable.
- */
-function parseWorkdayDate(s) {
-  if (!s) return null;
-  const d = new Date(s);
-  return Number.isFinite(d.getTime()) ? d.toISOString() : null;
 }
 
 /**

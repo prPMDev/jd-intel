@@ -1,4 +1,4 @@
-import { normalize, extractSalaryFromText } from '../normalizer.js';
+import { normalize, extractSalaryFromText, toIso } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 import { atsFetch, probeResult } from '../http.js';
 
@@ -44,7 +44,7 @@ export async function fetchLever(slug) {
     workplace: job.workplaceType,
     description: buildDescription(job),
     url: job.hostedUrl || '',
-    postedAt: job.createdAt ? new Date(job.createdAt).toISOString() : null,
+    postedAt: toIso(job.createdAt),
     salary: parseLeverSalary(job.salaryRange, job.text),
     metadata: {
       leverId: job.id,

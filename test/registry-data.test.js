@@ -8,7 +8,7 @@ import { readFile } from 'node:fs/promises';
 // by registry.test.js against fixtures). Reads the files directly so no
 // loader cache or env override is involved.
 
-const PLATFORMS = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'teamtailor', 'recruitee', 'workday'];
+import { ATS_NAMES as PLATFORMS } from '../src/adapters/index.js';
 
 // Same normalization as findAtsBySlug in src/registry.js.
 const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');

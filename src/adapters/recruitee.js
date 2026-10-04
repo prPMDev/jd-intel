@@ -1,4 +1,4 @@
-import { normalize } from '../normalizer.js';
+import { normalize, toIso } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 import { atsFetch, probeResult } from '../http.js';
 import { orgHost } from '../boards.js';
@@ -51,7 +51,7 @@ export async function fetchRecruitee(slug, ctx = {}) {
     let location = place;
     if (offer.remote) location = place ? `Remote - ${place}` : 'Remote';
 
-    const createdAt = toIso(offer.created_at);
+    const createdAt = recruiteeDate(offer.created_at);
 
     return normalize({
       companySlug: slug,
@@ -65,7 +65,7 @@ export async function fetchRecruitee(slug, ctx = {}) {
       url: offer.careers_url || offer.careers_apply_url || '',
       // created_at can predate publication by years on long-lived offers,
       // so it is not a posting date. published_at is.
-      postedAt: toIso(offer.published_at) || createdAt,
+      postedAt: recruiteeDate(offer.published_at) || createdAt,
       salary: parseRecruiteeSalary(offer.salary),
       metadata: {
         recruiteeId: offer.guid || offer.id,
@@ -77,14 +77,8 @@ export async function fetchRecruitee(slug, ctx = {}) {
   });
 }
 
-/**
- * Recruitee returns "2026-05-13 07:38:11 UTC"; coerce to ISO.
- */
-function toIso(ts) {
-  if (!ts) return null;
-  const d = new Date(ts.replace(' UTC', 'Z').replace(' ', 'T'));
-  return Number.isNaN(d.getTime()) ? null : d.toISOString();
-}
+// Recruitee returns "2026-05-13 07:38:11 UTC".
+const recruiteeDate = (ts) => toIso(ts?.replace(' UTC', 'Z').replace(' ', 'T'));
 
 /**
  * Recruitee sends three booleans, not one enum. Hybrid wins when remote is
