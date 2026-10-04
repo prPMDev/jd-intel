@@ -516,7 +516,7 @@ describe("fetchJobsDetailed — ctx.report records a board's scan, and jobs_foun
     let ctxSeen;
     t.mock.method(ADAPTERS.smartrecruiters, 'fetch', async (slug, ctx) => {
       ctxSeen = ctx;
-      ctx.report({ ats: 'smartrecruiters', prefiltered: 6, hydrated: 6, capped: false });
+      ctx.report({ prefiltered: 6, hydrated: 6, capped: false });
       return ['Product Manager', 'Group PM'].map(title =>
         normalize({ companySlug: slug, company: slug, title, location: 'Remote', description: 'Build.', url: `https://x/${title}` }, 'smartrecruiters'));
     });
@@ -599,8 +599,8 @@ describe('fetchJobsDetailed — boards[].org_name and org_url come from the boar
   test('two report calls for one board merge; an org-only report leaves scan null', async (t) => {
     const rows = (slug, ats) => [normalize({ companySlug: slug, company: slug, title: 'PM', location: 'Remote', description: 'Build.', url: `https://x/${slug}` }, ats)];
     t.mock.method(ADAPTERS.smartrecruiters, 'fetch', async (slug, ctx) => {
-      ctx.report({ ats: 'smartrecruiters', listed: 3, prefiltered: 1, hydrated: 1, capped: false });
-      ctx.report({ ats: 'smartrecruiters', org_name: 'AcmePay Ltd', org_url: 'careers.acmepay.example' });
+      ctx.report({ listed: 3, prefiltered: 1, hydrated: 1, capped: false });
+      ctx.report({ org_name: 'AcmePay Ltd', org_url: 'careers.acmepay.example' });
       return rows(slug, 'smartrecruiters');
     });
     const merged = await fetchJobsDetailed({ company: 'acmepay' });

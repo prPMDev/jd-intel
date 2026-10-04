@@ -70,7 +70,7 @@ export function isAtsError(code, status) {
 export function probeFailureTests(has, slug) {
   for (const [status, code] of [[429, 'rate_limited'], [503, 'ats_unreachable'], [403, 'ats_unreachable']]) {
     test(`throws ${code} carrying the status on a ${status}`, async (t) => {
-      t.mock.method(global, 'fetch', async () => ({ ok: false, status, json: async () => ({}), text: async () => '' }));
+      t.mock.method(global, 'fetch', async () => statusResponse(status));
       await assert.rejects(has(slug), isAtsError(code, status));
     });
   }

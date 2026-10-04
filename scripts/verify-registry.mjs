@@ -36,6 +36,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 import { ADAPTERS } from '../src/adapters/index.js';
 import { loadRegistry } from '../src/registry.js';
 import { ERROR_CODES } from '../src/errors.js';
@@ -43,14 +44,14 @@ import { ERROR_CODES } from '../src/errors.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 
-function getArg(flag, fallback) {
-  const i = process.argv.indexOf(flag);
-  return i >= 0 && process.argv[i + 1] !== undefined ? process.argv[i + 1] : fallback;
-}
+const string = (fallback) => ({ type: 'string', default: fallback });
+const { values: flags } = parseArgs({
+  options: { candidates: { type: 'string' }, concurrency: string('4'), limit: string('1'), retries: string('1') },
+});
 
-const candidatesPath = getArg('--candidates', null);
-const CONCURRENCY = Number(getArg('--concurrency', '4'));
-const LIMIT = Number(getArg('--limit', '1')); // jobCount>0 is the only signal we need
+const candidatesPath = flags.candidates ?? null;
+const CONCURRENCY = Number(flags.concurrency);
+const LIMIT = Number(flags.limit); // jobCount>0 is the only signal we need
 
 async function loadEntries() {
   if (candidatesPath) {
@@ -69,7 +70,7 @@ async function loadEntries() {
 // The decision is structural, never a message regex: Workday error messages
 // embed the pod name next to the status ("(ufp/wd503/Careers): 404"), so a
 // /5\d\d/ match on the text reads that terminal 404 as a retryable 5xx.
-const RETRIES = Number(getArg('--retries', '1'));
+const RETRIES = Number(flags.retries);
 const NETWORK_ERR = /fetch failed|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket hang up/i;
 
 function isTransient(err) {

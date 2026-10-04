@@ -11,27 +11,10 @@
 
 const [, , command] = process.argv;
 
-switch (command) {
-  case 'install': {
-    const { install } = await import('./install.js');
-    await install();
-    break;
-  }
-  case 'uninstall': {
-    const { uninstall } = await import('./install.js');
-    await uninstall();
-    break;
-  }
-  case 'help':
-  case '-h':
-  case '--help': {
-    const { printHelp } = await import('./install.js');
-    printHelp();
-    break;
-  }
-  default: {
-    // No command → start the MCP server.
-    // This is the path Claude Desktop invokes via `npx -y jd-intel-mcp`.
-    await import('./server.js');
-  }
-}
+// install.js export to run for a command; anything else starts the MCP
+// server, the path Claude Desktop invokes via `npx -y jd-intel-mcp`.
+const COMMANDS = { install: 'install', uninstall: 'uninstall', help: 'printHelp', '-h': 'printHelp', '--help': 'printHelp' };
+const run = Object.hasOwn(COMMANDS, command ?? '') ? COMMANDS[command] : null;
+
+if (run) await (await import('./install.js'))[run]();
+else await import('./server.js');

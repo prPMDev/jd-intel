@@ -14,7 +14,7 @@ disableRetries();
 process.env.JD_INTEL_REGISTRY_URL = '';
 process.env.JD_INTEL_REGISTRY_DIR = fileURLToPath(new URL('./fixtures/registry', import.meta.url));
 
-const ATS_KEYS = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'teamtailor', 'recruitee', 'workday'];
+import { ATS_NAMES as ATS_KEYS } from '../src/adapters/index.js';
 
 describe('loadRegistry', () => {
   test('loads a single ATS as an array', async () => {

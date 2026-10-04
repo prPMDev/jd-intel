@@ -7,11 +7,6 @@ import { ADAPTERS, ATS_NAMES } from './adapters/index.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REGISTRY_DIR = join(__dirname, '..', 'registry');
 
-// The one order the registry is ever walked in. Lookups, detectAts and the
-// loaded object all follow it, so which file answers for a slug does not
-// depend on which file's load finished first (issue #87).
-const PLATFORMS = ATS_NAMES;
-
 // Network-first registry. A hosted copy lets installed bundles AND npx users
 // pick up newly-added companies without reinstalling; the on-disk copy that
 // ships with the package is the guaranteed offline fallback. The base URL is
@@ -73,8 +68,11 @@ async function loadPlatform(platform) {
  */
 export async function loadRegistry(ats) {
   if (ats) return loadPlatform(ats);
-  const lists = await Promise.all(PLATFORMS.map(loadPlatform));
-  return Object.fromEntries(PLATFORMS.map((platform, i) => [platform, lists[i]]));
+  // ATS_NAMES is the one order the registry is ever walked in. Lookups,
+  // detectAts and this object all follow it, so which file answers for a
+  // slug does not depend on which file's load finished first (issue #87).
+  const lists = await Promise.all(ATS_NAMES.map(loadPlatform));
+  return Object.fromEntries(ATS_NAMES.map((platform, i) => [platform, lists[i]]));
 }
 
 /**
@@ -127,7 +125,7 @@ export async function searchRegistry(query) {
 // normalized forms keeps registry-first routing working for those.
 export const normSlug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
 
-const byPlatform = (a, b) => PLATFORMS.indexOf(a.ats) - PLATFORMS.indexOf(b.ats);
+const byPlatform = (a, b) => ATS_NAMES.indexOf(a.ats) - ATS_NAMES.indexOf(b.ats);
 
 /**
  * Look up which ATS a slug belongs to in the registry.
@@ -143,7 +141,7 @@ export async function findAtsBySlug(slug) {
  * Unlike findAtsBySlug (returns just the ats name), this returns the
  * whole entry so callers can read adapter-specific config (e.g. the
  * Workday {tenant, env, site} triple). The files are searched in
- * PLATFORMS order, so the first match is the same on every call.
+ * ATS_NAMES order, so the first match is the same on every call.
  *
  * @returns {Promise<{ats: string, entry: object}|null>}
  */
@@ -167,7 +165,7 @@ export async function findEntryBySlug(slug) {
  * adds nothing, and an AtsError (429, 5xx, 401, network) goes to `failed`
  * with its code, so a board the probe could not check never reads as
  * absent (issue #55). Any other error is a bug and is rethrown. Both lists
- * come back in PLATFORMS order, never in completion order.
+ * come back in ATS_NAMES order, never in completion order.
  *
  * @returns {Promise<{
  *   boards: Array<{ ats: string, slug: string, source: 'registry'|'probe' }>,

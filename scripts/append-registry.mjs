@@ -28,19 +28,13 @@
 import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
+import { normSlug as norm } from '../src/registry.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const REGISTRY_DIR = join(ROOT, 'registry');
 
-function getArg(flag, fallback) {
-  const i = process.argv.indexOf(flag);
-  return i >= 0 && process.argv[i + 1] !== undefined ? process.argv[i + 1] : fallback;
-}
-
-const reportPath = getArg('--report', 'tmp/verify-report.json');
-
-// Same normalization as findAtsBySlug in src/registry.js.
-const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+const reportPath = parseArgs({ options: { report: { type: 'string', default: 'tmp/verify-report.json' } } }).values.report;
 
 function formatEntry(e) {
   const fields = {

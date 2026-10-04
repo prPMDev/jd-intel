@@ -1,4 +1,4 @@
-import { normalize, decodeEntities } from '../normalizer.js';
+import { normalize, decodeEntities, toIso } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 import { atsFetch } from '../http.js';
 import { orgHost } from '../boards.js';
@@ -116,12 +116,6 @@ export async function fetchTeamtailor(slug, ctx = {}) {
       location = location ? `Remote - ${location}` : 'Remote';
     }
 
-    let postedAt = null;
-    if (pubDateRaw) {
-      const d = new Date(pubDateRaw);
-      if (!Number.isNaN(d.getTime())) postedAt = d.toISOString();
-    }
-
     return normalize({
       companySlug: slug,
       company,
@@ -132,7 +126,7 @@ export async function fetchTeamtailor(slug, ctx = {}) {
       workplace: REMOTE_STATUS[remoteStatus.toLowerCase()] || null,
       description: decodeEntities(pick('description')),
       url: link,
-      postedAt,
+      postedAt: toIso(pubDateRaw),
       salary: null, // No structured salary; normalizer parses from text
       metadata: {
         teamtailorId: guid,

@@ -15,7 +15,6 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "fetch": "node src/cli.js fetch",
-    "search": "node src/cli.js search",
     "verify:registry": "node scripts/verify-registry.mjs",
     "sync:registry-pages": "node scripts/sync-pages-registry.mjs",
     "pack:mcpb": "node scripts/build-mcpb.mjs",
