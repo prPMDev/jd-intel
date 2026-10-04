@@ -56,7 +56,7 @@ workday: optional { tenant, env, site }. Use ONLY for a Workday company not in t
 
 An argument that fails the input schema (wrong type, out of range, unknown key, a blank workday field) returns isError with plain text naming the field and no envelope; fix that argument and call again.
 
-RESPONSE: { status, data: [jobs] | null, metadata: { count, registry_hit, ats, workday_override, version, registry_source, total_matched, total_before_filters, match, company, boards, failed, counts_exact, truncated, est_tokens, offset, next_offset, order } }.
+RESPONSE: { status, data: [jobs] | null, metadata: { count, registry_hit, ats, workday_override, version, registry_source, total_matched, total_before_filters, content_missing, match, company, boards, failed, counts_exact, truncated, est_tokens, offset, next_offset, order } }.
 
 count: jobs in data. total_matched: jobs that passed the filters, before offset, limit and the budget. total_before_filters: rows the boards listed before any filter; count 0 with total_before_filters above 0 is a board with openings where none passed the filters.
 
@@ -68,11 +68,13 @@ counts_exact: false when a board's scan.capped is true. Workday and SmartRecruit
 
 Each job carries location (the primary), locations (every place it is open in, primary first) and workplace { type, source }. type is remote, hybrid, onsite or unknown; source is ats when the platform stated it, text when read from the location string, null when unknown. locationType repeats workplace.type.
 
+Each job also carries content { status, reason }. status "complete": the posting was read. status "missing": Workday or SmartRecruiters listed the job but its detail request failed (reason "http_503", "http_429", "network_error"), so description is empty and salary is null because they are unknown, not because the posting has none; on Workday location, workplace and postedAt then come from the list row, and on SmartRecruiters url is empty. Tell the user the posting could not be read and give the link or the board. content_missing counts these jobs before the filters: a filter cannot match a description that never arrived, so such a job may be missing from data, and count 0 with content_missing above 0 is not "no matching roles". Calling again usually reads them.
+
 AGE: results are newest first unless order says otherwise. A posting older than about 90 days is usually dead or evergreen. fetch_jobs still returns them; posted_within_days: 90 leaves them out.
 
 STATUSES:
-- success: every board asked answered (failed is empty). data may be []. A registry board or a workday override that the ATS answers with 404 (no board at that slug, a site Workday does not know) is a board with total_before_filters 0, not an error.
-- partial: at least one board answered and at least one adapter is in failed. data holds what the answering boards returned.
+- success: every board asked answered (failed is empty) and every posting was read (content_missing is 0). data may be []. A registry board or a workday override that the ATS answers with 404 (no board at that slug, a site Workday does not know) is a board with total_before_filters 0, not an error.
+- partial: at least one board answered and something was not checked: an adapter is in failed, or content_missing is above 0. data holds what the answering boards returned.
 - error: no board answered. data is null and error.code says why.
 
 ERROR CODES:

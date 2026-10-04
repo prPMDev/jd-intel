@@ -469,7 +469,7 @@ describe('fetch_jobs: size, paging and counts (#54, scan cap)', () => {
     const { structuredContent: env } = await fetchOk(client, { company: 'acme' });
     for (const key of [
       'count', 'registry_hit', 'ats', 'workday_override', 'version', 'registry_source',
-      'total_matched', 'total_before_filters', 'match', 'company', 'boards', 'failed', 'counts_exact',
+      'total_matched', 'total_before_filters', 'content_missing', 'match', 'company', 'boards', 'failed', 'counts_exact',
       'truncated', 'est_tokens', 'offset', 'next_offset', 'order',
     ]) {
       assert.ok(key in env.metadata, `metadata.${key} missing`);
@@ -480,6 +480,18 @@ describe('fetch_jobs: size, paging and counts (#54, scan cap)', () => {
     assert.equal(env.metadata.offset, 0);
     assert.equal(env.metadata.next_offset, null);
     assert.equal(env.metadata.order, 'newest');
+  });
+
+  test('an unread posting: partial with content_missing, and the envelope passes both validators (issue #85)', async () => {
+    const unread = { ...BOARD[0], description: '', content: { status: 'missing', reason: 'http_503' } };
+    const client = await connect({ fetchJobsDetailed: returning({ ...libraryResult({ jobs: [unread, BOARD[1]] }), content_missing: 1 }) });
+    const result = await call(client, 'fetch_jobs', { company: 'acme' });
+    assert.equal(result.isError, undefined);
+    assert.equal(result.structuredContent.status, 'partial');
+    assert.equal(result.structuredContent.metadata.content_missing, 1);
+    assert.deepEqual(result.structuredContent.data[0].content, { status: 'missing', reason: 'http_503' });
+    const clean = await call(await connect({ fetchJobsDetailed: returning(libraryResult({ jobs: [BOARD[1]] })) }), 'fetch_jobs', { company: 'acme' });
+    assert.deepEqual([clean.structuredContent.status, clean.structuredContent.metadata.content_missing], ['success', 0]);
   });
 
   test('more matches than limit: total_matched > count, truncated by limit, next_offset set', async () => {

@@ -240,7 +240,8 @@ No custom parsing per company.
 | `locationType` | `remote`, `hybrid`, `onsite`, or `unknown` when neither the platform nor the location text says |
 | `workplace` | `{ type, source }`. `type` repeats `locationType`; `source` is `ats` when the platform stated it, `text` when read from the location string, null when unknown |
 | `salary` | Min-max range with `currency`, plus `period` (`year`, `month`, `hour`, or null) and `source` (`ats` when the platform supplied it, `text` when parsed from the posting). Null when nothing is stated |
-| `description` | Full JD in clean markdown |
+| `description` | Full JD in clean markdown. Empty when `content.status` is `missing` |
+| `content` | `{ status, reason }`. `complete` when the posting was read. `missing` when Workday or SmartRecruiters listed the job but its detail request failed (`reason`: `http_503`, `http_429`, `network_error`), so `description` and `salary` are unknown |
 | `url` | Direct link to the posting |
 | `postedAt` | Publication date (when provided) |
 

@@ -23,6 +23,9 @@ export function jobId(company, title, ats, location = '') {
  * adapter to 'remote' | 'hybrid' | 'onsite', or null when the platform
  * gives no signal. `raw.locations` lists every place the posting is open
  * in; `location` stays the primary because it feeds the id (issue #68).
+ *
+ * `raw.content` is set only by a two-step adapter whose detail request
+ * failed (see missingContent). Every other job was read in full.
  */
 export function normalize(raw, ats) {
   const now = new Date().toISOString();
@@ -47,8 +50,19 @@ export function normalize(raw, ats) {
     firstSeen: now,
     lastSeen: now,
     status: 'open',
+    content: raw.content || { status: 'complete', reason: null },
     metadata: raw.metadata || {},
   };
+}
+
+/**
+ * The `content` of a job whose detail request failed, so its description
+ * and pay were never read (issue #85). `failure` is the non-OK Response or
+ * the error atsFetch threw: an HTTP status gives "http_503", anything else
+ * "network_error".
+ */
+export function missingContent(failure) {
+  return { status: 'missing', reason: failure?.status ? `http_${failure.status}` : 'network_error' };
 }
 
 const CURRENCY_CODES = 'USD|EUR|GBP|CAD|AUD|NZD|CHF|SEK|NOK|DKK|PLN|CZK|HUF|INR|SGD|HKD|JPY|CNY|BRL|MXN|ZAR|AED|ILS';

@@ -1,4 +1,4 @@
-import { normalize } from '../normalizer.js';
+import { normalize, missingContent } from '../normalizer.js';
 import { atsErrorFromStatus } from '../errors.js';
 import { prefilterRows } from '../filters.js';
 import { atsFetch } from '../http.js';
@@ -123,6 +123,7 @@ export async function fetchWorkday(slug, ctx = {}) {
   const jobs = await Promise.all(hydrate.map(async (p, i) => {
     const externalPath = p.externalPath || ''; // already begins with '/job/...'
     let info = {};
+    let content; // set only when the detail could not be read (issue #85)
     try {
       // externalPath already carries the '/job/...' segment, so it is
       // concatenated directly onto the CXS base. Inserting another
@@ -132,9 +133,12 @@ export async function fetchWorkday(slug, ctx = {}) {
         const detail = await dResp.json();
         info = detail.jobPostingInfo || {};
         orgs[i] = detail.hiringOrganization || null;
+      } else {
+        content = missingContent(dResp);
       }
-    } catch {
-      // detail failed, retries included: fall back to list fields, empty description
+    } catch (err) {
+      // detail failed, retries included: list fields only, marked missing
+      content = missingContent(err);
     }
 
     return normalize({
@@ -149,6 +153,7 @@ export async function fetchWorkday(slug, ctx = {}) {
       url: `https://${tenant}.${env}.myworkdayjobs.com/${site}${externalPath}`,
       postedAt: parseWorkdayDate(info.startDate) || normalizePostedOn(p.postedOn),
       salary: null, // normalizer extracts from description text
+      content,
       metadata: {
         workdayTenant: tenant,
         workdayEnv: env,

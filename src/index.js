@@ -57,6 +57,7 @@ export async function fetchJobs(options = {}) {
  *   jobs: Array,
  *   total_matched: number,
  *   total_before_filters: number,
+ *   content_missing: number,
  *   match: 'registry'|'probe'|'workday_override',
  *   company: { key: string, name: string }|null,
  *   boards: Array<object>,
@@ -65,6 +66,9 @@ export async function fetchJobs(options = {}) {
  *   jobs: the page. total_matched: matches before offset and limit.
  *   total_before_filters: rows every board listed before any filter (on
  *   Workday and SmartRecruiters the list count, not the rows they hydrated).
+ *   content_missing: jobs whose posting was not read because the detail
+ *   request failed (Workday, SmartRecruiters), counted before the filters:
+ *   a description filter cannot match text that never arrived.
  *   match: how the company was resolved. company: the registry row's name
  *   and its key (normalized name); null unless match is 'registry'.
  *   boards: one entry per board that answered (see src/boards.js), with
@@ -194,6 +198,7 @@ export async function fetchJobsDetailed({
     jobs: pageJobs(matched, { order, offset, limit }),
     total_matched: matched.length,
     total_before_filters: boards.reduce((n, b) => n + b.jobs_found, 0),
+    content_missing: rows.filter(j => j.content?.status === 'missing').length,
     match,
     company: match === 'registry' ? { key: normSlug(targets[0].name), name: targets[0].name } : null,
     boards,

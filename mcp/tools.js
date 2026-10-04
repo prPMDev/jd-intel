@@ -211,7 +211,7 @@ export function registerTools(server, deps = {}) {
         throw err;
       }
 
-      const { jobs: page, total_matched, total_before_filters, match, company, boards, failed } = result;
+      const { jobs: page, total_matched, total_before_filters, content_missing = 0, match, company, boards, failed } = result;
 
       // No board answered. With a failed check it is an outage, reported with
       // the failures; with every check complete and no registry row, the slug
@@ -239,6 +239,7 @@ export function registerTools(server, deps = {}) {
         registry_source: getRegistrySource(),
         total_matched,
         total_before_filters,
+        content_missing,
         match,
         company,
         boards,
@@ -265,7 +266,9 @@ export function registerTools(server, deps = {}) {
       // is the bound.
       const pagesOn = notReturned > 0 || (!countsExact && jobs.length === limit);
 
-      return withEstTokens(failed.length > 0 ? partial : success, jobs, {
+      // partial: a usable answer where something was not checked, either a
+      // board (failed) or a posting (content_missing, issue #85).
+      return withEstTokens(failed.length > 0 || content_missing > 0 ? partial : success, jobs, {
         ...meta,
         count: jobs.length,
         truncated,

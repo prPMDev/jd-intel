@@ -241,6 +241,7 @@ describe('normalize', () => {
     assert.equal(job.status, 'open');
     assert.ok(job.id, 'id should be generated');
     assert.ok(job.firstSeen, 'firstSeen should be set');
+    assert.deepEqual(job.content, { status: 'complete', reason: null }, 'content is complete unless an adapter says otherwise');
   });
 
   test('detects remote locationType', () => {
