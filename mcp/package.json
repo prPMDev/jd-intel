@@ -1,6 +1,6 @@
 {
   "name": "jd-intel-mcp",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "mcpName": "io.github.prPMDev/jd-intel-mcp",
   "description": "MCP server for jd-intel. Your AI assistant fetches and reads full job descriptions across seven ATS platforms, no copy-paste.",
   "type": "module",
@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "jd-intel": "^0.10.0",
+    "jd-intel": "^0.11.0",
     "zod": "^3.23.0"
   },
   "keywords": [
