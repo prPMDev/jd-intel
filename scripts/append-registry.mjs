@@ -7,17 +7,24 @@
  * this one appends. It reads survivorsByAts from the verify report, so
  * only entries that passed the gate in this run can ever be added.
  *
- * Safety nets:
+ * One row, one board (issue #87). A board is unique by (ats, slug), and
+ * this script never decides that two rows are one company:
+ *   - Appends a survivor that collides with nothing, and one whose
+ *     `company` is an existing company key (a human asserted the link in
+ *     the candidates file).
+ *   - Refuses a board (ats, slug) that is already registered, an entry
+ *     missing slug, name or sector, and a Workday entry without the full
+ *     config {tenant, env, site}. Refusals are printed.
+ *   - Sets every other collision aside: a survivor whose normalized slug,
+ *     name or company matches an existing row's slug, name or company in
+ *     any file goes to tmp/registry-review.json and is printed. It is
+ *     neither appended nor dropped. A reviewer applies it with
+ *     scripts/link-registry.mjs.
  *   - Refuses reports generated from the live registry (would re-append
  *     existing entries); only --candidates reports are accepted.
- *   - Drops any survivor whose normalized slug or name already exists in
- *     ANY registry file (same normalization findAtsBySlug uses), so a
- *     company never appears under two ATS.
- *   - Drops entries missing slug, name, or sector; Workday entries also
- *     need the full config {tenant, env, site} (adapter guard mirrors this).
  *
  * Rewrites each touched file with recomputed column alignment (key order
- * slug, name, sector, config) and preserves the file's line endings.
+ * slug, name, sector, company, config) and preserves the file's line endings.
  *
  * Usage:
  *   node scripts/verify-registry.mjs --candidates tmp/candidates.json
@@ -25,99 +32,50 @@
  *   node scripts/append-registry.mjs --report tmp/verify-report.json
  */
 
-import { readFile, writeFile, readdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { normSlug as norm } from '../src/registry.js';
+import { loadRegistryFiles, writeRegistryFile, planAppend } from './registry-lib.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const REGISTRY_DIR = join(ROOT, 'registry');
+const REVIEW_PATH = 'tmp/registry-review.json';
 
 const reportPath = parseArgs({ options: { report: { type: 'string', default: 'tmp/verify-report.json' } } }).values.report;
-
-function formatEntry(e) {
-  const fields = {
-    slug: `"slug": ${JSON.stringify(e.slug)},`,
-    name: `"name": ${JSON.stringify(e.name)},`,
-    sector: `"sector": ${JSON.stringify(e.sector)}`,
-  };
-  if (e.config) {
-    const { tenant, env, site } = e.config;
-    fields.config = `"config": {"tenant": ${JSON.stringify(tenant)}, "env": ${JSON.stringify(env)}, "site": ${JSON.stringify(site)}}`;
-  }
-  return fields;
-}
-
-// One entry per line, slug and name fields padded so the following field
-// aligns across the whole file (longest field + 1 space), sector unpadded.
-function serialize(entries, eol) {
-  const rows = entries.map(formatEntry);
-  const slugW = Math.max(...rows.map((r) => r.slug.length)) + 1;
-  const nameW = Math.max(...rows.map((r) => r.name.length)) + 1;
-  const lines = rows.map((r) => {
-    let line = `  {${r.slug.padEnd(slugW)}${r.name.padEnd(nameW)}${r.sector}`;
-    if (r.config) line += `, ${r.config}`;
-    return line + '}';
-  });
-  return `[${eol}${lines.join(`,${eol}`)}${eol}]${eol}`;
-}
 
 async function main() {
   const report = JSON.parse(await readFile(join(ROOT, reportPath), 'utf-8'));
   if (report.generatedFrom === 'live-registry') {
     throw new Error('report was generated from the live registry, not a --candidates run; nothing to append');
   }
-  const survivorsByAts = report.survivorsByAts || {};
 
-  const files = (await readdir(REGISTRY_DIR)).filter((f) => f.endsWith('.json'));
-  const registry = {}; // ats -> { entries, eol }
-  const seen = new Set(); // normalized slugs and names across ALL files
-  for (const f of files) {
-    const raw = await readFile(join(REGISTRY_DIR, f), 'utf-8');
-    const ats = f.replace(/\.json$/, '');
-    registry[ats] = { entries: JSON.parse(raw), eol: raw.includes('\r\n') ? '\r\n' : '\n' };
-    for (const e of registry[ats].entries) {
-      seen.add(norm(e.slug));
-      seen.add(norm(e.name));
-    }
-  }
-
-  const added = {};
-  const skipped = [];
-  for (const [ats, entries] of Object.entries(survivorsByAts)) {
-    if (!registry[ats]) {
-      skipped.push(...(entries || []).map((e) => `${ats}/${e.slug} -> no registry/${ats}.json`));
-      continue;
-    }
-    for (const e of entries || []) {
-      if (!e.slug || !e.name || !e.sector) {
-        skipped.push(`${ats}/${e.slug || '?'} -> missing slug, name, or sector`);
-        continue;
-      }
-      if (ats === 'workday' && !(e.config && e.config.tenant && e.config.env && e.config.site)) {
-        skipped.push(`${ats}/${e.slug} -> workday entry missing config {tenant, env, site}`);
-        continue;
-      }
-      if (seen.has(norm(e.slug)) || seen.has(norm(e.name))) {
-        skipped.push(`${ats}/${e.slug} -> already in a registry file (slug or name match)`);
-        continue;
-      }
-      seen.add(norm(e.slug));
-      seen.add(norm(e.name));
-      registry[ats].entries.push({ slug: e.slug, name: e.name, sector: e.sector, ...(e.config ? { config: e.config } : {}) });
-      (added[ats] = added[ats] || []).push(e.slug);
-    }
-  }
+  const registry = await loadRegistryFiles(REGISTRY_DIR);
+  const { added, refused, review } = planAppend(registry, report.survivorsByAts || {});
 
   for (const [ats, slugs] of Object.entries(added)) {
-    const { entries, eol } = registry[ats];
-    await writeFile(join(REGISTRY_DIR, `${ats}.json`), serialize(entries, eol));
+    await writeRegistryFile(REGISTRY_DIR, ats, registry[ats]);
     console.log(`  ${ats.padEnd(16)} +${slugs.length}: ${slugs.join(', ')}`);
   }
-  if (skipped.length) {
-    console.log('\nSkipped:');
-    for (const s of skipped) console.log(`  ${s}`);
+  if (refused.length) {
+    console.log('\nRefused:');
+    for (const s of refused) console.log(`  ${s}`);
+  }
+
+  if (review.length) {
+    // The candidate's own gate result travels with it, so the reviewer
+    // sees what the board said about itself.
+    const gate = (item) => (report.survivors || []).find((s) => s.ats === item.ats && s.slug === item.candidate.slug);
+    const items = review.map((item) => ({ ...item, candidate_gate: gate(item) ?? null }));
+    await mkdir(join(ROOT, 'tmp'), { recursive: true });
+    await writeFile(join(ROOT, REVIEW_PATH), JSON.stringify({ generatedFrom: reportPath, items }, null, 2) + '\n');
+    console.log(`\nReview (${review.length}), set aside in ${REVIEW_PATH}, not appended:`);
+    items.forEach((item, i) => {
+      const hits = item.collisions.map((c) => `${c.ats}/${c.row.slug} "${c.row.name}" (${c.matched_on.join('+')})`).join('; ');
+      console.log(`  [${i}] ${item.ats}/${item.candidate.slug} "${item.candidate.name}" collides with ${hits}`);
+    });
+    console.log(`Next: node scripts/verify-registry.mjs --recheck ${REVIEW_PATH}   (live-checks the existing rows and proposes a label)`);
+    console.log('Then list every item in the PR under "Review". A maintainer applies one with scripts/link-registry.mjs.');
   }
 
   const total = Object.values(registry).reduce((n, { entries }) => n + entries.length, 0);
