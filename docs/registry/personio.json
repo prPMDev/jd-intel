@@ -1,0 +1,11 @@
+[
+  {"slug": "1komma5grad", "name": "1KOMMA5°",    "sector": "energy tech"},
+  {"slug": "thermondo",   "name": "Thermondo",   "sector": "energy tech"},
+  {"slug": "westwing",    "name": "Westwing",    "sector": "ecommerce"},
+  {"slug": "vivid",       "name": "Vivid Money", "sector": "fintech (banking)"},
+  {"slug": "merantix",    "name": "Merantix",    "sector": "ai venture studio"},
+  {"slug": "ottonova",    "name": "ottonova",    "sector": "health insurance"},
+  {"slug": "finanzguru",  "name": "Finanzguru",  "sector": "fintech"},
+  {"slug": "holidu",      "name": "Holidu",      "sector": "travel tech"},
+  {"slug": "clark",       "name": "CLARK",       "sector": "insurtech"}
+]

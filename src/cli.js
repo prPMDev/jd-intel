@@ -163,7 +163,8 @@ Usage:
 Fetch options:
   --ats <platform>                Skip auto-detect. One of: greenhouse, lever,
                                   ashby, smartrecruiters, teamtailor, recruitee,
-                                  workday. Omit to auto-detect (registry-backed).
+                                  personio, workable, workday. Omit to
+                                  auto-detect (registry-backed).
   --workday-tenant T              Workday is keyed by a {tenant, env, site}
   --workday-env wdN               triple, not a slug. Registered Workday
   --workday-site S                companies work via auto-detect or --ats

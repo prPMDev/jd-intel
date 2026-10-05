@@ -1,6 +1,6 @@
 # jd-intel-mcp
 
-MCP server for [jd-intel](https://github.com/prPMDev/jd-intel). Lets any AI assistant (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code) search open job listings across Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee, and Workday through natural conversation.
+MCP server for [jd-intel](https://github.com/prPMDev/jd-intel). Lets any AI assistant (Claude Desktop, Claude Code, Cursor, Windsurf, VS Code) search open job listings across Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee, Personio, Workable, and Workday through natural conversation.
 
 > **Stop pasting job descriptions into AI assistants. Let your AI fetch them directly.**
 

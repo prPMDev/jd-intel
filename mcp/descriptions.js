@@ -22,7 +22,7 @@
  * the AI's behavior changes immediately when descriptions change.
  */
 
-export const FETCH_JOBS = `Fetch open job postings from one company's ATS board (Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee, Workday).
+export const FETCH_JOBS = `Fetch open job postings from one company's ATS board (Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee, Personio, Workable, Workday).
 
 USE WHEN: the user asks about roles at a known company ("Is Stripe hiring?", "What's open at Figma?").
 
@@ -110,7 +110,7 @@ ERROR CODES:
 - invalid_args: both query and sector missing.
 - internal_error: an exception inside the server, not an argument problem.`;
 
-export const DETECT_ATS = `List the ATS platforms a company answers on: registry rows first (all seven platforms, Workday included, no request made), then a live probe of every probeable ATS (Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee) the registry did not list. Workday cannot be probed, so a Workday board appears only from the registry.
+export const DETECT_ATS = `List the ATS platforms a company answers on: registry rows first (all nine platforms, Workday included, no request made), then a live probe of every probeable ATS (Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee, Personio, Workable) the registry did not list. Workday cannot be probed, so a Workday board appears only from the registry.
 
 USE WHEN: user asks about the ATS platform explicitly ("What ATS does Stripe use?") or for debugging.
 
@@ -120,7 +120,7 @@ ARGUMENT GUIDE:
 
 company: company name or slug. Hyphens and spaces stripped automatically ("Cockroach Labs" → "cockroachlabs"). A missing or non-string company or an unknown key fails the input schema and returns isError with plain text naming the field and no envelope; fix that argument and call again.
 
-RESPONSE: { status, data: "greenhouse" | "lever" | "ashby" | "smartrecruiters" | "teamtailor" | "recruitee" | "workday" | null, metadata: { attempted, succeeded, boards, failed, notes } }.
+RESPONSE: { status, data: "greenhouse" | "lever" | "ashby" | "smartrecruiters" | "teamtailor" | "recruitee" | "personio" | "workable" | "workday" | null, metadata: { attempted, succeeded, boards, failed, notes } }.
 
 boards: every board known for this slug, [{ ats, slug, source }], in platform order. source "registry": a registry row, not probed. source "probe": the ATS answered to this slug live; the registry does not vouch that it is the company asked about. A listed board exists and may hold zero postings. data: the ats of the first board, null when boards is empty. succeeded: the ats of each board. attempted: the ATS probed live (every probeable ATS the registry did not list). failed: probes that could not be checked, [{ ats, slug, code, message }]; a failed probe is neither a match nor a miss. notes: present only when boards spans several platforms, stating that data is the first in platform order, not a ranking, and that every board is in metadata.boards.
 
@@ -138,4 +138,4 @@ export const REGISTRY_RESOURCE = `The full jd-intel company registry, grouped by
 
 Use for questions that need the whole catalog ("what sectors do you cover?", "tell me about the catalog"). It is a large read, about 1,000 rows and 65,000 characters and growing weekly, so for a company name or one sector call search_registry instead.
 
-Shape: { greenhouse: [{slug, name, sector}], lever: [...], ashby: [...], smartrecruiters: [...], teamtailor: [...], recruitee: [...], workday: [...] }.`;
+Shape: { greenhouse: [{slug, name, sector}], lever: [...], ashby: [...], smartrecruiters: [...], teamtailor: [...], recruitee: [...], personio: [...], workable: [...], workday: [...] }.`;

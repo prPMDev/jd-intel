@@ -939,7 +939,7 @@ describe('detect_ats: boards, failed and statuses (#55, #87)', () => {
   const known = (ats, source, slug = 'acme') => ({ ats, slug, source });
   const probeFailure = (ats, code, message) => ({ ats, slug: 'acme', code, message });
   const detect = (boards, failed = []) => ({ detectAtsDetailed: returning({ boards, failed }) });
-  const PROBEABLE = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'teamtailor', 'recruitee'];
+  const PROBEABLE = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'teamtailor', 'recruitee', 'personio', 'workable'];
 
   test('one registry board: success, data its ats, boards with source, attempted excludes it and Workday', async () => {
     const client = await connect(detect([known('lever', 'registry')]));

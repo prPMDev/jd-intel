@@ -18,13 +18,15 @@ const BOARD_URLS = {
   smartrecruiters: (slug) => `https://careers.smartrecruiters.com/${slug}`,
   teamtailor: (slug) => `https://${slug}.teamtailor.com`,
   recruitee: (slug) => `https://${slug}.recruitee.com`,
+  personio: (slug) => `https://${slug}.jobs.personio.de`,
+  workable: (slug) => `https://apply.workable.com/${slug}`,
   workday: (slug, config) => (config ? `https://${config.tenant}.${config.env}.myworkdayjobs.com/${config.site}` : null),
 };
 
 // Domains the platforms own. A link there (boards.greenhouse.io,
 // jobs.lever.co, testco.recruitee.com, cisco.wd5.myworkdayjobs.com) says
 // which ATS hosts the board, nothing about whose board it is.
-const ATS_DOMAINS = ['greenhouse.io', 'lever.co', 'ashbyhq.com', 'smartrecruiters.com', 'teamtailor.com', 'recruitee.com', 'myworkdayjobs.com'];
+const ATS_DOMAINS = ['greenhouse.io', 'lever.co', 'ashbyhq.com', 'smartrecruiters.com', 'teamtailor.com', 'recruitee.com', 'personio.de', 'personio.com', 'workable.com', 'myworkdayjobs.com'];
 
 /**
  * The page a person opens to see the board, or null when the ATS is unknown

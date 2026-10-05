@@ -9,7 +9,7 @@
 
 > **Stop pasting job descriptions into AI assistants. Let your AI fetch them directly.**
 
-Full text. Clean structure. Across seven major ATS. No copy-paste. No context loss.
+Full text. Clean structure. Across nine major ATS. No copy-paste. No context loss.
 
 ---
 
@@ -40,9 +40,9 @@ Done.
 Because scraping breaks where jd-intel doesn't:
 
 - **Full JDs when browsing fails.** SPA-rendered boards, slow loads, auth walls, and geo-restrictions block a browser. They don't block a public API call.
-- **Structured data, not HTML soup.** Salary, location type, department, and clean markdown, normalized across seven ATS.
+- **Structured data, not HTML soup.** Salary, location type, department, and clean markdown, normalized across nine ATS.
 - **No keys, no browser.** Public APIs only. Runs anywhere your AI does.
-- **One schema, every platform.** Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee, Workday return the same shape.
+- **One schema, every platform.** Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee, Personio, Workable, Workday return the same shape.
 
 ---
 
@@ -257,8 +257,9 @@ No custom parsing per company.
 | SmartRecruiters | Shipped | Enterprise and mid-market |
 | Teamtailor | Shipped | European startups and scale-ups |
 | Recruitee | Shipped | Dutch / EU SMBs and scale-ups |
+| Personio | Shipped | German / EU mid-market |
+| Workable | Shipped | SMBs worldwide |
 | Workday | Shipped | Large enterprises (registry-keyed) |
-| Personio | Planned | German / EU mid-market |
 
 Adding a new ATS is a single adapter file. See [Contributing](#contributing).
 
@@ -283,14 +284,12 @@ All filters AND together. Deep dive on patterns and gotchas: [docs/filters.md](d
 
 **Shipped**
 - Library, CLI, and MCP server (three surfaces of one toolkit)
-- Greenhouse, Ashby, Lever, SmartRecruiters, Teamtailor, Recruitee, Workday adapters
+- Greenhouse, Ashby, Lever, SmartRecruiters, Teamtailor, Recruitee, Personio, Workable, Workday adapters
 - Title, topic, location, and date filters
 - Salary extraction from JD text
 - Verified company registry (900+ companies)
 
 **Next**
-- Personio adapter (German / EU mid-market)
-- Workable adapter (widget API; broad SMB coverage)
 - Anthropic MCP marketplace submission
 
 **Planned**

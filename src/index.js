@@ -3,7 +3,7 @@
  *
  * Fetches, normalizes, and enriches job data from public ATS APIs
  * (Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee,
- * Workday) into a unified schema.
+ * Personio, Workable, Workday) into a unified schema.
  */
 
 import { ADAPTERS, ATS_NAMES } from './adapters/index.js';
