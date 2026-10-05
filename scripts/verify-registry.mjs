@@ -30,7 +30,22 @@
  *   node scripts/verify-registry.mjs --concurrency 4 --limit 1 --retries 2
  *
  * Candidates file shape: { "<ats>": [ {slug, name, sector, config?}, ... ], ... }
- * Report written to tmp/verify-report.json.
+ * Report written to tmp/verify-report.json. Each row carries, beside the
+ * pass/fail `status`, what a reviewer needs to judge identity (issue #87):
+ *   outcome      live (postings), empty (the board answers with none), gone
+ *                (404 or another terminal 4xx), blocked (401/403), transient
+ *                (429, 5xx or network after retries). A Workday row with no
+ *                postings reads empty: its 404 and its empty site look alike.
+ *   board_name   the organization name the board states, null when its
+ *   board_domain platform exposes none (Lever, Ashby); the company host too.
+ *   name_check   board_name against the entry's name and company: match,
+ *                partial, mismatch or unavailable.
+ * Pass or fail is still postings > 0.
+ *
+ * --recheck <review file> live-checks the existing rows each item in
+ * tmp/registry-review.json collides with, and writes each one's result and
+ * a proposed label (migration, second board, same-name stranger,
+ * unverified) back into that file for a human to confirm.
  */
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
@@ -40,13 +55,14 @@ import { parseArgs } from 'node:util';
 import { ADAPTERS } from '../src/adapters/index.js';
 import { loadRegistry } from '../src/registry.js';
 import { ERROR_CODES } from '../src/errors.js';
+import { nameCheck, proposeLabel } from './registry-lib.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 
 const string = (fallback) => ({ type: 'string', default: fallback });
 const { values: flags } = parseArgs({
-  options: { candidates: { type: 'string' }, concurrency: string('4'), limit: string('1'), retries: string('1') },
+  options: { candidates: { type: 'string' }, recheck: { type: 'string' }, concurrency: string('4'), limit: string('1'), retries: string('1') },
 });
 
 const candidatesPath = flags.candidates ?? null;
@@ -80,6 +96,25 @@ function isTransient(err) {
   return NETWORK_ERR.test(err?.message || '');                   // DNS/socket, not an AtsError
 }
 
+// What a failed call says about the board. 'gone' needs a terminal status:
+// an error with none is never evidence that a board is gone.
+function outcomeOfError(err) {
+  if (err?.status === 401 || err?.status === 403) return 'blocked';
+  if (typeof err?.status === 'number' && err.status < 500 && err.status !== 429) return 'gone';
+  return 'transient';
+}
+
+// A board with no rows: adapters return [] for a 404 and for an empty
+// board alike, so has() tells them apart. Workday cannot be probed.
+async function emptyOrGone(ats, adapter, slug) {
+  if (ats === 'workday') return 'empty';
+  try {
+    return (await adapter.has(slug)) ? 'empty' : 'gone';
+  } catch (err) {
+    return outcomeOfError(err);
+  }
+}
+
 async function verifyOne(ats, entry, attempt = 0) {
   // Call the adapter directly with the CANONICAL slug — exactly what
   // fetchJobs does AFTER a registry lookup (it passes hit.entry.slug).
@@ -90,18 +125,30 @@ async function verifyOne(ats, entry, attempt = 0) {
   // yet in the registry. The registry restores the canonical slug at
   // lookup time, so the adapter-direct call is the truthful test of
   // whether an entry will work once added.
+  const base = { ats, slug: entry.slug, name: entry.name };
+  const noBoard = { board_name: null, board_domain: null, name_check: 'unavailable' };
   const adapter = ADAPTERS[ats];
   if (!adapter) {
-    return { ats, slug: entry.slug, name: entry.name, status: 'error', jobCount: 0, error: `unknown ats: ${ats}` };
+    return { ...base, status: 'error', jobCount: 0, outcome: null, ...noBoard, error: `unknown ats: ${ats}` };
   }
   try {
+    let org = {};
     const jobs = await adapter.fetch(entry.slug, {
       config: entry.config,
       companyName: entry.name,
       filterContext: { limit: LIMIT },
+      report: (fields) => { org = { ...org, ...fields }; },
     });
     const jobCount = Array.isArray(jobs) ? jobs.length : 0;
-    return { ats, slug: entry.slug, name: entry.name, status: jobCount > 0 ? 'ok' : 'empty', jobCount };
+    return {
+      ...base,
+      status: jobCount > 0 ? 'ok' : 'empty',
+      jobCount,
+      outcome: jobCount > 0 ? 'live' : await emptyOrGone(ats, adapter, entry.slug),
+      board_name: org.org_name ?? null,
+      board_domain: org.org_url ?? null,
+      name_check: nameCheck(org.org_name, entry),
+    };
   } catch (err) {
     if (attempt < RETRIES && isTransient(err)) {
       // Exponential backoff with jitter: 2s, then 4s, 8s when --retries is raised.
@@ -109,7 +156,7 @@ async function verifyOne(ats, entry, attempt = 0) {
       await new Promise((r) => setTimeout(r, wait));
       return verifyOne(ats, entry, attempt + 1);
     }
-    return { ats, slug: entry.slug, name: entry.name, status: 'error', jobCount: 0, error: err.message };
+    return { ...base, status: 'error', jobCount: 0, outcome: outcomeOfError(err), ...noBoard, error: err.message };
   }
 }
 
@@ -128,7 +175,34 @@ async function runPool(tasks, concurrency) {
   return results;
 }
 
+// Live-check the existing rows each review item collides with, so the
+// review file says what each board is right now, and propose a label.
+async function recheck(reviewPath) {
+  const file = join(ROOT, reviewPath);
+  const review = JSON.parse(await readFile(file, 'utf-8'));
+  const collisions = (review.items || []).flatMap((item) => item.collisions.map((c) => ({ item, c })));
+  console.log(`Rechecking ${collisions.length} existing row(s) from ${reviewPath}...\n`);
+
+  const results = await runPool(collisions.map(({ c }) => () => verifyOne(c.ats, c.row)), CONCURRENCY);
+  collisions.forEach(({ item, c }, i) => {
+    const { outcome, jobCount, board_name, board_domain, name_check } = results[i];
+    c.gate = { outcome, jobCount, board_name, board_domain, name_check };
+    c.proposed = proposeLabel(item.candidate_gate, c.gate);
+  });
+  (review.items || []).forEach((item, i) => {
+    const labels = [...new Set(item.collisions.map((c) => c.proposed))];
+    item.proposed = labels.length === 1 ? labels[0] : 'unverified';
+    const g = item.candidate_gate || {};
+    console.log(`  [${i}] ${item.ats}/${item.candidate.slug} -> ${item.proposed}  (candidate board says ${JSON.stringify(g.board_name ?? null)}, name_check ${g.name_check ?? 'unavailable'})`);
+    for (const c of item.collisions) console.log(`        ${c.ats}/${c.row.slug}: ${c.gate.outcome}, board says ${JSON.stringify(c.gate.board_name)}`);
+  });
+
+  await writeFile(file, JSON.stringify(review, null, 2) + '\n');
+  console.log(`\nWrote the results into ${reviewPath}. Labels are proposals; a maintainer confirms each one.`);
+}
+
 async function main() {
+  if (flags.recheck) return recheck(flags.recheck);
   const byAts = await loadEntries();
   const flat = [];
   for (const [ats, entries] of Object.entries(byAts)) {
