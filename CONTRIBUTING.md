@@ -74,6 +74,8 @@ Slugs come from the public job board URL. The quickest way to confirm one is the
 | SmartRecruiters | `careers.smartrecruiters.com/<Slug>` | the path segment, usually PascalCase | `GET https://api.smartrecruiters.com/v1/companies/<slug>/postings?limit=1` |
 | TeamTailor | `<slug>.teamtailor.com` | the subdomain | `HEAD https://<slug>.teamtailor.com/jobs.rss` |
 | Recruitee | `<slug>.recruitee.com` | the subdomain | `GET https://<slug>.recruitee.com/api/offers/` |
+| Personio | `<slug>.jobs.personio.de` | the subdomain | `GET https://<slug>.jobs.personio.de/xml?language=en` without following redirects: 200 is a career site, a 307 to personio.com is none |
+| Workable | `apply.workable.com/<slug>` | the path segment | `GET https://apply.workable.com/api/v1/widget/accounts/<slug>` |
 | Workday | see below | company-derived | see below |
 
 A few things that catch people out:

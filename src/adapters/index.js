@@ -4,6 +4,8 @@ import { fetchAshby, hasAshby } from './ashby.js';
 import { fetchSmartrecruiters, hasSmartrecruiters } from './smartrecruiters.js';
 import { fetchTeamtailor, hasTeamtailor } from './teamtailor.js';
 import { fetchRecruitee, hasRecruitee } from './recruitee.js';
+import { fetchPersonio, hasPersonio } from './personio.js';
+import { fetchWorkable, hasWorkable } from './workable.js';
 import { fetchWorkday, hasWorkday } from './workday.js';
 
 export {
@@ -13,6 +15,8 @@ export {
   fetchSmartrecruiters, hasSmartrecruiters,
   fetchTeamtailor, hasTeamtailor,
   fetchRecruitee, hasRecruitee,
+  fetchPersonio, hasPersonio,
+  fetchWorkable, hasWorkable,
   fetchWorkday, hasWorkday,
 };
 
@@ -23,6 +27,8 @@ export const ADAPTERS = {
   smartrecruiters: { fetch: fetchSmartrecruiters, has: hasSmartrecruiters },
   teamtailor: { fetch: fetchTeamtailor, has: hasTeamtailor },
   recruitee: { fetch: fetchRecruitee, has: hasRecruitee },
+  personio: { fetch: fetchPersonio, has: hasPersonio },
+  workable: { fetch: fetchWorkable, has: hasWorkable },
   workday: { fetch: fetchWorkday, has: hasWorkday },
 };
 

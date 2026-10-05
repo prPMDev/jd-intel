@@ -45,7 +45,7 @@ A toolkit (three surfaces, one core) for fetching and normalizing job descriptio
 - **CLI** (`npx jd-intel fetch <slug>`) — same capabilities from the terminal.
 - **MCP server** (`jd-intel-mcp`) — exposes the toolkit to AI assistants via the Model Context Protocol.
 
-Seven ATS adapters shipped: Greenhouse, Lever, Ashby, SmartRecruiters, TeamTailor, Recruitee, Workday. Verified company registry, count in `registry/*.json`.
+Nine ATS adapters shipped: Greenhouse, Lever, Ashby, SmartRecruiters, TeamTailor, Recruitee, Personio, Workable, Workday. Verified company registry, count in `registry/*.json`.
 
 ---
 
@@ -160,7 +160,7 @@ This is where decisions, learnings, and mental models go as they happen. Raw, no
 | File | Use for |
 |------|---------|
 | `notes/building-mcp.md` | Active learning log + journey + mental models. Default file to append to. |
-| `notes/expansion-research.md` | Verified catalog of next-adapter options (Recruitee, Personio, Workable, Teamtailor) |
+| `notes/expansion-research.md` | Research behind the Recruitee, Personio, Workable and Teamtailor adapters; next-adapter options |
 | `notes/landing-page-plan.md` | Landing page blueprint for a focused half-day build |
 | `notes/linkedin-content-guide.md` | Read-only from here. The polish/publish project consumes this. |
 

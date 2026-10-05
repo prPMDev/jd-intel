@@ -61,7 +61,7 @@ describe('registry network-first loading', () => {
     assert.equal((await reg.findEntryBySlug('dup')).entry.name, 'Dup on Greenhouse');
     assert.deepEqual(
       Object.keys(await reg.loadRegistry()),
-      ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'teamtailor', 'recruitee', 'workday']
+      ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'teamtailor', 'recruitee', 'personio', 'workable', 'workday']
     );
   });
 

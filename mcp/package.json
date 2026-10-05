@@ -2,7 +2,7 @@
   "name": "jd-intel-mcp",
   "version": "0.12.1",
   "mcpName": "io.github.prPMDev/jd-intel-mcp",
-  "description": "MCP server for jd-intel. Your AI assistant fetches and reads full job descriptions across seven ATS platforms, no copy-paste.",
+  "description": "MCP server for jd-intel. Your AI assistant fetches and reads full job descriptions across nine ATS platforms, no copy-paste.",
   "type": "module",
   "main": "server.js",
   "bin": {

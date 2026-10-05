@@ -1,0 +1,17 @@
+[
+  {"slug": "viva",           "name": "Viva.com",        "sector": "fintech / payments"},
+  {"slug": "spotawheel",     "name": "Spotawheel",      "sector": "automotive"},
+  {"slug": "learnworlds",    "name": "LearnWorlds",     "sector": "edtech"},
+  {"slug": "welcomepickups", "name": "Welcome Pickups", "sector": "travel tech"},
+  {"slug": "novibet",        "name": "Novibet",         "sector": "gaming"},
+  {"slug": "upstream",       "name": "Upstream",        "sector": "marketing tech"},
+  {"slug": "skroutz",        "name": "Skroutz",         "sector": "ecommerce"},
+  {"slug": "epignosis",      "name": "Epignosis",       "sector": "edtech"},
+  {"slug": "blueground",     "name": "Blueground",      "sector": "real estate tech"},
+  {"slug": "orfium",         "name": "Orfium",          "sector": "media"},
+  {"slug": "huggingface",    "name": "Hugging Face",    "sector": "ai / llms"},
+  {"slug": "hellasdirect",   "name": "Hellas Direct",   "sector": "insurtech"},
+  {"slug": "ferryhopper",    "name": "Ferryhopper",     "sector": "travel tech"},
+  {"slug": "persado",        "name": "Persado",         "sector": "marketing tech"},
+  {"slug": "natech",         "name": "Natech",          "sector": "banking software"}
+]

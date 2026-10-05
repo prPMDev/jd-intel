@@ -68,7 +68,7 @@ async function main() {
   // job-board APIs. This cannot remove Claude Desktop's generic warnings, but
   // it states the truth next to them.
   const longDescription = [
-    'jd-intel gives your AI assistant direct access to live job postings across seven applicant tracking systems: Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee, and Workday. It reads available job listings to find roles, filter by title and location, and pull full descriptions, no copy-paste.',
+    'jd-intel gives your AI assistant direct access to live job postings across nine applicant tracking systems: Greenhouse, Lever, Ashby, SmartRecruiters, Teamtailor, Recruitee, Personio, Workable, and Workday. It reads available job listings to find roles, filter by title and location, and pull full descriptions, no copy-paste.',
     'What it can access: it makes outbound HTTPS requests to public job-board APIs to read publicly listed postings, plus one request to refresh its own hosted company list. It does not read your personal files, does not run commands on your computer, and writes nothing to your disk. The only file it reads is its own bundled list of companies. It sends only the company names and search terms needed to look up postings, never your resume, identity, or any personal data.',
     'Open source (MIT). Source and issues: https://github.com/prPMDev/jd-intel',
   ].join('\n\n');
