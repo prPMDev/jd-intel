@@ -287,7 +287,7 @@ All filters AND together. Deep dive on patterns and gotchas: [docs/filters.md](d
 - Greenhouse, Ashby, Lever, SmartRecruiters, Teamtailor, Recruitee, Personio, Workable, Workday adapters
 - Title, topic, location, and date filters
 - Salary extraction from JD text
-- Verified company registry (900+ companies)
+- Verified company registry (1,000+ companies)
 
 **Next**
 - Anthropic MCP marketplace submission
