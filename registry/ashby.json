@@ -166,5 +166,8 @@
   {"slug": "axiom",              "name": "Axiom",               "sector": "web3 infrastructure"},
   {"slug": "incident",           "name": "incident.io",         "sector": "devops"},
   {"slug": "doppler",            "name": "Doppler",             "sector": "security"},
-  {"slug": "infisical",          "name": "Infisical",           "sector": "security"}
+  {"slug": "infisical",          "name": "Infisical",           "sector": "security"},
+  {"slug": "amplitude",          "name": "Amplitude",           "sector": "analytics"},
+  {"slug": "hightouch",          "name": "Hightouch",           "sector": "data"},
+  {"slug": "aviv",               "name": "AVIV Group",          "sector": "real estate tech"}
 ]
