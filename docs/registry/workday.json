@@ -240,5 +240,10 @@
   {"slug": "kith",                        "name": "Kith",                                   "sector": "retail", "config": {"tenant": "kith", "env": "wd1", "site": "Kith_External_Careers"}},
   {"slug": "uniqlo",                      "name": "Uniqlo",                                 "sector": "retail", "config": {"tenant": "fastretailing", "env": "wd3", "site": "careers_cd_Uniqlo"}},
   {"slug": "allyfinancial",               "name": "Ally Financial",                         "sector": "banking", "config": {"tenant": "ally", "env": "wd1", "site": "Ally"}},
-  {"slug": "fis",                         "name": "FIS",                                    "sector": "fintech", "config": {"tenant": "fis", "env": "wd5", "site": "SearchJobs"}}
+  {"slug": "fis",                         "name": "FIS",                                    "sector": "fintech", "config": {"tenant": "fis", "env": "wd5", "site": "SearchJobs"}},
+  {"slug": "redhat",                      "name": "Red Hat",                                "sector": "enterprise software", "config": {"tenant": "redhat", "env": "wd5", "site": "jobs"}},
+  {"slug": "broadcom",                    "name": "Broadcom",                               "sector": "semiconductors", "config": {"tenant": "broadcom", "env": "wd1", "site": "External_Career"}},
+  {"slug": "transunion",                  "name": "TransUnion",                             "sector": "credit data", "config": {"tenant": "transunion", "env": "wd5", "site": "TransUnion"}},
+  {"slug": "globalpayments",              "name": "Global Payments",                        "sector": "fintech / payments", "config": {"tenant": "tsys", "env": "wd1", "site": "TSYS"}},
+  {"slug": "statestreet",                 "name": "State Street",                           "sector": "asset management", "config": {"tenant": "statestreet", "env": "wd1", "site": "Global"}}
 ]

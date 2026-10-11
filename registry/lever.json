@@ -76,5 +76,12 @@
   {"slug": "cfsenergy",         "name": "Commonwealth Fusion Systems", "sector": "energy tech"},
   {"slug": "charmindustrial",   "name": "Charm Industrial",            "sector": "climate tech"},
   {"slug": "alltrails",         "name": "AllTrails",                   "sector": "fitness"},
-  {"slug": "jamcity",           "name": "Jam City",                    "sector": "gaming"}
+  {"slug": "jamcity",           "name": "Jam City",                    "sector": "gaming"},
+  {"slug": "dlocal",            "name": "dLocal",                      "sector": "fintech / payments"},
+  {"slug": "zopa",              "name": "Zopa",                        "sector": "fintech (banking)"},
+  {"slug": "binance",           "name": "Binance",                     "sector": "fintech / crypto"},
+  {"slug": "aircall",           "name": "Aircall",                     "sector": "communications"},
+  {"slug": "contentsquare",     "name": "Contentsquare",               "sector": "analytics"},
+  {"slug": "jumpcloud",         "name": "JumpCloud",                   "sector": "identity"},
+  {"slug": "swile",             "name": "Swile",                       "sector": "hr tech"}
 ]

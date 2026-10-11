@@ -95,5 +95,6 @@
   {"slug": "playtestcloud",                       "name": "PlaytestCloud",                          "sector": "gaming"},
   {"slug": "sympower",                            "name": "Sympower",                               "sector": "energy tech"},
   {"slug": "tonyschocolonely",                    "name": "Tony's Chocolonely",                     "sector": "cpg / food & beverage"},
-  {"slug": "carbonequity",                        "name": "Carbon Equity",                          "sector": "climate tech / fintech"}
+  {"slug": "carbonequity",                        "name": "Carbon Equity",                          "sector": "climate tech / fintech"},
+  {"slug": "northwave",                           "name": "Northwave",                              "sector": "security"}
 ]

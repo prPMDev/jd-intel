@@ -152,5 +152,19 @@
   {"slug": "strava",             "name": "Strava",              "sector": "fitness"},
   {"slug": "legora",             "name": "Legora",              "sector": "legal ai"},
   {"slug": "lovable",            "name": "Lovable",             "sector": "ai dev tools"},
-  {"slug": "bitvavo",            "name": "Bitvavo",             "sector": "fintech / crypto"}
+  {"slug": "bitvavo",            "name": "Bitvavo",             "sector": "fintech / crypto"},
+  {"slug": "neon",               "name": "Neon",                "sector": "gaming payments"},
+  {"slug": "warp",               "name": "Warp",                "sector": "hr / payroll"},
+  {"slug": "hex",                "name": "Hex",                 "sector": "analytics"},
+  {"slug": "novo",               "name": "Novo",                "sector": "fintech (banking)"},
+  {"slug": "turnkey",            "name": "Turnkey",             "sector": "fintech / crypto"},
+  {"slug": "mintlify",           "name": "Mintlify",            "sector": "dev tools"},
+  {"slug": "graphite",           "name": "Graphite",            "sector": "dev tools"},
+  {"slug": "coderabbit",         "name": "CodeRabbit",          "sector": "ai dev tools"},
+  {"slug": "browserbase",        "name": "Browserbase",         "sector": "dev tools"},
+  {"slug": "e2b",                "name": "E2B",                 "sector": "ai dev tools"},
+  {"slug": "axiom",              "name": "Axiom",               "sector": "web3 infrastructure"},
+  {"slug": "incident",           "name": "incident.io",         "sector": "devops"},
+  {"slug": "doppler",            "name": "Doppler",             "sector": "security"},
+  {"slug": "infisical",          "name": "Infisical",           "sector": "security"}
 ]
