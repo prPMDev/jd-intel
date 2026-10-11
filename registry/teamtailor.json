@@ -88,5 +88,7 @@
   {"slug": "veo",                             "name": "VEO",                        "sector": "sports tech"},
   {"slug": "adven",                           "name": "Adven",                      "sector": "energy"},
   {"slug": "pixiongames",                     "name": "Pixion Games",               "sector": "gaming"},
-  {"slug": "stillfrontgroup",                 "name": "Stillfront",                 "sector": "gaming"}
+  {"slug": "stillfrontgroup",                 "name": "Stillfront",                 "sector": "gaming"},
+  {"slug": "northmill",                       "name": "Northmill",                  "sector": "fintech (banking)"},
+  {"slug": "holvi",                           "name": "Holvi",                      "sector": "fintech (banking)"}
 ]

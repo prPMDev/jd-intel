@@ -250,5 +250,20 @@
   {"slug": "realtimeboardglobal",                "name": "Miro",                              "sector": "productivity"},
   {"slug": "goatgroup",                          "name": "GOAT",                              "sector": "ecommerce"},
   {"slug": "mentimeter",                         "name": "Mentimeter",                        "sector": "productivity"},
-  {"slug": "catawiki",                           "name": "Catawiki",                          "sector": "marketplaces"}
+  {"slug": "catawiki",                           "name": "Catawiki",                          "sector": "marketplaces"},
+  {"slug": "island",                             "name": "Island",                            "sector": "security"},
+  {"slug": "axonius",                            "name": "Axonius",                           "sector": "security"},
+  {"slug": "dragos",                             "name": "Dragos",                            "sector": "security"},
+  {"slug": "recordedfuture",                     "name": "Recorded Future",                   "sector": "security"},
+  {"slug": "singlestore",                        "name": "SingleStore",                       "sector": "database"},
+  {"slug": "neo4j",                              "name": "Neo4j",                             "sector": "database"},
+  {"slug": "bugcrowd",                           "name": "Bugcrowd",                          "sector": "security"},
+  {"slug": "imply",                              "name": "Imply",                             "sector": "database"},
+  {"slug": "ebanx",                              "name": "EBANX",                             "sector": "fintech / payments"},
+  {"slug": "truelayer",                          "name": "TrueLayer",                         "sector": "fintech / payments"},
+  {"slug": "public",                             "name": "Public.com",                        "sector": "fintech"},
+  {"slug": "upgrade",                            "name": "Upgrade",                           "sector": "fintech / consumer credit"},
+  {"slug": "oportun",                            "name": "Oportun",                           "sector": "fintech / consumer credit"},
+  {"slug": "missionlane",                        "name": "Mission Lane",                      "sector": "fintech / consumer credit"},
+  {"slug": "zuora",                              "name": "Zuora",                             "sector": "fintech / billing"}
 ]
