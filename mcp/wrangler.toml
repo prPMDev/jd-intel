@@ -1,0 +1,7 @@
+# Hosted jd-intel MCP server (issue #30). Deploy with: npx wrangler deploy
+name = "jd-intel"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+# node:crypto for job ids; node:fs and node:path are imported by the
+# registry loader, whose disk fallback fails here and falls back to [].
+compatibility_flags = ["nodejs_compat"]

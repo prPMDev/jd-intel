@@ -116,6 +116,17 @@ The server prints `jd-intel MCP server running on stdio` and then listens on std
 }
 ```
 
+## Run it hosted
+
+The same server runs on Cloudflare Workers over Streamable HTTP, so a client that supports remote MCP servers adds it by URL with nothing installed. `worker.js` is the entry point and `wrangler.toml` the config; the tools, resources and responses are identical to the stdio server.
+
+```bash
+cd mcp
+npx wrangler deploy
+```
+
+Then add `https://<your-worker>.workers.dev/mcp` in your client (in Claude: Settings, Connectors, Add custom connector). The server is stateless: every request is answered on its own, with no sessions and no stored data. It needs the Workers paid plan, since the free plan's CPU and subrequest limits are too small for large boards.
+
 ---
 
 ## Responses

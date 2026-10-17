@@ -1,12 +1,11 @@
 /**
- * Single source of the server version.
+ * Single source of the server version: server.js reports it to the MCP
+ * host, tools.js puts it in response metadata, worker.js serves it.
  *
- * Read from package.json via createRequire — works on every Node 18+ with no
- * import-attribute version concerns (Claude Desktop's bundled Node version is
- * not known ahead of time). server.js reports this to the MCP host; tools.js
- * surfaces it in response metadata so the AI can tell the user what's running.
+ * A JSON import works on Node 18.20+ and on Cloudflare Workers alike. The
+ * createRequire(import.meta.url) it replaces threw on Workers, where
+ * import.meta.url is undefined.
  */
-import { createRequire } from 'node:module';
+import pkg from './package.json' with { type: 'json' };
 
-const require = createRequire(import.meta.url);
-export const VERSION = require('./package.json').version;
+export const VERSION = pkg.version;

@@ -4,8 +4,9 @@ import { fileURLToPath } from 'node:url';
 import { AtsError } from './errors.js';
 import { ADAPTERS, ATS_NAMES } from './adapters/index.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const REGISTRY_DIR = join(__dirname, '..', 'registry');
+// Resolved when a disk read happens, not at import: on Cloudflare Workers
+// import.meta.url is undefined, and the disk fallback is simply absent there.
+const bundledDir = () => join(dirname(fileURLToPath(import.meta.url)), '..', 'registry');
 
 // Network-first registry. A hosted copy lets installed bundles AND npx users
 // pick up newly-added companies without reinstalling; the on-disk copy that
@@ -39,7 +40,7 @@ async function readPlatform(platform) {
   // points the disk loader at a different directory (test fixtures), so
   // tests can assert lookup semantics without depending on live registry
   // content.
-  const dir = process.env.JD_INTEL_REGISTRY_DIR || REGISTRY_DIR;
+  const dir = process.env.JD_INTEL_REGISTRY_DIR || bundledDir();
   const data = await readFile(join(dir, `${platform}.json`), 'utf-8');
   return JSON.parse(data);
 }
