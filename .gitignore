@@ -24,3 +24,6 @@ mcpb-build/
 
 # Local agent / session config
 .claude/
+
+# wrangler dev local state
+.wrangler/
