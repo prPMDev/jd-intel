@@ -3,9 +3,24 @@
   "displayName": "jd-intel",
   "version": "0.13.0",
   "description": "Search open jobs across 1,000+ companies on nine hiring platforms and read full postings, so your AI can find roles that fit you. No copy-paste.",
-  "author": { "name": "Prashant R", "url": "https://prpmdev.github.io/jd-intel/" },
+  "author": {
+    "name": "Prashant R",
+    "url": "https://prpmdev.github.io/jd-intel/"
+  },
   "homepage": "https://prpmdev.github.io/jd-intel/",
   "repository": "https://github.com/prPMDev/jd-intel",
   "license": "MIT",
-  "keywords": ["jobs", "job search", "ats", "greenhouse", "lever", "ashby", "workday", "mcp"]
+  "keywords": [
+    "jobs",
+    "job search",
+    "ats",
+    "greenhouse",
+    "lever",
+    "ashby",
+    "workday",
+    "mcp"
+  ],
+  "privacyPolicyUrl": "https://github.com/prPMDev/jd-intel/blob/master/PRIVACY.md",
+  "documentationUrl": "https://prpmdev.github.io/jd-intel/guide.html",
+  "supportUrl": "https://github.com/prPMDev/jd-intel/issues"
 }
