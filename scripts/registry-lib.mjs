@@ -182,7 +182,8 @@ export function nameCheck(boardName, entry) {
 export function proposeLabel(candidate, existing) {
   if (!candidate || !existing || candidate.outcome !== 'live') return 'unverified';
   if (candidate.name_check === 'unavailable') return 'unverified';
-  if (candidate.name_check === 'mismatch') return 'same-name stranger';
+  // A Workday board names the legal entity of one posting, often a subsidiary.
+  if (candidate.name_check === 'mismatch') return candidate.ats === 'workday' ? 'unverified' : 'same-name stranger';
   if (existing.outcome === 'gone') return candidate.name_check === 'match' ? 'migration' : 'unverified';
   if (existing.outcome === 'live' || existing.outcome === 'empty') return 'second board';
   return 'unverified'; // blocked or transient: the existing board could not be read
