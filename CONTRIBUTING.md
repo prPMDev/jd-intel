@@ -61,7 +61,7 @@ A survivor whose slug, name or `company` matches an existing row on any ATS (com
 node scripts/verify-registry.mjs --recheck tmp/registry-review.json
 ```
 
-This live-checks the existing rows your candidate collides with and proposes a label for each item: `migration` (the old board is gone and yours replaces it), `second board` (both answer), `same-name stranger` (the board names a different company) or `unverified`. List every item in your PR under a "Review" heading with its label and what each board shows. The label is a proposal. A maintainer reads both boards and applies the decision with `scripts/link-registry.mjs`, which is the only script that edits an existing row.
+This live-checks the existing rows your candidate collides with and proposes a label for each item: `migration` (the old board is gone and yours replaces it), `second board` (both answer), `same-name stranger` (the board names a different company) or `unverified`. On Workday a name mismatch stays `unverified`, since the board names a single posting's legal entity, often a subsidiary. List every item in your PR under a "Review" heading with its label and what each board shows. The label is a proposal. A maintainer reads both boards and applies the decision with `scripts/link-registry.mjs`, which is the only script that edits an existing row.
 
 The gate report also records, per entry, the `outcome` (live, empty, gone, blocked, transient), the `board_name` and `board_domain` the board states about itself, and a `name_check` against the name you gave. A `mismatch` or `partial` is worth a second look before you open the PR.
 

@@ -127,6 +127,8 @@ describe('proposeLabel', () => {
     assert.equal(proposeLabel(live('partial'), { outcome: 'empty' }), 'second board');
   });
   test('a name mismatch is a stranger', () => assert.equal(proposeLabel(live('mismatch'), { outcome: 'live' }), 'same-name stranger'));
+  test('a Workday name mismatch stays unverified: the board names a posting\'s legal entity', () =>
+    assert.equal(proposeLabel({ ...live('mismatch'), ats: 'workday' }, { outcome: 'live' }), 'unverified'));
   test('no name, an unread existing board or a missing gate result stays unverified', () => {
     assert.equal(proposeLabel(live('unavailable'), { outcome: 'live' }), 'unverified');
     assert.equal(proposeLabel(live('match'), { outcome: 'transient' }), 'unverified');
