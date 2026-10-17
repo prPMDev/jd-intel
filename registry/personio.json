@@ -19,5 +19,13 @@
   {"slug": "workidentity",           "name": "workidentity",      "sector": "it consultancy"},
   {"slug": "theobald-software-gmbh", "name": "Theobald Software", "sector": "data integration"},
   {"slug": "prologistik-group",      "name": "proLogistik Group", "sector": "logistics tech"},
-  {"slug": "startup-insider",        "name": "Startup Insider",   "sector": "media"}
+  {"slug": "startup-insider",        "name": "Startup Insider",   "sector": "media"},
+  {"slug": "node-energy",            "name": "node.energy",       "sector": "energy tech"},
+  {"slug": "envelio",                "name": "envelio",           "sector": "energy tech"},
+  {"slug": "entrix",                 "name": "Entrix",            "sector": "energy tech"},
+  {"slug": "gridx",                  "name": "gridX",             "sector": "energy tech"},
+  {"slug": "juna",                   "name": "Juna.ai",           "sector": "industrial saas"},
+  {"slug": "temedica",               "name": "Temedica",          "sector": "health data"},
+  {"slug": "wirelane",               "name": "Wirelane",          "sector": "e-mobility"},
+  {"slug": "reev",                   "name": "reev",              "sector": "e-mobility"}
 ]

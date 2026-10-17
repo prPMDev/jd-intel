@@ -263,5 +263,10 @@
   {"slug": "upgrade",                            "name": "Upgrade",                           "sector": "fintech / consumer credit"},
   {"slug": "oportun",                            "name": "Oportun",                           "sector": "fintech / consumer credit"},
   {"slug": "missionlane",                        "name": "Mission Lane",                      "sector": "fintech / consumer credit"},
-  {"slug": "zuora",                              "name": "Zuora",                             "sector": "fintech / billing"}
+  {"slug": "zuora",                              "name": "Zuora",                             "sector": "fintech / billing"},
+  {"slug": "omadahealth",                        "name": "Omada Health",                      "sector": "healthcare"},
+  {"slug": "abcellera",                          "name": "AbCellera",                         "sector": "biotech"},
+  {"slug": "arcinstitute",                       "name": "Arc Institute",                     "sector": "biotech"},
+  {"slug": "seer",                               "name": "Seer",                              "sector": "life sciences"},
+  {"slug": "kairospower",                        "name": "Kairos Power",                      "sector": "energy"}
 ]

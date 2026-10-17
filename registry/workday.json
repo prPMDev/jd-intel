@@ -245,5 +245,19 @@
   {"slug": "broadcom",                    "name": "Broadcom",                               "sector": "semiconductors", "config": {"tenant": "broadcom", "env": "wd1", "site": "External_Career"}},
   {"slug": "transunion",                  "name": "TransUnion",                             "sector": "credit data", "config": {"tenant": "transunion", "env": "wd5", "site": "TransUnion"}},
   {"slug": "globalpayments",              "name": "Global Payments",                        "sector": "fintech / payments", "config": {"tenant": "tsys", "env": "wd1", "site": "TSYS"}},
-  {"slug": "statestreet",                 "name": "State Street",                           "sector": "asset management", "config": {"tenant": "statestreet", "env": "wd1", "site": "Global"}}
+  {"slug": "statestreet",                 "name": "State Street",                           "sector": "asset management", "config": {"tenant": "statestreet", "env": "wd1", "site": "Global"}},
+  {"slug": "elevancehealth",              "name": "Elevance Health",                        "sector": "health insurance", "config": {"tenant": "elevancehealth", "env": "wd1", "site": "ANT"}},
+  {"slug": "cigna",                       "name": "The Cigna Group",                        "sector": "health insurance", "config": {"tenant": "cigna", "env": "wd5", "site": "cignacareers"}},
+  {"slug": "centene",                     "name": "Centene",                                "sector": "health insurance", "config": {"tenant": "centene", "env": "wd5", "site": "Centene_External"}},
+  {"slug": "baxter",                      "name": "Baxter International",                   "sector": "medical devices", "config": {"tenant": "baxter", "env": "wd1", "site": "baxter"}},
+  {"slug": "edwardslifesciences",         "name": "Edwards Lifesciences",                   "sector": "medical devices", "config": {"tenant": "edwards", "env": "wd5", "site": "EdwardsCareers"}},
+  {"slug": "danaher",                     "name": "Danaher",                                "sector": "life sciences", "config": {"tenant": "danaher", "env": "wd1", "site": "DanaherJobs"}},
+  {"slug": "bakerhughes",                 "name": "Baker Hughes",                           "sector": "energy / oil & gas", "config": {"tenant": "bakerhughes", "env": "wd5", "site": "BakerHughes"}},
+  {"slug": "johnsoncontrols",             "name": "Johnson Controls",                       "sector": "hvac / building systems", "config": {"tenant": "jci", "env": "wd5", "site": "JCI"}},
+  {"slug": "labcorp",                     "name": "Labcorp",                                "sector": "healthcare", "config": {"tenant": "labcorp", "env": "wd1", "site": "External"}},
+  {"slug": "teladoc",                     "name": "Teladoc Health",                         "sector": "healthcare", "config": {"tenant": "teladoc", "env": "wd503", "site": "teladochealth_is_hiring"}},
+  {"slug": "philips",                     "name": "Philips",                                "sector": "medical devices", "config": {"tenant": "philips", "env": "wd3", "site": "jobs-and-careers"}},
+  {"slug": "solventum",                   "name": "Solventum",                              "sector": "medical devices", "config": {"tenant": "healthcare", "env": "wd1", "site": "Search"}},
+  {"slug": "agilent",                     "name": "Agilent Technologies",                   "sector": "life sciences", "config": {"tenant": "agilent", "env": "wd5", "site": "Agilent_Careers"}},
+  {"slug": "sanofi",                      "name": "Sanofi",                                 "sector": "pharmaceuticals", "config": {"tenant": "sanofi", "env": "wd3", "site": "SanofiCareers"}}
 ]
