@@ -1,0 +1,9 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "jd-intel",
+  "description": "jd-intel: your AI searches open jobs across 1,000+ companies on nine hiring platforms and reads the full postings.",
+  "owner": { "name": "Prashant R", "url": "https://github.com/prPMDev" },
+  "plugins": [
+    { "name": "jd-intel", "description": "Search open jobs across 1,000+ companies and read full postings from Claude.", "source": "./plugin", "category": "productivity" }
+  ]
+}
