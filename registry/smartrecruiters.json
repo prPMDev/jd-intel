@@ -37,7 +37,7 @@
   {"slug": "ServiceNow",                      "name": "ServiceNow",                           "sector": "enterprise software"},
   {"slug": "O-I",                             "name": "O-I Glass",                            "sector": "materials"},
   {"slug": "Nemera",                          "name": "Nemera",                               "sector": "medical devices"},
-  {"slug": "GEHealthcare2",                   "name": "GE HealthCare",                        "sector": "healthcare imaging"},
+  {"slug": "GEHealthcare2",                   "name": "GE HealthCare",                        "sector": "healthcare imaging", "company": "GE HealthCare"},
   {"slug": "LGCGroup",                        "name": "LGC Group",                            "sector": "life sciences"},
   {"slug": "InVitaHealthcareTechnologies",    "name": "InVita Healthcare Technologies",       "sector": "healthcare interop"},
   {"slug": "CustomizedEnergySolutions",       "name": "Customized Energy Solutions",          "sector": "energy"},

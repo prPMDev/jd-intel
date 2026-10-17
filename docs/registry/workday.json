@@ -259,5 +259,6 @@
   {"slug": "philips",                     "name": "Philips",                                "sector": "medical devices", "config": {"tenant": "philips", "env": "wd3", "site": "jobs-and-careers"}},
   {"slug": "solventum",                   "name": "Solventum",                              "sector": "medical devices", "config": {"tenant": "healthcare", "env": "wd1", "site": "Search"}},
   {"slug": "agilent",                     "name": "Agilent Technologies",                   "sector": "life sciences", "config": {"tenant": "agilent", "env": "wd5", "site": "Agilent_Careers"}},
-  {"slug": "sanofi",                      "name": "Sanofi",                                 "sector": "pharmaceuticals", "config": {"tenant": "sanofi", "env": "wd3", "site": "SanofiCareers"}}
+  {"slug": "sanofi",                      "name": "Sanofi",                                 "sector": "pharmaceuticals", "config": {"tenant": "sanofi", "env": "wd3", "site": "SanofiCareers"}},
+  {"slug": "gehealthcare",                "name": "GE HealthCare",                          "sector": "medical devices", "company": "GE HealthCare", "config": {"tenant": "gehc", "env": "wd5", "site": "GEHC_ExternalSite"}}
 ]
