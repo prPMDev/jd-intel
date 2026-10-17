@@ -264,6 +264,8 @@ For npm publish flow: token in `.npmrc`, `npm publish` from root for jd-intel, f
 
 After publishing: tag the commit (`git tag v0.X.Y && git push origin v0.X.Y`).
 
+The Claude plugin in `plugin/` pins the published server: when `jd-intel-mcp` ships, set `plugin/.mcp.json` to the new `jd-intel-mcp@<version>` and raise `plugin/.claude-plugin/plugin.json` `version` to match, in the release PR. The directory picks the new version up from `master`.
+
 ---
 
 ## Anti-patterns to watch for

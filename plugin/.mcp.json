@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "jd-intel": {
+      "command": "npx",
+      "args": ["-y", "jd-intel-mcp@0.13.0"]
+    }
+  }
+}
