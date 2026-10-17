@@ -90,5 +90,8 @@
   {"slug": "pixiongames",                     "name": "Pixion Games",               "sector": "gaming"},
   {"slug": "stillfrontgroup",                 "name": "Stillfront",                 "sector": "gaming"},
   {"slug": "northmill",                       "name": "Northmill",                  "sector": "fintech (banking)"},
-  {"slug": "holvi",                           "name": "Holvi",                      "sector": "fintech (banking)"}
+  {"slug": "holvi",                           "name": "Holvi",                      "sector": "fintech (banking)"},
+  {"slug": "doktor",                          "name": "Doktor.se",                  "sector": "healthcare"},
+  {"slug": "mindler",                         "name": "Mindler",                    "sector": "mental health"},
+  {"slug": "lifesum",                         "name": "Lifesum",                    "sector": "consumer health"}
 ]

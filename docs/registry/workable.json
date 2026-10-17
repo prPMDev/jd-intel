@@ -26,5 +26,9 @@
   {"slug": "optasia",           "name": "Optasia",           "sector": "fintech"},
   {"slug": "control-risks-6",   "name": "Control Risks",     "sector": "security"},
   {"slug": "ottimate",          "name": "Ottimate",          "sector": "fintech"},
-  {"slug": "eqltech",           "name": "EQL Tech",          "sector": "tech recruitment"}
+  {"slug": "eqltech",           "name": "EQL Tech",          "sector": "tech recruitment"},
+  {"slug": "pharmacy2u",        "name": "Pharmacy2U",        "sector": "healthcare / pharmacy"},
+  {"slug": "lantum",            "name": "Lantum",            "sector": "healthcare staffing"},
+  {"slug": "connected-kerb",    "name": "Connected Kerb",    "sector": "e-mobility"},
+  {"slug": "vortexa",           "name": "Vortexa",           "sector": "energy / data"}
 ]
