@@ -93,5 +93,21 @@
   {"slug": "holvi",                           "name": "Holvi",                      "sector": "fintech (banking)"},
   {"slug": "doktor",                          "name": "Doktor.se",                  "sector": "healthcare"},
   {"slug": "mindler",                         "name": "Mindler",                    "sector": "mental health"},
-  {"slug": "lifesum",                         "name": "Lifesum",                    "sector": "consumer health"}
+  {"slug": "lifesum",                         "name": "Lifesum",                    "sector": "consumer health"},
+  {"slug": "antonsport",                      "name": "Anton Sport",                "sector": "retail"},
+  {"slug": "apotea",                          "name": "Apotea",                     "sector": "ecommerce"},
+  {"slug": "kjell",                           "name": "Kjell & Company",            "sector": "retail"},
+  {"slug": "axelarigato",                     "name": "Axel Arigato",               "sector": "apparel / footwear"},
+  {"slug": "mathem",                          "name": "Mathem",                     "sector": "grocery delivery"},
+  {"slug": "happysocks",                      "name": "Happy Socks",                "sector": "apparel / footwear"},
+  {"slug": "estrid",                          "name": "Estrid",                     "sector": "consumer brands"},
+  {"slug": "lindex",                          "name": "Lindex",                     "sector": "apparel retail"},
+  {"slug": "starstable",                      "name": "Star Stable Entertainment",  "sector": "gaming"},
+  {"slug": "sharkmob",                        "name": "Sharkmob",                   "sector": "gaming"},
+  {"slug": "fatshark",                        "name": "Fatshark",                   "sector": "gaming"},
+  {"slug": "sybo",                            "name": "SYBO Games",                 "sector": "gaming"},
+  {"slug": "ioi",                             "name": "IO Interactive",             "sector": "gaming"},
+  {"slug": "neongiant",                       "name": "Neon Giant",                 "sector": "gaming"},
+  {"slug": "hemnet",                          "name": "Hemnet",                     "sector": "real estate tech"},
+  {"slug": "foodora",                         "name": "foodora",                    "sector": "logistics / delivery"}
 ]

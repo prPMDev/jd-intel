@@ -74,5 +74,8 @@
   {"slug": "HitachiSolutions",                "name": "Hitachi Solutions",                    "sector": "consulting"},
   {"slug": "EurochangeLTD",                   "name": "eurochange",                           "sector": "financial services"},
   {"slug": "EnterpriseSolutionInc",           "name": "Enterprise Solution Inc",              "sector": "tech staffing"},
-  {"slug": "ecovadis",                        "name": "EcoVadis",                             "sector": "sustainability"}
+  {"slug": "ecovadis",                        "name": "EcoVadis",                             "sector": "sustainability"},
+  {"slug": "Gameloft",                        "name": "Gameloft",                             "sector": "gaming"},
+  {"slug": "JYSK",                            "name": "JYSK",                                 "sector": "retail"},
+  {"slug": "Accor",                           "name": "Accor",                                "sector": "hospitality"}
 ]
