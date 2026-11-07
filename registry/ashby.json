@@ -173,5 +173,10 @@
   {"slug": "tennr",              "name": "Tennr",               "sector": "healthcare ai"},
   {"slug": "anterior",           "name": "Anterior",            "sector": "healthcare ai"},
   {"slug": "sylvera",            "name": "Sylvera",             "sector": "climate tech"},
-  {"slug": "radiant",            "name": "Radiant Industries",  "sector": "energy"}
+  {"slug": "radiant",            "name": "Radiant Industries",  "sector": "energy"},
+  {"slug": "substack",           "name": "Substack",            "sector": "media tools"},
+  {"slug": "eightsleep",         "name": "Eight Sleep",         "sector": "consumer health"},
+  {"slug": "whop",               "name": "Whop",                "sector": "marketplaces"},
+  {"slug": "believer",           "name": "Believer",            "sector": "gaming"},
+  {"slug": "gardens",            "name": "Gardens",             "sector": "gaming"}
 ]

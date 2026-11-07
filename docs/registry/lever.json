@@ -83,5 +83,13 @@
   {"slug": "aircall",           "name": "Aircall",                     "sector": "communications"},
   {"slug": "contentsquare",     "name": "Contentsquare",               "sector": "analytics"},
   {"slug": "jumpcloud",         "name": "JumpCloud",                   "sector": "identity"},
-  {"slug": "swile",             "name": "Swile",                       "sector": "hr tech"}
+  {"slug": "swile",             "name": "Swile",                       "sector": "hr tech"},
+  {"slug": "larian",            "name": "Larian Studios",              "sector": "gaming"},
+  {"slug": "sunstudio",         "name": "SUN.STUDIO",                  "sector": "gaming"},
+  {"slug": "avalanchestudios",  "name": "Avalanche Studios Group",     "sector": "gaming"},
+  {"slug": "kolibrigames",      "name": "Kolibri Games",               "sector": "gaming"},
+  {"slug": "blablacar",         "name": "BlaBlaCar",                   "sector": "transportation"},
+  {"slug": "malt",              "name": "Malt",                        "sector": "freelance marketplace"},
+  {"slug": "veepee",            "name": "Veepee",                      "sector": "ecommerce"},
+  {"slug": "pigment",           "name": "Pigment",                     "sector": "enterprise software"}
 ]
