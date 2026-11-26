@@ -268,5 +268,13 @@
   {"slug": "abcellera",                          "name": "AbCellera",                         "sector": "biotech"},
   {"slug": "arcinstitute",                       "name": "Arc Institute",                     "sector": "biotech"},
   {"slug": "seer",                               "name": "Seer",                              "sector": "life sciences"},
-  {"slug": "kairospower",                        "name": "Kairos Power",                      "sector": "energy"}
+  {"slug": "kairospower",                        "name": "Kairos Power",                      "sector": "energy"},
+  {"slug": "rapidfortinc",                       "name": "RapidFort",                         "sector": "security"},
+  {"slug": "tide",                               "name": "Tide",                              "sector": "fintech (banking)"},
+  {"slug": "upbound",                            "name": "Upbound",                           "sector": "infrastructure"},
+  {"slug": "knowbe4",                            "name": "KnowBe4",                           "sector": "security"},
+  {"slug": "onetrust",                           "name": "OneTrust",                          "sector": "security"},
+  {"slug": "bigid",                              "name": "BigID",                             "sector": "security"},
+  {"slug": "solarisbank",                        "name": "Solaris",                           "sector": "fintech (banking)"},
+  {"slug": "purestorage",                        "name": "Everpure",                          "sector": "hardware / storage"}
 ]

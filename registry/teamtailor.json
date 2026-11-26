@@ -93,5 +93,9 @@
   {"slug": "holvi",                           "name": "Holvi",                      "sector": "fintech (banking)"},
   {"slug": "doktor",                          "name": "Doktor.se",                  "sector": "healthcare"},
   {"slug": "mindler",                         "name": "Mindler",                    "sector": "mental health"},
-  {"slug": "lifesum",                         "name": "Lifesum",                    "sector": "consumer health"}
+  {"slug": "lifesum",                         "name": "Lifesum",                    "sector": "consumer health"},
+  {"slug": "mynt",                            "name": "Mynt",                       "sector": "fintech"},
+  {"slug": "polypeptidesweden",               "name": "PolyPeptide",                "sector": "biotech"},
+  {"slug": "securitas",                       "name": "Securitas",                  "sector": "security services"},
+  {"slug": "enfuceoy",                        "name": "Enfuce",                     "sector": "fintech / payments"}
 ]

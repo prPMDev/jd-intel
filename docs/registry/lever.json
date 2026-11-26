@@ -83,5 +83,9 @@
   {"slug": "aircall",           "name": "Aircall",                     "sector": "communications"},
   {"slug": "contentsquare",     "name": "Contentsquare",               "sector": "analytics"},
   {"slug": "jumpcloud",         "name": "JumpCloud",                   "sector": "identity"},
-  {"slug": "swile",             "name": "Swile",                       "sector": "hr tech"}
+  {"slug": "swile",             "name": "Swile",                       "sector": "hr tech"},
+  {"slug": "optionmetrics",     "name": "OptionMetrics",               "sector": "financial data"},
+  {"slug": "verygoodsecurity",  "name": "Very Good Security",          "sector": "security"},
+  {"slug": "allegiantair",      "name": "Allegiant",                   "sector": "airline"},
+  {"slug": "nium",              "name": "Nium",                        "sector": "fintech / payments"}
 ]

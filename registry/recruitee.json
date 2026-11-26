@@ -97,5 +97,6 @@
   {"slug": "tonyschocolonely",                    "name": "Tony's Chocolonely",                     "sector": "cpg / food & beverage"},
   {"slug": "carbonequity",                        "name": "Carbon Equity",                          "sector": "climate tech / fintech"},
   {"slug": "northwave",                           "name": "Northwave",                              "sector": "security"},
-  {"slug": "luscii",                              "name": "Luscii",                                 "sector": "healthcare"}
+  {"slug": "luscii",                              "name": "Luscii",                                 "sector": "healthcare"},
+  {"slug": "tether",                              "name": "Tether",                                 "sector": "fintech / crypto"}
 ]

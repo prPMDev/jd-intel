@@ -173,5 +173,13 @@
   {"slug": "tennr",              "name": "Tennr",               "sector": "healthcare ai"},
   {"slug": "anterior",           "name": "Anterior",            "sector": "healthcare ai"},
   {"slug": "sylvera",            "name": "Sylvera",             "sector": "climate tech"},
-  {"slug": "radiant",            "name": "Radiant Industries",  "sector": "energy"}
+  {"slug": "radiant",            "name": "Radiant Industries",  "sector": "energy"},
+  {"slug": "payabli",            "name": "Payabli",             "sector": "fintech / payments"},
+  {"slug": "claritypay",         "name": "ClarityPay",          "sector": "fintech"},
+  {"slug": "bjakcareer",         "name": "Bjak",                "sector": "insurtech"},
+  {"slug": "latitude-global",    "name": "Latitude",            "sector": "fintech / payments"},
+  {"slug": "checkly",            "name": "Checkly",             "sector": "dev tools"},
+  {"slug": "sanity",             "name": "Sanity",              "sector": "dev tools"},
+  {"slug": "paddle",             "name": "Paddle",              "sector": "fintech / payments"},
+  {"slug": "moss",               "name": "Moss",                "sector": "fintech"}
 ]
