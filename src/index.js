@@ -227,44 +227,23 @@ export function discoveryFailure(company, failed) {
 }
 
 /**
- * Search for companies in the registry.
- */
-export async function search({ keyword, location, ats } = {}) {
-  // For now, search is registry-based. With SQLite store, this becomes a full-text search.
-  if (!keyword) throw new ArgumentError('keyword is required');
-  return searchRegistry(keyword);
-}
-
-/**
  * Detect which ATS platform a company uses: the registry first, then a
  * probe of each adapter. detectAts returns [{ ats, slug }]; detectAtsDetailed
- * adds each board's source and the probes that failed.
+ * adds each board's source and the probes that failed. findAtsBySlug looks a
+ * slug up in the registry (cached, no network) and returns the ATS name
+ * (e.g. "greenhouse", "workday") or null.
  */
-export { detectAts, detectAtsDetailed } from './registry.js';
+export { detectAts, detectAtsDetailed, findAtsBySlug };
 
 /**
- * Look up which ATS a slug belongs to in the registry (cached, no network).
- * Returns the ATS name (e.g. "greenhouse", "workday") or null if not in registry.
- */
-export { findAtsBySlug } from './registry.js';
-
-/**
- * Registry management.
+ * Registry access: load the catalog, search it by keyword, and report where
+ * it came from (bundled, network, or mixed).
  */
 export const registry = {
   load: loadRegistry,
   search: searchRegistry,
-  detect: detectAts,
-  detectDetailed: detectAtsDetailed,
-  findAtsBySlug,
-  findEntryBySlug,
   getSource: getRegistrySource,
 };
-
-// Re-export individual adapters for direct use
-export { fetchGreenhouse } from './adapters/greenhouse.js';
-export { fetchLever } from './adapters/lever.js';
-export { fetchAshby } from './adapters/ashby.js';
 
 // Re-export filter logic for reuse (e.g., by the MCP server)
 export { applyFilters, applyFiltersDetailed } from './filters.js';

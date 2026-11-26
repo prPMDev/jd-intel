@@ -10,7 +10,6 @@
  * Usage: npm run pack:mcpb
  */
 import { rm, mkdir, copyFile, readFile, writeFile, readdir } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
@@ -36,13 +35,12 @@ async function main() {
   // 2. Copy the server files (mcp package `files` + package.json). No tests,
   //    no node_modules (installed fresh below).
   for (const f of [...mcpPkg.files, 'package.json']) {
-    if (existsSync(join(MCP, f))) await copyFile(join(MCP, f), join(BUILD, f));
+    await copyFile(join(MCP, f), join(BUILD, f));
   }
 
-  // Bundle the project icon if present. It lives at the repo root (docs/),
-  // not in mcp/files, so the loop above does not pick it up.
-  const hasIcon = existsSync(join(ROOT, 'docs', 'icon.png'));
-  if (hasIcon) await copyFile(join(ROOT, 'docs', 'icon.png'), join(BUILD, 'icon.png'));
+  // Bundle the project icon. It lives at the repo root (docs/), not in
+  // mcp/files, so the loop above does not pick it up.
+  await copyFile(join(ROOT, 'docs', 'icon.png'), join(BUILD, 'icon.png'));
 
   // 3. Pack the local library so the bundle carries THIS repo's jd-intel
   //    (a real copy via tarball, not a symlink; works pre-publish).
@@ -59,10 +57,7 @@ async function main() {
 
   // 5. Generate the manifest (version/desc from the mcp package = single
   //    source of truth, so the bundle version can never drift).
-  const author = {
-    name: typeof mcpPkg.author === 'string' ? mcpPkg.author : mcpPkg.author.name,
-    url: 'https://prashantrana.xyz',
-  };
+  const author = { name: mcpPkg.author, url: 'https://prashantrana.xyz' };
   // Honest, plain-language access disclosure. Verified against the code: the
   // server reads no user files and runs no commands; it only fetches public
   // job-board APIs. This cannot remove Claude Desktop's generic warnings, but
@@ -85,7 +80,7 @@ async function main() {
     license: mcpPkg.license,
     support: 'https://github.com/prPMDev/jd-intel/issues',
     long_description: longDescription,
-    ...(hasIcon ? { icon: 'icon.png' } : {}),
+    icon: 'icon.png',
     server: {
       type: 'node',
       entry_point: 'server.js',

@@ -18,11 +18,10 @@
  * up. A small limit keeps huge tenants (e.g. CVS ~16k) cheap; we only
  * need jobCount > 0.
  *
- * The library retries transient failures itself (src/http.js: 429, 5xx and
- * network errors, with backoff and Retry-After), so an adapter call that
- * rejects here has already outlasted that. The script keeps one more pass
- * of its own (--retries, default 1) as a longer breather for a host that
- * is rate-limiting a whole run.
+ * The library retries transient failures (src/http.js: 429, 5xx and network
+ * errors, with backoff and Retry-After). --retries N (default 1) widens that
+ * budget to 3 * (1 + N) attempts per request, so an error reported here has
+ * already outlasted them all.
  *
  * Usage:
  *   node scripts/verify-registry.mjs                 # verify live registry
@@ -54,7 +53,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { ADAPTERS } from '../src/adapters/index.js';
 import { loadRegistry } from '../src/registry.js';
-import { ERROR_CODES } from '../src/errors.js';
+import { configureHttp } from '../src/http.js';
 import { nameCheck, proposeLabel } from './registry-lib.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -64,37 +63,13 @@ const string = (fallback) => ({ type: 'string', default: fallback });
 const { values: flags } = parseArgs({
   options: { candidates: { type: 'string' }, recheck: { type: 'string' }, concurrency: string('4'), limit: string('1'), retries: string('1') },
 });
+const extraPasses = Number(flags.retries);
+if (!Number.isInteger(extraPasses) || extraPasses < 0) throw new Error('--retries must be a non-negative integer');
+configureHttp({ retries: 3 * (1 + extraPasses) }); // three library attempts per pass
 
 const candidatesPath = flags.candidates ?? null;
 const CONCURRENCY = Number(flags.concurrency);
 const LIMIT = Number(flags.limit); // jobCount>0 is the only signal we need
-
-async function loadEntries() {
-  if (candidatesPath) {
-    const raw = await readFile(join(ROOT, candidatesPath), 'utf-8');
-    return JSON.parse(raw);
-  }
-  return loadRegistry(); // { ats: [entries] }
-}
-
-// Transient-failure detector. ATS APIs rate-limit under load (Workday and
-// SmartRecruiters both do at modest volume), and a 429 says nothing about
-// whether a board is real. Treating one as a failure produced a 27% false
-// drop rate on a 118-entry run, so these retry with backoff instead. The
-// library's own retries run first; this pass is the second line.
-//
-// The decision is structural, never a message regex: Workday error messages
-// embed the pod name next to the status ("(ufp/wd503/Careers): 404"), so a
-// /5\d\d/ match on the text reads that terminal 404 as a retryable 5xx.
-const RETRIES = Number(flags.retries);
-const NETWORK_ERR = /fetch failed|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket hang up/i;
-
-function isTransient(err) {
-  if (err?.code === ERROR_CODES.RATE_LIMITED) return true;      // 429
-  if (typeof err?.status === 'number') return err.status >= 500; // 5xx retry, 4xx terminal
-  if (err?.code === ERROR_CODES.ATS_UNREACHABLE) return true;   // no status: network error or timeout
-  return NETWORK_ERR.test(err?.message || '');                   // DNS/socket, not an AtsError
-}
 
 // What a failed call says about the board. 'gone' needs a terminal status:
 // an error with none is never evidence that a board is gone.
@@ -115,7 +90,7 @@ async function emptyOrGone(ats, adapter, slug) {
   }
 }
 
-async function verifyOne(ats, entry, attempt = 0) {
+async function verifyOne(ats, entry) {
   // Call the adapter directly with the CANONICAL slug — exactly what
   // fetchJobs does AFTER a registry lookup (it passes hit.entry.slug).
   // We deliberately do NOT route through fetchJobs({company}) here: that
@@ -150,12 +125,6 @@ async function verifyOne(ats, entry, attempt = 0) {
       name_check: nameCheck(org.org_name, entry),
     };
   } catch (err) {
-    if (attempt < RETRIES && isTransient(err)) {
-      // Exponential backoff with jitter: 2s, then 4s, 8s when --retries is raised.
-      const wait = 2000 * 2 ** attempt + Math.floor(Math.random() * 500);
-      await new Promise((r) => setTimeout(r, wait));
-      return verifyOne(ats, entry, attempt + 1);
-    }
     return { ...base, status: 'error', jobCount: 0, outcome: outcomeOfError(err), ...noBoard, error: err.message };
   }
 }
@@ -203,7 +172,7 @@ async function recheck(reviewPath) {
 
 async function main() {
   if (flags.recheck) return recheck(flags.recheck);
-  const byAts = await loadEntries();
+  const byAts = candidatesPath ? JSON.parse(await readFile(join(ROOT, candidatesPath), 'utf-8')) : await loadRegistry();
   const flat = [];
   for (const [ats, entries] of Object.entries(byAts)) {
     for (const entry of entries || []) flat.push({ ats, entry });
@@ -240,11 +209,9 @@ async function main() {
   // Survivors grouped back by ATS, carrying the original entry (incl. config),
   // so a seed step can append exactly what passed.
   const survivorsByAts = {};
-  for (const { ats, entry } of flat) {
-    if (survivors.some((s) => s.ats === ats && s.slug === entry.slug)) {
-      (survivorsByAts[ats] = survivorsByAts[ats] || []).push(entry);
-    }
-  }
+  results.forEach((r, i) => {
+    if (r.status === 'ok') (survivorsByAts[r.ats] ??= []).push(flat[i].entry);
+  });
 
   await mkdir(join(ROOT, 'tmp'), { recursive: true });
   await writeFile(

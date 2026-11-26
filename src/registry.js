@@ -85,11 +85,8 @@ export async function loadRegistry(ats) {
  * company list is live or the bundled snapshot.
  */
 export function getRegistrySource() {
-  const vals = Object.values(sources);
-  if (vals.length === 0) return 'unknown';
-  if (vals.every((v) => v === 'network')) return 'network';
-  if (vals.every((v) => v === 'disk-fallback')) return 'disk-fallback';
-  return 'mixed';
+  const kinds = new Set(Object.values(sources));
+  return kinds.size === 0 ? 'unknown' : kinds.size > 1 ? 'mixed' : [...kinds][0];
 }
 
 /**

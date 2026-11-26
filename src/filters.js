@@ -57,9 +57,8 @@ export function filterJobs(jobs, options = {}) {
   if (typeof postedWithinDays === 'number') {
     const cutoff = Date.now() - postedWithinDays * 86400000;
     result = result.filter(j => {
-      if (!j.postedAt) return false;
-      const posted = new Date(j.postedAt).getTime();
-      return Number.isFinite(posted) && posted >= cutoff;
+      const t = postedTime(j);
+      return t !== null && t >= cutoff;
     });
   }
 

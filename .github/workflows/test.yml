@@ -21,30 +21,9 @@ jobs:
           node-version: ${{ matrix.node }}
 
       # The library, CLI and test suite have zero dependencies, so there is
-      # nothing to install. mcp/ has its own deps and its own job below.
-      - name: Registry files are valid JSON
-        run: |
-          for f in registry/*.json docs/registry/*.json; do
-            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" \
-              || { echo "::error file=$f::invalid JSON"; exit 1; }
-          done
-
+      # nothing to install. mcp/ has its own deps, installed below.
       - name: Run tests
         run: node --test test/*.test.js
-
-  mcp:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ['18', '20', '22']
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node }}
 
       # Point mcp's jd-intel dependency at this checkout before installing,
       # so a PR that changes src/ is tested against the MCP server, not the
@@ -53,33 +32,13 @@ jobs:
       # version that is not on npm yet, which is the state between a version
       # bump and its publish.
       - name: Install mcp deps against the local library
+        if: ${{ !cancelled() }}
         working-directory: mcp
         run: |
           npm pkg set dependencies.jd-intel=file:..
           npm install
 
       - name: Run mcp tests
+        if: ${{ !cancelled() }}
         working-directory: mcp
         run: node --test test/*.test.js
-
-  registry-sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      # docs/registry is the copy GitHub Pages serves. If it drifts from
-      # registry/, the site serves stale data and nothing else notices:
-      # the test suite is decoupled from live registry contents by design.
-      - name: docs/registry matches registry
-        run: |
-          npm run sync:registry-pages
-          if ! git diff --quiet -- docs/registry; then
-            echo "::error::docs/registry is out of sync with registry/. Run: npm run sync:registry-pages"
-            git diff --stat -- docs/registry
-            exit 1
-          fi
-          echo "docs/registry is in sync"

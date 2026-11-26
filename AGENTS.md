@@ -41,7 +41,7 @@ Anonymity discipline applies throughout, with one explicit exception (author att
 
 A toolkit (three surfaces, one core) for fetching and normalizing job descriptions across major Applicant Tracking Systems:
 
-- **Library** (`jd-intel`) — `fetchJobs`, `searchRegistry`, `detectAts`, `applyFilters`. ESM, Node 18+.
+- **Library** (`jd-intel`) — `fetchJobs`, `registry.search`, `detectAts`, `applyFilters`. ESM, Node 18+.
 - **CLI** (`npx jd-intel fetch <slug>`) — same capabilities from the terminal.
 - **MCP server** (`jd-intel-mcp`) — exposes the toolkit to AI assistants via the Model Context Protocol.
 
@@ -90,11 +90,10 @@ jd-intel/
 │   ├── resources.js              # Registry Resource
 │   ├── descriptions.js           # Tool description strings (the AI surface)
 │   ├── envelope.js               # {status, data, metadata} response wrapper
-│   ├── errors.js                 # 7-code error taxonomy (library's 6 + internal_error)
 │   ├── install.js                # `npx jd-intel-mcp install` auto-configurator
 │   └── README.md
 ├── .github/workflows/
-│   ├── test.yml                  # CI: suite on PR (Node 18/20/22) + registry JSON and Pages-sync gates
+│   ├── test.yml                  # CI: suite on PR (Node 18/20/22), then the MCP suite against the local library
 │   └── publish.yml               # npm/MCPB release, fires on v* tags only
 ├── test/                         # Node built-in test runner
 ├── registry/                     # JSON catalogs of verified companies per ATS
@@ -126,7 +125,7 @@ jd-intel/
 - 3 tools (fetch_jobs, search_registry, detect_ats) + 1 Resource (registry)
 - Stdio transport; HTTP/Cloudflare Workers version is roadmap (#22 + future)
 - Uniform envelope `{status, data, metadata}` across every tool
-- 7-code error taxonomy: the library's six plus internal_error for an exception that escapes a handler (no `hint` field; tool description teaches recovery)
+- 7-code error taxonomy: the library's six plus internal_error, added in `mcp/tools.js`, for an exception that escapes a handler (no `hint` field; tool description teaches recovery)
 - Tool names use snake_case for MCP convention; library API uses camelCase
 
 **Registry-first routing:**
@@ -136,7 +135,7 @@ jd-intel/
 **Local registry testing (bites every time):**
 - The library fetches the registry from the published Pages URL, so a locally-added company returns 0 jobs until it merges and Pages redeploys. Nothing is broken.
 - Force the bundled copy: `JD_INTEL_REGISTRY_URL="" node src/cli.js fetch <slug>`
-- The test suite is decoupled from live registry contents by design, but invalid JSON in `registry/*.json` still fails it. CI gates that separately.
+- The test suite is decoupled from live registry contents by design, but invalid JSON in `registry/*.json` still fails it. The suite also checks that `docs/registry` matches `registry/`.
 
 **Voice rules (apply to all user-facing prose):**
 - No em dashes (—) in README, docs, mcp/README, mcp/descriptions.js. Period, colon, comma, or rewrite. Code comments / JSDoc are exempt.
@@ -221,7 +220,7 @@ A scheduled cloud agent expands the registry weekly, staging everything as a PR 
 
 - Candidates file shape: `{ "<ats>": [ {slug, name, sector, company?, config?}, ... ] }`. `config` is Workday-only (`{tenant, env, site}`). `company` links a row to its sibling boards; only a human sets it, and the agent leaves it unset
 - Gate, then append: `node scripts/verify-registry.mjs --candidates tmp/candidates.json --limit 50`, then `node scripts/append-registry.mjs` (writes `survivorsByAts` from the report; never hand-edit the column-aligned registry JSON)
-- Transient failures are retried twice over: the library retries 429/5xx/network on every request (three attempts with backoff), and the gate adds a pass of its own (`--retries N`, default 1). A 429 is rate limiting, not a dead board: entries that fail the gate are silently dropped, so treating transient errors as failures quietly discards good companies
+- The library retries 429, 5xx and network errors on every request, with backoff and Retry-After. The gate raises that attempt count with `--retries N` (default 1, which means six attempts in total; `--retries 0` leaves the library's three). A 429 is rate limiting, not a dead board: entries that fail the gate are silently dropped, so treating transient errors as failures quietly discards good companies
 - The contributor-facing version of this pipeline lives in `CONTRIBUTING.md`. Keep the two in step
 - Never add an entry that didn't pass the live gate in the same run
 - One row, one board. A board is unique by (ats, slug). Rows that share a `company` key are boards of one company; only a human adds that key, in a reviewed PR, after reading both boards. A second board for a company already in the registry (regional arm, subsidiary, hourly site, another Workday career site) is wanted, not a duplicate. A shared slug or name is not evidence of a shared company. The agent never edits an existing row. A board that still answers is not a migration: `empty` is not `gone`. Additions by default, deletions never.
@@ -236,7 +235,7 @@ A scheduled cloud agent expands the registry weekly, staging everything as a PR 
 2. **Read relevant `notes/*` file** if you need historical context
 3. **Plan** with the appropriate skill or Plan agent if non-trivial
 4. **Implement** with thin handlers, library does work, tests cover behavior
-5. **Verify** — run tests, smoke-test the MCP via stdin if MCP work, voice-review user-facing text. CI repeats the suite on every PR across Node 18/20/22, plus a registry JSON gate and a `docs/registry` sync check
+5. **Verify**: run tests, smoke-test the MCP via stdin if MCP work, voice-review user-facing text. CI repeats the suite and the MCP suite on every PR across Node 18/20/22. The suite itself parses every registry file and checks the `docs/registry` copy
 6. **Commit** with a descriptive message, push, mention in issue if applicable
 
 For npm publish flow: token in `.npmrc`, `npm publish` from root for jd-intel, from `mcp/` for jd-intel-mcp. See the publishing log in `notes/building-mcp.md` for the full process documented.

@@ -8,13 +8,13 @@ import { serialize, planAppend, findCollisions, nameCheck, proposeLabel, applyRe
  */
 
 const registry = () => ({
-  greenhouse: { eol: '\n', entries: [
+  greenhouse: { entries: [
     { slug: 'acme', name: 'Acme', sector: 'fintech' },
     { slug: 'hs', name: 'Headroom', sector: 'mental health', company: 'Headroom' },
     { slug: 'headroomsourcing', name: 'Headroom (Sourcing)', sector: 'mental health', company: 'Headroom' },
   ] },
-  lever: { eol: '\n', entries: [{ slug: 'globex', name: 'Globex', sector: 'energy' }] },
-  workday: { eol: '\n', entries: [
+  lever: { entries: [{ slug: 'globex', name: 'Globex', sector: 'energy' }] },
+  workday: { entries: [
     { slug: 'initech', name: 'Initech', sector: 'it services', config: { tenant: 'initech', env: 'wd5', site: 'Careers' } },
   ] },
 });
@@ -28,9 +28,9 @@ describe('serialize', () => {
     assert.equal(serialize(JSON.parse(text)), text);
   });
 
-  test('puts config last and keeps the file line ending', () => {
-    const text = serialize([{ slug: 'a', name: 'A', sector: 's', company: 'A Co', config: { tenant: 't', env: 'wd1', site: 'S' } }], '\r\n');
-    assert.equal(text, '[\r\n  {"slug": "a", "name": "A", "sector": "s", "company": "A Co", "config": {"tenant": "t", "env": "wd1", "site": "S"}}\r\n]\r\n');
+  test('puts config last', () => {
+    const text = serialize([{ slug: 'a', name: 'A', sector: 's', company: 'A Co', config: { tenant: 't', env: 'wd1', site: 'S' } }]);
+    assert.equal(text, '[\n  {"slug": "a", "name": "A", "sector": "s", "company": "A Co", "config": {"tenant": "t", "env": "wd1", "site": "S"}}\n]\n');
   });
 });
 
