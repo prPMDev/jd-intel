@@ -74,5 +74,6 @@
   {"slug": "HitachiSolutions",                "name": "Hitachi Solutions",                    "sector": "consulting"},
   {"slug": "EurochangeLTD",                   "name": "eurochange",                           "sector": "financial services"},
   {"slug": "EnterpriseSolutionInc",           "name": "Enterprise Solution Inc",              "sector": "tech staffing"},
-  {"slug": "ecovadis",                        "name": "EcoVadis",                             "sector": "sustainability"}
+  {"slug": "ecovadis",                        "name": "EcoVadis",                             "sector": "sustainability"},
+  {"slug": "NetApp2",                         "name": "NetApp",                               "sector": "hardware / storage"}
 ]

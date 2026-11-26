@@ -260,5 +260,16 @@
   {"slug": "solventum",                   "name": "Solventum",                              "sector": "medical devices", "config": {"tenant": "healthcare", "env": "wd1", "site": "Search"}},
   {"slug": "agilent",                     "name": "Agilent Technologies",                   "sector": "life sciences", "config": {"tenant": "agilent", "env": "wd5", "site": "Agilent_Careers"}},
   {"slug": "sanofi",                      "name": "Sanofi",                                 "sector": "pharmaceuticals", "config": {"tenant": "sanofi", "env": "wd3", "site": "SanofiCareers"}},
-  {"slug": "gehealthcare",                "name": "GE HealthCare",                          "sector": "medical devices", "company": "GE HealthCare", "config": {"tenant": "gehc", "env": "wd5", "site": "GEHC_ExternalSite"}}
+  {"slug": "gehealthcare",                "name": "GE HealthCare",                          "sector": "medical devices", "company": "GE HealthCare", "config": {"tenant": "gehc", "env": "wd5", "site": "GEHC_ExternalSite"}},
+  {"slug": "rsm",                         "name": "RSM US",                                 "sector": "consulting", "config": {"tenant": "rsm", "env": "wd1", "site": "RSMCareers"}},
+  {"slug": "protiviti",                   "name": "Protiviti",                              "sector": "consulting", "config": {"tenant": "roberthalf", "env": "wd1", "site": "ProtivitiNA"}},
+  {"slug": "jadeglobal",                  "name": "Jade Global",                            "sector": "it services", "config": {"tenant": "jadeglobal", "env": "wd5", "site": "Jade_Careers"}},
+  {"slug": "broadridge",                  "name": "Broadridge",                             "sector": "financial services", "config": {"tenant": "broadridge", "env": "wd5", "site": "Careers"}},
+  {"slug": "pnc",                         "name": "PNC",                                    "sector": "banking", "config": {"tenant": "pnc", "env": "wd5", "site": "External"}},
+  {"slug": "vanguard",                    "name": "Vanguard",                               "sector": "financial services", "config": {"tenant": "vanguard", "env": "wd5", "site": "vanguard_external"}},
+  {"slug": "spgi",                        "name": "S&P Global",                             "sector": "financial data", "config": {"tenant": "spgi", "env": "wd5", "site": "SPGI_Careers"}},
+  {"slug": "proofpoint",                  "name": "Proofpoint",                             "sector": "security", "config": {"tenant": "proofpoint", "env": "wd5", "site": "ProofpointCareers"}},
+  {"slug": "sailpoint",                   "name": "SailPoint",                              "sector": "security", "config": {"tenant": "sailpoint", "env": "wd1", "site": "SailPoint"}},
+  {"slug": "rackspace",                   "name": "Rackspace Technology",                   "sector": "infrastructure", "config": {"tenant": "rackspace", "env": "wd1", "site": "External"}},
+  {"slug": "ssctech",                     "name": "SS&C Technologies",                      "sector": "financial services", "config": {"tenant": "ssctech", "env": "wd1", "site": "SSCTechnologies"}}
 ]
