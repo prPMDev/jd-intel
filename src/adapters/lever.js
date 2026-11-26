@@ -35,7 +35,7 @@ export async function fetchLever(slug) {
     // Lever's API doesn't return the company name at the board or job level,
     // so the slug is the honest fallback. `categories.team` is the team within
     // the company ("Payments Platform"), not the company itself.
-    company: titleCaseSlug(slug),
+    company: slug.charAt(0).toUpperCase() + slug.slice(1),
     title: job.text || '',
     department: job.categories?.department || job.categories?.team || '',
     location: job.categories?.location || '',
@@ -97,13 +97,6 @@ function parseLeverSalary(range, title) {
     };
   }
   return extractSalaryFromText(title || '');
-}
-
-function titleCaseSlug(slug) {
-  if (!slug) return '';
-  // "cockroachlabs" → "Cockroachlabs", "netflix" → "Netflix"
-  // Best-effort display name; users should prefer companySlug for exact matching.
-  return slug.charAt(0).toUpperCase() + slug.slice(1);
 }
 
 /**

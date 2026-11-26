@@ -24,25 +24,22 @@
  *     existing entries); only --candidates reports are accepted.
  *
  * Rewrites each touched file with recomputed column alignment (key order
- * slug, name, sector, company, config) and preserves the file's line endings.
+ * slug, name, sector, company, config).
  *
  * Usage:
  *   node scripts/verify-registry.mjs --candidates tmp/candidates.json
  *   node scripts/append-registry.mjs
- *   node scripts/append-registry.mjs --report tmp/verify-report.json
  */
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseArgs } from 'node:util';
 import { loadRegistryFiles, writeRegistryFile, planAppend } from './registry-lib.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const REGISTRY_DIR = join(ROOT, 'registry');
 const REVIEW_PATH = 'tmp/registry-review.json';
-
-const reportPath = parseArgs({ options: { report: { type: 'string', default: 'tmp/verify-report.json' } } }).values.report;
+const reportPath = 'tmp/verify-report.json';
 
 async function main() {
   const report = JSON.parse(await readFile(join(ROOT, reportPath), 'utf-8'));

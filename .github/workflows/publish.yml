@@ -23,8 +23,10 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Install root deps
-        run: npm install
+      - name: Read package versions
+        run: |
+          echo "LIB_VERSION=$(node -p "require('./package.json').version")" >> "$GITHUB_ENV"
+          echo "MCP_VERSION=$(node -p "require('./mcp/package.json').version")" >> "$GITHUB_ENV"
 
       - name: Run tests
         run: node --test test/*.test.js
@@ -34,31 +36,29 @@ jobs:
       # existing version". Fresh versions publish normally.
       - name: Publish jd-intel (library + CLI)
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          if npm view "jd-intel@$VERSION" version > /dev/null 2>&1; then
-            echo "jd-intel@$VERSION already published, skipping."
+          if npm view "jd-intel@$LIB_VERSION" version > /dev/null 2>&1; then
+            echo "jd-intel@$LIB_VERSION already published, skipping."
           else
             npm publish --access public
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # mcp depends on jd-intel@^0.5.0; it must exist on the registry
+      # mcp depends on jd-intel; the version just published must exist on the registry
       # before mcp's npm install can resolve it. Poll until the registry
       # serves this exact version (propagation is usually seconds).
       - name: Wait for jd-intel to be resolvable on npm
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "Waiting for jd-intel@$VERSION on the registry..."
+          echo "Waiting for jd-intel@$LIB_VERSION on the registry..."
           for i in $(seq 1 30); do
-            if npm view "jd-intel@$VERSION" version > /dev/null 2>&1; then
-              echo "jd-intel@$VERSION is available."
+            if npm view "jd-intel@$LIB_VERSION" version > /dev/null 2>&1; then
+              echo "jd-intel@$LIB_VERSION is available."
               exit 0
             fi
             echo "Attempt $i: not yet available, retrying in 10s..."
             sleep 10
           done
-          echo "Timed out waiting for jd-intel@$VERSION on the registry." >&2
+          echo "Timed out waiting for jd-intel@$LIB_VERSION on the registry." >&2
           exit 1
 
       - name: Install mcp deps
@@ -67,9 +67,8 @@ jobs:
 
       - name: Publish jd-intel-mcp (MCP server)
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          if npm view "jd-intel-mcp@$VERSION" version > /dev/null 2>&1; then
-            echo "jd-intel-mcp@$VERSION already published, skipping."
+          if npm view "jd-intel-mcp@$MCP_VERSION" version > /dev/null 2>&1; then
+            echo "jd-intel-mcp@$MCP_VERSION already published, skipping."
           else
             npm publish --access public
           fi
@@ -102,16 +101,15 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         working-directory: mcp
         run: |
-          VERSION=$(node -p "require('./package.json').version")
           for i in $(seq 1 30); do
-            if npm view "jd-intel-mcp@$VERSION" version > /dev/null 2>&1; then
-              echo "jd-intel-mcp@$VERSION is available."
+            if npm view "jd-intel-mcp@$MCP_VERSION" version > /dev/null 2>&1; then
+              echo "jd-intel-mcp@$MCP_VERSION is available."
               exit 0
             fi
             echo "Attempt $i: not yet available, retrying in 10s..."
             sleep 10
           done
-          echo "Timed out waiting for jd-intel-mcp@$VERSION on the registry." >&2
+          echo "Timed out waiting for jd-intel-mcp@$MCP_VERSION on the registry." >&2
           exit 1
 
       # List jd-intel-mcp in the official MCP Registry so it surfaces in client

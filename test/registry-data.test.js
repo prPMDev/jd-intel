@@ -9,7 +9,8 @@ import { readFile } from 'node:fs/promises';
 // loader cache or env override is involved.
 
 import { ATS_NAMES as PLATFORMS } from '../src/adapters/index.js';
-import { norm, serialize } from '../scripts/registry-lib.mjs';
+import { normSlug } from '../src/registry.js';
+import { serialize } from '../scripts/registry-lib.mjs';
 
 async function readRegistry(platform) {
   const raw = await readFile(new URL(`../registry/${platform}.json`, import.meta.url), 'utf-8');
@@ -62,8 +63,8 @@ describe('registry data integrity', () => {
     for (const p of PLATFORMS) {
       const seen = new Set();
       for (const e of await readRegistry(p)) {
-        assert.ok(!seen.has(norm(e.slug)), `duplicate board: ${p}/${e.slug}`);
-        seen.add(norm(e.slug));
+        assert.ok(!seen.has(normSlug(e.slug)), `duplicate board: ${p}/${e.slug}`);
+        seen.add(normSlug(e.slug));
       }
     }
   });
@@ -71,10 +72,10 @@ describe('registry data integrity', () => {
   test('a row without company has a name no other row uses, and no name reads as a company key', async () => {
     const rows = [];
     for (const p of PLATFORMS) for (const e of await readRegistry(p)) rows.push({ ...e, where: `${p}/${e.slug}` });
-    const companyKeys = new Set(rows.filter((r) => r.company).map((r) => norm(r.company)));
-    const names = new Map(); // norm(name) -> where, standalone rows only
+    const companyKeys = new Set(rows.filter((r) => r.company).map((r) => normSlug(r.company)));
+    const names = new Map(); // normSlug(name) -> where, standalone rows only
     for (const r of rows.filter((row) => !row.company)) {
-      const n = norm(r.name);
+      const n = normSlug(r.name);
       assert.ok(!names.has(n), `duplicate name: ${r.where} collides with ${names.get(n)}; link them with a company key or disambiguate`);
       assert.ok(!companyKeys.has(n), `${r.where}: name equals a company key but the row is not linked`);
       names.set(n, r.where);
@@ -82,19 +83,19 @@ describe('registry data integrity', () => {
   });
 
   test('rows sharing a company key agree on its spelling, differ in name per ATS, and are at least two', async () => {
-    const companies = new Map(); // norm(company) -> [{ company, name, ats, where }]
+    const companies = new Map(); // normSlug(company) -> [{ company, name, ats, where }]
     for (const p of PLATFORMS) {
       for (const e of await readRegistry(p)) {
         if (e.company === undefined) continue;
         assert.ok(typeof e.company === 'string' && e.company.length > 0, `${p}/${e.slug}: empty company`);
-        const key = norm(e.company);
+        const key = normSlug(e.company);
         companies.set(key, [...(companies.get(key) || []), { company: e.company, name: e.name, ats: p, where: `${p}/${e.slug}` }]);
       }
     }
     for (const rows of companies.values()) {
       assert.ok(rows.length >= 2, `${rows[0].where}: company "${rows[0].company}" links only one row`);
       assert.equal(new Set(rows.map((r) => r.company)).size, 1, `company spelled differently across ${rows.map((r) => r.where).join(', ')}`);
-      const perAts = rows.map((r) => `${r.ats}|${norm(r.name)}`);
+      const perAts = rows.map((r) => `${r.ats}|${normSlug(r.name)}`);
       assert.equal(new Set(perAts).size, perAts.length, `two boards of "${rows[0].company}" on one ATS share a name`);
     }
   });
@@ -102,7 +103,7 @@ describe('registry data integrity', () => {
   test('the serializer reproduces every registry file byte for byte', async () => {
     for (const p of PLATFORMS) {
       const raw = await readFile(new URL(`../registry/${p}.json`, import.meta.url), 'utf-8');
-      assert.equal(serialize(JSON.parse(raw), raw.includes('\r\n') ? '\r\n' : '\n'), raw, `registry/${p}.json is not in append-registry's format`);
+      assert.equal(serialize(JSON.parse(raw)), raw, `registry/${p}.json is not in append-registry's format`);
     }
   });
 

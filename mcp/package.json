@@ -14,7 +14,6 @@
     "tools.js",
     "resources.js",
     "envelope.js",
-    "errors.js",
     "descriptions.js",
     "install.js",
     "version.js",

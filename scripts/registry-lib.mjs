@@ -17,8 +17,6 @@ import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { normSlug as norm } from '../src/registry.js';
 
-export { norm };
-
 function formatEntry(e) {
   const fields = {
     slug: `"slug": ${JSON.stringify(e.slug)},`,
@@ -39,7 +37,7 @@ function formatEntry(e) {
  * and config are unpadded. serialize(JSON.parse(file)) reproduces every
  * registry file byte for byte; the data test pins that.
  */
-export function serialize(entries, eol = '\n') {
+export function serialize(entries) {
   const rows = entries.map(formatEntry);
   const slugW = Math.max(0, ...rows.map((r) => r.slug.length)) + 1;
   const nameW = Math.max(0, ...rows.map((r) => r.name.length)) + 1;
@@ -49,11 +47,11 @@ export function serialize(entries, eol = '\n') {
     if (r.config) line += `, ${r.config}`;
     return line + '}';
   });
-  return `[${eol}${lines.join(`,${eol}`)}${eol}]${eol}`;
+  return `[\n${lines.join(',\n')}\n]\n`;
 }
 
 /** The row as the files store it: known keys only, in file order. */
-export function toRow(e) {
+function toRow(e) {
   return {
     slug: e.slug,
     name: e.name,
@@ -63,18 +61,17 @@ export function toRow(e) {
   };
 }
 
-/** @returns {Promise<Record<string, { entries: object[], eol: string }>>} */
+/** @returns {Promise<Record<string, { entries: object[] }>>} */
 export async function loadRegistryFiles(dir) {
   const registry = {};
   for (const f of (await readdir(dir)).filter((name) => name.endsWith('.json'))) {
-    const raw = await readFile(join(dir, f), 'utf-8');
-    registry[f.replace(/\.json$/, '')] = { entries: JSON.parse(raw), eol: raw.includes('\r\n') ? '\r\n' : '\n' };
+    registry[f.replace(/\.json$/, '')] = { entries: JSON.parse(await readFile(join(dir, f), 'utf-8')) };
   }
   return registry;
 }
 
-export async function writeRegistryFile(dir, ats, { entries, eol }) {
-  await writeFile(join(dir, `${ats}.json`), serialize(entries, eol));
+export async function writeRegistryFile(dir, ats, { entries }) {
+  await writeFile(join(dir, `${ats}.json`), serialize(entries));
 }
 
 /** Why an entry cannot be a row at all, or null when it can. */

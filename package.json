@@ -14,9 +14,8 @@
   ],
   "scripts": {
     "test": "node --test test/*.test.js",
-    "fetch": "node src/cli.js fetch",
     "verify:registry": "node scripts/verify-registry.mjs",
-    "sync:registry-pages": "node scripts/sync-pages-registry.mjs",
+    "sync:registry-pages": "node -e \"fs.cpSync('registry','docs/registry',{recursive:true})\"",
     "pack:mcpb": "node scripts/build-mcpb.mjs",
     "smoke:mcpb": "node scripts/smoke-mcpb.mjs"
   },

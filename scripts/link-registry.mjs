@@ -19,7 +19,7 @@
  *
  * Usage:
  *   node scripts/link-registry.mjs --item 0 --as second-board --company "Acme"
- *   node scripts/link-registry.mjs --review tmp/registry-review.json --item 2 --as stranger --name "Acme Robotics"
+ *   node scripts/link-registry.mjs --item 2 --as stranger --name "Acme Robotics"
  */
 
 import { readFile, writeFile } from 'node:fs/promises';
@@ -33,11 +33,11 @@ const REGISTRY_DIR = join(ROOT, 'registry');
 
 const string = { type: 'string' };
 const { values: flags } = parseArgs({
-  options: { review: { type: 'string', default: 'tmp/registry-review.json' }, item: string, as: string, company: string, name: string, existing: { type: 'string', default: '0' } },
+  options: { item: string, as: string, company: string, name: string, existing: { type: 'string', default: '0' } },
 });
 
 async function main() {
-  const reviewFile = join(ROOT, flags.review);
+  const reviewFile = join(ROOT, 'tmp/registry-review.json');
   const review = JSON.parse(await readFile(reviewFile, 'utf-8'));
   const item = review.items?.[Number(flags.item)];
   if (flags.item === undefined || !item) throw new Error(`--item must be 0 to ${(review.items?.length ?? 0) - 1}`);

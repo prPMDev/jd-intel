@@ -19,11 +19,11 @@ import {
   ATS_NAMES,
   AtsError,
   ArgumentError,
+  ERROR_CODES as LIBRARY_ERROR_CODES,
 } from 'jd-intel';
 
 const { search: searchRegistry, getSource: getRegistrySource } = registry;
 import { success, partial, error, envelopeSchema } from './envelope.js';
-import { ERROR_CODES } from './errors.js';
 import { VERSION } from './version.js';
 import {
   FETCH_JOBS,
@@ -39,6 +39,10 @@ const DEFAULT_LIMIT = 100;
 const DEFAULT_MAX_TOKENS = 12000;
 const DEFAULT_SEARCH_LIMIT = 50;
 const MAX_SEARCH_LIMIT = 200;
+
+// The library owns the codes its adapters throw. Only the MCP layer has a
+// handler boundary an exception can escape, so internal_error lives here.
+const ERROR_CODES = { ...LIBRARY_ERROR_CODES, INTERNAL_ERROR: 'internal_error' };
 
 // detectAtsDetailed asks every adapter the registry did not answer for, but
 // hasWorkday() answers false without a request: a Workday board is a

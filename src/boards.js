@@ -29,15 +29,6 @@ const BOARD_URLS = {
 const ATS_DOMAINS = ['greenhouse.io', 'lever.co', 'ashbyhq.com', 'smartrecruiters.com', 'teamtailor.com', 'recruitee.com', 'personio.de', 'personio.com', 'workable.com', 'myworkdayjobs.com'];
 
 /**
- * The page a person opens to see the board, or null when the ATS is unknown
- * or, for Workday, no {tenant, env, site} is at hand.
- */
-export function boardUrl(ats, slug, config) {
-  const build = BOARD_URLS[ats];
-  return build ? build(slug, config) : null;
-}
-
-/**
  * The bare hostname a board's link points at ("jobs.example.com"), for
  * org_url. Null when the link is missing or malformed, and null when the
  * host belongs to an ATS, since that carries no signal about the company.
@@ -71,7 +62,7 @@ export function describeBoard({ ats, slug, name = null, config, org_name = null,
     slug,
     name,
     site: ats === 'workday' && config ? config.site : null,
-    board_url: boardUrl(ats, slug, config),
+    board_url: BOARD_URLS[ats]?.(slug, config) ?? null,
     org_name,
     org_url,
     jobs_found,
